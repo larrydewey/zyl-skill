@@ -14,7 +14,9 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `defstruct+` | same as `defstruct`; `(:derive [...])` not parsed |
 | `(trait Name (method params...) ...)` | documentation + orphan-rule locality only |
 | `(impl Trait Type (defn m (self ...) ...) ...)` | call `(Trait.m recv ...)` |
-| `(derive Type Trait...)` / `(derive Type [Trait...])` | `Show` generates an impl; other traits no-op |
+| `(derive Type Trait...)` / `(derive Type [Trait...])` | `Show` generates an impl (`Secret` fields → `<secret>`, `impl-not Show` fields → `<hidden>`); other traits no-op |
+| `(impl-not Trait Target)` | top-level; `Target` a type or a trait (all implementors); any impl/derive of the pair, or an impl of `Trait` whose result derives from a protected value, is `E_IMPL_FORBIDDEN`; for `Show` the target gets a compiler-made `<hidden>` Show |
+| prelude `(trait Secret (wipe (self) Int))` | `(impl Secret T ...)` makes `T` key material: constructors yield secrets, params/fields of `T` are secret, prints `<secret>`, `(k.wipe)` erases; prelude `(impl-not Show Secret)` |
 | `(alias Name Type)` | no-op |
 | `(defmacro name (params) template)`, `macro` | top level only; one body form |
 | `(use path ...)`, `(pub <def>)`, `(feature-gate f <def>)`, `(module n)` (ignored), `(export n)` (dropped) | |
@@ -80,15 +82,17 @@ No overflow checks; bitwise ops not constant-folded.
 
 | Form | Notes |
 |---|---|
-| `(spawn entry)` | zero-arg, non-capturing; returns Int id |
-| `(send a msg)` | queued then **discarded**; abort if `a` stopped |
+| `(spawn entry)` | zero-param fn or named fn; immutable captures OK, a parameter gets 0; returns Int id |
+| `(send a msg)` | async, FIFO per sender; one word (Int or immutable heap pointer); no-op if `a` not live; dropped if `a` never receives |
+| `(receive)` | next data message of the running actor (or `main`); blocks; queued closure messages ahead run first |
+| `(actor-self)` | running actor's id; on `main`, opens a mailbox so actors can reply |
 | `(ffi-call "sym" args... timeout)` | last arg always dropped as timeout; not enforced |
 | `(ffi-pin v)` / `(ffi-unpin p)` | pointer to a pin slot / read slot |
 | runtime via `ffi-call` | `zyl_actor_send_closure a fn word`, `zyl_actor_wait_all`, `zyl_cstr_from_int arena n`, `zyl_now_ms`, `zyl_argc`, `zyl_arg_str`, `zyl_span_copy` |
 
 ## Bytes and atomics
 
-`(byte n)`, `(bytebuf Region cap)`, `bytebuf-cap/len/ptr`, `(byteslice buf off len)`, `(byteslice-sub s off len)`, `(bytebuf-append dst slice)`, `(load-u8 :le buf off)`, `load-i8`, `(store-u8 :le buf off v)`, `store-i8`, `bytebuf-atomic-{load,store,add,sub,fetch-add,max,min,cas}`, `(align-check ptr n)`. Wider widths → `E_RESERVED_KEYWORD`.
+`(byte n)`, `(bytebuf Region cap)`, `bytebuf-cap/len/ptr`, `(byteslice buf off len)`, `(byteslice-sub s off len)`, `(bytebuf-append dst slice)`, `(load-u8 :le buf off)`, `load-i8`, `(store-u8 :le buf off v)`, `store-i8`, `load-{u,i}{16,32,64}`, `store-{u,i}{16,32,64}` (same shape), `bytebuf-atomic-{load,store,add,sub,fetch-add,max,min,cas}`, `(align-check ptr n)`. Handles are typed `ByteBuf` / `ByteSlice`.
 
 ## Contracts
 
@@ -100,4 +104,4 @@ No overflow checks; bitwise ops not constant-folded.
 
 ## Types, regions, capabilities (annotation/argument names)
 
-Types `Int Float Bool String Unit Byte List Option Result Vec Map`; regions `Stack Heap Global Circular Pin`; capabilities `Secret` (`TCap`/`TMut` are inferred). `declassify`, `ct-eq-bool`, `ct-eq-words-bool` drop `Secret`.
+Types `Int Float Bool String Unit Byte List Option Result Vec Map`; regions `Stack Heap Global Circular Pin`; capabilities `Secret` — a parameter or field annotation, or a trait (`TCap`/`TMut` are inferred). `declassify`, `ct-eq-bool`, `ct-eq-words-bool` drop `Secret`.

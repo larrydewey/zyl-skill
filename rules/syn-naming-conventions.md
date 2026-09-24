@@ -37,7 +37,7 @@ Indentation is two spaces; the LSP formatter re-indents by paren depth.
 
 ## Notes
 
-- `E_RESERVED_KEYWORD` is raised today only for the unimplemented 16/32/64-bit byte loads/stores (`load-u16`, `store-u32`, ...). The spec's full reserved list is not enforced.
+- `E_RESERVED_KEYWORD` is not raised today; the spec's reserved list is not enforced.
 - Names in the core prelude (`identity`, `const`, `flip`, `compose`, `apply`, `abs`, `max`, `min`, `clamp`, `signum`, `square`, `cube`, `xor`, `nand`, `nor`, `implies`, `when`, `unless`, `is-zero`, `is-even`, `is-odd`, `print-int`, `print-float`, `print-string`, `print-bool`, the `option-*`/`result-*`/`list-*` helpers, `car`/`cdr`...) are taken: redefining one is `E_DUPLICATE_DEFINITION`.
 
 ## See Also

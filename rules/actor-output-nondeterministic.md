@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The spec promises deterministic actor output; the implementation does not deliver it. Every actor is its own pthread scheduled by the OS. Two actors printing 200 lines each produced 16 different outputs in 20 runs; three fan-out workers printed out of order in 1 of 100 runs. What does hold: FIFO from one sender to one actor, and one message at a time per actor.
+The spec promises deterministic actor output; the implementation does not deliver it. Every actor is its own pthread scheduled by the OS. Two actors printing 200 lines each produced 16 different outputs in 20 runs; three fan-out workers printed out of order in 1 of 100 runs. What does hold: FIFO from one sender to one actor, and one message at a time per actor. To order results, have workers `send` them to `main` (an `(actor-self)` id) and print in the order `main` `(receive)`s them.
 
 ## Good
 

@@ -16,7 +16,7 @@ Costs (orders of magnitude): `spawn` ≈ 10 µs (one `pthread_create`), closure-
 
 ## Notes
 
-- In a package, `spawn`/`send`/`receive` and any `stdlib/actor` use need the `actor` capability; the capability pass skips `main`'s body, but declare it anyway.
+- In a package, `spawn`/`send`/`receive`/`actor-self` and any `stdlib/actor` use need the `actor` capability; the capability pass skips `main`'s body, but declare it anyway.
 - Test pattern: keep logic in pure functions tested directly; test actors only for lifecycle.
 
 ## See Also

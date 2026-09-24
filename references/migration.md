@@ -20,7 +20,7 @@
 | `#[derive]` | `(derive T Show)`; other traits accepted, no effect |
 | closures `\|x\| x+n` | `(fn (x) (+ x n))`, capture by value, no mutation of captures |
 | `macro_rules!` | `defmacro` templates, hygienic, no quasiquote, plain params |
-| threads + channels | `spawn` + closure messages via `zyl_actor_send_closure`; `send` is discarded |
+| threads + channels | `spawn` + `send`/`(receive)`, reply to `(actor-self)`; closure messages via `zyl_actor_send_closure` |
 | `extern "C"` | `(ffi-call "sym" args… timeout)`; int64/pointers only |
 | Cargo.toml / ranges | `zyl.pkg` / bare minimum versions (MVS) |
 | Cargo.lock | `zyl.lock` (integrity record, commit it) |

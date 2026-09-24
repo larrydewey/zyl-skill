@@ -25,6 +25,8 @@
 
 ## Notes
 
+- **Redaction:** derived `Show` prints a `Secret` field (or a field whose type implements the `Secret` trait) as `<secret>`, and a field whose type is protected by `(impl-not Show T)` as `<hidden>`: `(derive Login Show)` with `(pw Secret)` prints `Login { user: ann, pw: <secret> }`. A Secret type and an `impl-not Show` type get a compiler-made `Show` (`<secret>` / `<hidden>`); deriving or writing `Show` for them is `E_IMPL_FORBIDDEN` ([trait-coherence-and-orphans](trait-coherence-and-orphans.md)).
+- A hand-written `show` whose text derives from a secret (field, binder or helper call) is `E_SECRET_DEBUG`; one that reads an `impl-not Show`-protected field is `E_IMPL_FORBIDDEN`. Print the public fields only, or `declassify`.
 - Derive once per type: two `derive`s naming `Show` define the impl twice (assembler error).
 - Works for generic and recursive ADTs: `(StMk "k" (Some 2))` shows `StMk(k, Some(2))`.
 - Strings inside shown data are not quoted.

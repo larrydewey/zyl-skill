@@ -1,10 +1,10 @@
 # actor-closure-messages
 
-> Deliver work to a running actor with `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
+> Prefer `send` + `(receive)` for data messages; to run a function on a running actor, use `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
 
 ## Why It Matters
 
-This runtime primitive is the only working message protocol. The actor's thread runs queued calls `handler(word)` one at a time in queue order. `word` is an Int or a heap value passed **by pointer** (shared between threads, not copied — keep messages immutable). Request/response works by putting the requester's actor id in the message.
+The primary message protocol is `send` + `(receive)` ([actor-send-is-discarded](actor-send-is-discarded.md)). Closure messages are the lower-level alternative: the actor needs no receive loop, and its thread runs queued calls `handler(word)` one at a time in queue order. `word` is an Int or a heap value passed **by pointer** (shared between threads, not copied — keep messages immutable). Request/response works by putting the requester's actor id in the message. In an actor that does call `receive`, closure messages queued ahead of the next data message run first.
 
 ## Good
 

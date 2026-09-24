@@ -13,7 +13,7 @@ Capabilities are inferred, never written. The type system represents them as `TC
 | `TAtomic<T>` | atomic shared mutation | nothing; use `atomic/atomic` ops on addresses or `bytebuf-atomic-*` |
 | `TBox<T>` | heap ownership | nothing; recursive fields are already pointers |
 | `TPin<T>` | FFI-pinned | `ffi-pin` result |
-| `Secret` | key material | `(k Secret)` parameter annotation, tracked by `secret_check` (taint), not the unifier |
+| `Secret` | key material | `(k Secret)` parameter or field annotation, or `(impl Secret T ...)` for a type, tracked by `secret_check` (taint), not the unifier |
 
 ## Operation matrix (spec)
 

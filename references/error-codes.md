@@ -42,7 +42,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_UNBALANCED_OPEN_STRING` | U | LSP balance check: unterminated string |
 | `E_MALFORMED_PARAMETER` | R | param not a name or `(name Type)`; `((T) x)`; body swallowed by param list; non-identifier macro param/name-position arg |
 | `E_UNEXPECTED_TOKEN_IN_EXPR` | R | token illegal in expression position |
-| `E_RESERVED_KEYWORD` | R | only for `load-u16/u32/u64`, signed and store variants |
+| `E_RESERVED_KEYWORD` | C | catalogued, not raised |
 | `E_INVALID_CHAR`, `E_UNEXPECTED_EOF`, `E_INTEGER_OVERFLOW`, `E_FLOAT_OVERFLOW`, `E_UNBALANCED_PARENS`, `E_EXPECTED_RPAREN/RBRACKET/RCURLY`, `E_EXPECTED_EXPRESSION`, `E_EMPTY_LIST`, `E_ATOM_AS_OPERATOR` | C | stray chars **truncate silently**; oversized ints become **0** |
 
 ## Macros
@@ -81,8 +81,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 |---|---|---|
 | `E_MUT_CONFLICT` | R | `set!` on non-`let-mut`, parameter, struct field, or captured var inside a closure |
 | `E_CAPABILITY_LEAK` | R | `let-mut` name in `send` message or `spawn` body |
-| `E_CT_VIOLATION` | R | Secret in branch/match subject, index/offset, `/`/`%` |
-| `E_SECRET_DEBUG` | R | Secret to `print` |
+| `E_CT_VIOLATION` | R | Secret in branch / subject of a multi-arm match (one-arm destructuring is allowed), index/offset, `/`/`%` |
+| `E_SECRET_DEBUG` | R | Secret to `print`, into an `error` message, or into the text a `show` impl returns (impl bodies are checked); a secret inside a `Secret` field of a printed record is redacted, not an error |
 | `E_SECRET_ESCAPE` | R | Secret to `spawn`/`send`/`file-write` |
 | `E_FFI_PIN_REQUIRED` | R | Secret raw `ffi-call` arg |
 | `E_ZEROIZE_MISSING` | W | Secret param consumed into public result without zeroize |
@@ -115,6 +115,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 |---|---|---|
 | `E_PKG_ORPHAN_IMPL` | R | impl where neither trait nor type is local |
 | `E_TRAIT_NOT_FOUND` | R | dot method call: no trait declares the method, no impl for the receiver type, or ambiguous on an unknown-type receiver |
+| `E_IMPL_FORBIDDEN` | R | impl or derive of a pair forbidden by `(impl-not Trait Target)` (located), or an impl of `Trait` whose result derives from a protected value (flow rule, unlocated `PANIC:`); prelude `(impl-not Show Secret)` makes a `Show` for a Secret type this error |
 | `E_DUPLICATE_IMPL` | C | assembler "symbol already defined" |
 | `E_TRAIT_BOUND_NOT_SATISFIED`, `E_TRAIT_NOT_DERIVABLE` | C | bounds unwritable; derive does not check fields |
 

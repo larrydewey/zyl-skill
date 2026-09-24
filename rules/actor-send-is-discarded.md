@@ -1,40 +1,54 @@
 # actor-send-is-discarded
 
-> Don't design around `send`/`receive`: data messages are queued and discarded, and there is no `receive`. Use closure messages to deliver work.
+> Exchange data messages with `send` + `(receive)`, and reply to `(actor-self)` ids (main included); a sent message is dropped only if the target never calls `receive`. Closure messages remain available.
 
 ## Why It Matters
 
-Actors are the least complete part of the language. `send` is asynchronous and FIFO and passes the message as a raw word (not copied), but the runtime **drops data messages** when it dequeues them; nothing in Zyl can observe them. `(receive)` is not implemented (a body using it does nothing). Sending to an actor that was already waited on or terminated is a no-op (it used to abort with `free(): invalid pointer`; fixed 2026-09-24).
+`send` is asynchronous and FIFO per sender and passes the message as one 64-bit word: an Int or a pointer to an immutable heap value such as an ADT (not copied). `(receive)` returns the next **data** message in the running actor's mailbox, blocking until one arrives; closure messages queued ahead of it run first, so the mailbox stays FIFO. `(actor-self)` returns the running actor's id; on the main thread the first `actor-self` or `receive` opens a mailbox for `main` (no thread), so actors can reply to it. Structured messages are ADT values matched after `receive`.
+
+Data messages sent to an actor that never calls `receive` are still dropped when its loop drains them. Sending to an id that is not a live actor does nothing. An actor blocked in `receive` at program exit counts as idle and the exit drain stops it (no hang), but `(receive)` on `main` with nobody sending blocks forever.
 
 ## Bad
 
 ```lisp
-(defn counter () (receive ...))     ; not implemented
-(send worker (Inc 1))               ; queued, then discarded
-(actor-wait a) (send a 1)           ; silently nothing
+(defn idle () 0)
+(let a (spawn idle) (send a (Inc 1)))   ; idle never receives: dropped
+(print (receive))                        ; on main, nobody sends: hangs forever
 ```
 
 ## Good
 
 ```lisp
-(defn idle () 0)
-(defn handler (msg) (print (* msg 10)))
+(deftype CounterMsg (Add Int) (Get Int) (Stop Int))
+
+(defn counter-loop (total)
+  (match (receive)
+    (Add n (counter-loop (+ total n)))
+    (Get reply-to (begin (send reply-to total) (counter-loop total)))
+    (Stop reply-to (send reply-to total))))
+
 (defn main ()
-  (let a (spawn idle)
-    (begin
-      (ffi-call "zyl_actor_send_closure" a handler 1 1000)   ; runs handler(1) on a
-      (ffi-call "zyl_actor_send_closure" a handler 2 1000)
-      (ffi-call "zyl_actor_wait_all" 1000)                    ; drain, stop, join all
-      0)))
-;; 10, 20
+  (let me (actor-self)
+    (let c (spawn (fn () (counter-loop 0)))
+      (begin
+        (send c (Add 5))
+        (send c (Add 7))
+        (send c (Get me))
+        (print (receive))          ; 12
+        (send c (Stop me))
+        (print (receive))          ; 12
+        0))))
 ```
 
 ## Notes
 
-- `send` is still useful to exercise its compile-time checks.
-- Closure messages need the `ffi` capability (in addition to `actor`) in a package.
+- `receive`, `send` and `actor-self` need the `actor` capability in a package.
+- Closure messages (`zyl_actor_send_closure`, [actor-closure-messages](actor-closure-messages.md)) still work and interleave FIFO with data messages.
+- The REPL / `zyl eval` interpreter does not support actors.
+- Examples: `book/examples/actor-counter/counter.zyl`, `tests/regression/actor-receive.zyl`; book §21.3 "Receiving".
 
 ## See Also
 
 - [actor-closure-messages](actor-closure-messages.md)
 - [actor-always-wait](actor-always-wait.md)
+- [actor-spawn-captures-nothing](actor-spawn-captures-nothing.md)

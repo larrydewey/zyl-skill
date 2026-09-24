@@ -21,6 +21,11 @@ Some values must become public: an AEAD acts on its tag verdict, a signature is 
 
 AEAD/MAC/signature verdicts (via `ct-eq-words-bool`), Miller–Rabin rejection, RFC 6979 retry loop, public-key decompression, X25519 all-zero output check (RFC 7748 §6.1), RSA-OAEP combined extraction bit.
 
+## Notes
+
+- `declassify` is also the explicit escape from an `impl-not` flow rule ([trait-coherence-and-orphans](trait-coherence-and-orphans.md)) and from the redaction of `Secret` fields: there is no `Show` override for a Secret type.
+- It lives in `math/secret/secret`; without that `use`, `declassify` is an unbound function.
+
 ## See Also
 
 - [secret-zeroize](secret-zeroize.md)

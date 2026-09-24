@@ -41,7 +41,7 @@ Recognizing a form is not implementing it. These compile without complaint and t
 ## Notes
 
 - Background: ICNF lowering turns any form it does not recognize into `(IConst 0)`. That fail-soft default has hidden real bugs (`for`, `spawn`, `with-resource` once all lowered to 0).
-- `spawn` and `send` *are* lowered, but see [actor-send-is-discarded](actor-send-is-discarded.md).
+- `spawn`, `send`, `receive` and `actor-self` *are* lowered; see [actor-send-is-discarded](actor-send-is-discarded.md).
 
 ## See Also
 

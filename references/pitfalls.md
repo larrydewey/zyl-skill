@@ -38,12 +38,12 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 30 | `ffi-call` without timeout drops the last real argument | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
 | 31 | Float passed to C `double` | [ffi-int64-only-no-floats](../rules/ffi-int64-only-no-floats.md) |
 | 32 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |
-| 33 | `send` messages discarded; no `receive` | [actor-send-is-discarded](../rules/actor-send-is-discarded.md) |
+| 33 | `send` to an actor that never calls `(receive)` is dropped; `(receive)` on `main` with no sender hangs | [actor-send-is-discarded](../rules/actor-send-is-discarded.md) |
 | 34 | Spawned `fn` parameter is always 0; a reply during the final drain can be lost | [actor-spawn-captures-nothing](../rules/actor-spawn-captures-nothing.md), [actor-closure-messages](../rules/actor-closure-messages.md) |
 | 35 | `main` returns without waiting: actor work killed | [actor-always-wait](../rules/actor-always-wait.md) |
 | 36 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 37 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
-| 38 | Unannotated helper launders a `Secret` | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md) |
+| 38 | Unannotated helper, or `set!` into an existing `let-mut`, launders a `Secret`; heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
 | 39 | `test-suite` drops its tests; `assert-fail` always passes | [test-unimplemented-features](../rules/test-unimplemented-features.md) |
 | 40 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
 | 41 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |

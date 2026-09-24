@@ -10,7 +10,7 @@ Absent `(capabilities ...)` means **none**. Using a gated construct or stdlib mo
 |---|---|
 | `io` | `file-open`, `file-read`, `file-write`, `file-close`, `read-line`; `core/io`, `stdlib/io` |
 | `ffi` | `ffi-call`, `ffi-pin`, `ffi-unpin`; `stdlib/ffi` |
-| `actor` | `spawn`, `send`, `receive`; `stdlib/actor` |
+| `actor` | `spawn`, `send`, `receive`, `actor-self`; `stdlib/actor` |
 | `secret` | the `Secret` type in package code; `stdlib/math/secret` |
 | `native` | shipping/compiling C sources |
 | `unsafe` | `:unsafe` imports (not enforced) |

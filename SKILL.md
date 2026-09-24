@@ -54,7 +54,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
-9. **Actors: `send` is discarded, there is no `receive`, and a spawned `fn`'s parameter is always 0.** Deliver work with closure messages; the process drains every actor at exit, and `actor-wait` drops queued messages. A reply produced during the final drain can still be lost. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
+9. **Actors: `send` + `(receive)` exchange data messages, `(actor-self)` gives an id to reply to (main included); a spawned `fn`'s parameter is always 0.** Spawn bodies may capture immutable values (not `let-mut`); an actor that never calls `receive` drops data messages; closure messages still work. The process drains every actor at exit (one blocked in `receive` counts as idle), and `actor-wait` drops queued messages. A reply produced during the final drain can still be lost. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
 10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, commit the seed (a verified `./boot.sh` also refreshes `~/.zyl`). The compiler is built from `selfhost/driver.zyl` through module resolution, so a compiler module is reached only through a `use`; introduce syntax in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md)
 
 ## Minimal Correct Program
@@ -211,7 +211,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 ### 10. Traits (HIGH)
 
 - [`trait-qualified-calls`](rules/trait-qualified-calls.md) - Call trait methods with dot syntax, `(r.method args...)` or `((expr).method args...)`, picked by the receiver's type; use the qualified `(Trait.method r args...)` when several traits share the name and the receiver's type is unknown.
-- [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, and write each `(Trait, Type)` impl exactly once.
+- [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, write each `(Trait, Type)` impl exactly once, and use `(impl-not Trait Target)` to forbid a pair.
 - [`trait-derive-show`](rules/trait-derive-show.md) - Use `(derive T Show)` (or `(derive T [Show])`) to make `print` show a record; don't expect the other derivable traits to generate anything.
 - [`trait-static-dispatch`](rules/trait-static-dispatch.md) - Implement traits for any type — structs, multi-variant ADTs, primitives, generic types — and call them on values whose type inference can determine; avoid trait calls on heterogeneous data except over structs.
 - [`trait-no-dyn-use-adt-wrapper`](rules/trait-no-dyn-use-adt-wrapper.md) - Model open "trait object" designs with an ADT wrapper, a list of structs, or function values; there is no `dyn`.
@@ -248,12 +248,12 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 ### 14. Actors (CRITICAL)
 
 - [`actor-always-wait`](rules/actor-always-wait.md) **[CRITICAL]** - Know how actors end: the process drains every actor at exit, but `actor-wait` drops an actor's queued closure messages. Wait explicitly only where you need an ordering point.
-- [`actor-closure-messages`](rules/actor-closure-messages.md) - Deliver work to a running actor with `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
+- [`actor-closure-messages`](rules/actor-closure-messages.md) - Prefer `send` + `(receive)` for data messages; to run a function on a running actor, use `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
 - [`actor-limits`](rules/actor-limits.md) - Design within the runtime's limits: at most 1024 actors per process (ids never reused), ~8 MB actor stacks, unbounded mailboxes, and a panic in any actor kills the whole process.
 - [`actor-no-let-mut-crossing`](rules/actor-no-let-mut-crossing.md) - Never reference a `let-mut` variable in a `send` message or spawned closure; snapshot it with `let` first.
 - [`actor-output-nondeterministic`](rules/actor-output-nondeterministic.md) - Let exactly one actor (usually `main`) produce ordered output, or collect results and print after `zyl_actor_wait_all`.
-- [`actor-send-is-discarded`](rules/actor-send-is-discarded.md) **[CRITICAL]** - Don't design around `send`/`receive`: data messages are queued and discarded, and there is no `receive`. Use closure messages to deliver work.
-- [`actor-spawn-captures-nothing`](rules/actor-spawn-captures-nothing.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a zero-parameter `fn`; read-only captures work, parameters and `let-mut` captures do not.
+- [`actor-send-is-discarded`](rules/actor-send-is-discarded.md) **[CRITICAL]** - Exchange data messages with `send` + `(receive)`, and reply to `(actor-self)` ids (main included); a sent message is dropped only if the target never calls `receive`. Closure messages remain available.
+- [`actor-spawn-captures-nothing`](rules/actor-spawn-captures-nothing.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a zero-parameter `fn`; captures of immutable values work (e.g. an `(actor-self)` id to reply to), but a parameter is always 0 and a `let-mut` capture is `E_CAPABILITY_LEAK`.
 
 ### 15. Bits, Bytes & Buffers (HIGH)
 
@@ -261,7 +261,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`bits-bounds-fail-closed`](rules/bits-bounds-fail-closed.md) - Check the results of byte loads, stores and appends: out-of-range accesses do nothing and return 0 instead of failing.
 - [`bits-bytebuf-basics`](rules/bits-bytebuf-basics.md) - Allocate packed bytes with `(bytebuf Region N)` using literal region and capacity; keep buffer handles in their own bindings.
 - [`bits-defined-shift-counts`](rules/bits-defined-shift-counts.md) - Rely on Zyl's defined shift semantics (logical shifts by ≥64 give 0; `ashr` saturates), not on x86's mod-64 masking.
-- [`bits-only-8bit-widths`](rules/bits-only-8bit-widths.md) - Build 16/32/64-bit values from 8-bit loads and shifts (or `math/bits` packing helpers); the wider load/store names are reserved and rejected.
+- [`bits-only-8bit-widths`](rules/bits-only-8bit-widths.md) - Use `load-u16`..`load-u64`, `load-i16`..`load-i64` and `store-*` for wide values, with an explicit `:le`/`:be`; buffers are typed `ByteBuf`/`ByteSlice`.
 - [`bits-regions-unenforced-use-pin`](rules/bits-regions-unenforced-use-pin.md) - Write `Pin` for any buffer whose address you take or share, even though region rules are not enforced yet.
 - [`bits-shr-vs-ashr`](rules/bits-shr-vs-ashr.md) **[CRITICAL]** - Use `shr` (logical, zero fill) for bit patterns and `ashr` (arithmetic, sign fill) for signed numbers.
 
@@ -273,7 +273,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`secret-declassify-explicitly`](rules/secret-declassify-explicitly.md) - Make a secret-derived value public only through `declassify`, `ct-eq-bool` or `ct-eq-words-bool`, with a comment saying why it is safe.
 - [`secret-five-prohibitions`](rules/secret-five-prohibitions.md) **[CRITICAL]** - Never branch on, index with, divide by, print, or send a `Secret`, and pass it to C only through `ffi-pin`.
 - [`secret-unannotated-helpers-launder`](rules/secret-unannotated-helpers-launder.md) **[CRITICAL]** - Annotate every helper a secret flows through; an unannotated helper silently launders taint.
-- [`secret-zeroize`](rules/secret-zeroize.md) - Erase key material explicitly with `(zeroize base n)` or `(zeroize-bytes base n)` when you are done with it.
+- [`secret-zeroize`](rules/secret-zeroize.md) - Frames that held secrets are zeroed on return; erase heap key material explicitly with `(zeroize base n)`, `(zeroize-bytes base n)` or `(k.wipe)`.
 
 ### 17. Cryptography Library (MEDIUM)
 

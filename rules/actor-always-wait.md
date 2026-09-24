@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Every compiled program registers `zyl_actor_wait_all` as an `atexit` handler, so returning from `main` drains all actors' pending closure messages, then stops and joins them (the actor's line printed in 200 of 200 runs, 2026-09-24; before that fix, 186 of 200). An actor does not stop when its entry function returns: it idles on its mailbox until that drain or an explicit wait.
+Every compiled program registers `zyl_actor_wait_all` as an `atexit` handler, so returning from `main` drains all actors' pending closure messages, then stops and joins them (the actor's line printed in 200 of 200 runs, 2026-09-24; before that fix, 186 of 200). An actor does not stop when its entry function returns: it idles on its mailbox until that drain or an explicit wait. An actor blocked in `(receive)` at exit also counts as idle, so the drain stops it instead of hanging.
 
 | Operation | Effect |
 |---|---|

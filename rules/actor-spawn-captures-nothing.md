@@ -1,10 +1,10 @@
 # actor-spawn-captures-nothing
 
-> Pass `spawn` a named zero-argument function or a zero-parameter `fn`; read-only captures work, parameters and `let-mut` captures do not.
+> Pass `spawn` a named zero-argument function or a zero-parameter `fn`; captures of immutable values work (e.g. an `(actor-self)` id to reply to), but a parameter is always 0 and a `let-mut` capture is `E_CAPABILITY_LEAK`.
 
 ## Why It Matters
 
-`zyl_actor_spawn` unpacks a capturing closure into its code and environment, so a spawned `fn` that reads variables from the enclosing scope works (captured by value, like any closure; verified 2026-09-24, before which it segfaulted). A parameter on the entry receives 0; it is not a message. Capturing a `let-mut` is rejected at compile time (`E_CAPABILITY_LEAK`, located, with a label at the `let-mut`).
+`zyl_actor_spawn` unpacks a capturing closure into its code and environment, so a spawned `fn` that reads immutable variables from the enclosing scope works (captured by value, like any closure). The usual use is handing the worker a reply address: `(let me (actor-self) (spawn (fn () (worker me k))))`. A parameter on the entry receives 0; it is not a message (loop on `(receive)` instead). Capturing a `let-mut` is rejected at compile time (`E_CAPABILITY_LEAK`, located, with a label at the `let-mut`).
 
 ## Bad
 
@@ -16,23 +16,21 @@
 ## Good
 
 ```lisp
-(use actor/actor)
-(defn crunch (n) (if (<= n 1) 1 (* n (crunch (- n 1)))))
-(defn report-a () (print (crunch 5)))
+(defn worker (reply-to k) (send reply-to (* k 2)))
 
 (defn main ()
-  (let n 5
-    (let a (spawn (fn () (print (crunch n))))   ; read-only capture is fine
+  (let me (actor-self)
+    (let k 21
       (begin
-        (actor-wait a)
+        (spawn (fn () (worker me k)))   ; immutable captures are fine
+        (print (receive))               ; 42
         0))))
-;; or (spawn report-a)
 ```
 
 ## Notes
 
-- Deliver data to a running actor with closure messages ([actor-closure-messages](actor-closure-messages.md)).
-- Private actor state lives in `let-mut` locals of the entry function.
+- Deliver data to a running actor with `send` + `(receive)` ([actor-send-is-discarded](actor-send-is-discarded.md)) or closure messages ([actor-closure-messages](actor-closure-messages.md)).
+- Private actor state lives in `let-mut` locals (or loop parameters) of the entry function.
 
 ## See Also
 
