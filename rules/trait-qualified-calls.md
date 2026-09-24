@@ -27,7 +27,7 @@ Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Tr
 ## Notes
 
 - Further parameters follow the receiver: `(defn scale (self k) ...)` called `(Scale.scale r 3)`.
-- The method's parameters are whatever the `defn` in the impl says; they are not checked against the `trait` declaration, and a missing method is not reported. The declaration's return type does type every call.
+- The method's parameters are whatever the `defn` in the impl says; they are not checked against the `trait` declaration, and a missing method is not reported. The declaration's return type does type every call and may be compound, `(trait Dec (dec (self v) (Result Int String)))`, so `print` of the call uses `Show`. Extra `(p Type)` forms between the parameter list and the return type are also parameters: `(dec (self) (v Int) (Result Int String))`. A method declared without a return type takes its impl's return type at resolved calls.
 - No default method bodies, no supertraits, no `where` clauses, no associated types.
 - Stdlib traits: `Show` (prelude, `core/show`; `show` returns a String) and `OutputStream` in `io/io` (`write`, `flush`) for `Stdout` (`make-stdout`) and `StringBuffer` (`make-string-buffer`).
 - A trait call may be written anywhere, including as `struct-get`'s first argument.

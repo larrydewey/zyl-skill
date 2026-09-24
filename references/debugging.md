@@ -15,7 +15,6 @@
 | Crash with a guard in a match | guard on a constructor arm | test in the body |
 | Garbage where a variable should be | reconstructed record with fields out of order | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | SIGFPE | integer `/` or `%` by zero | guard divisor (compiler: `cqo` before `idiv`) |
-| Program hangs in `try` | `error` inside a 2/4-arg function | use `Result` |
 | Infinite loop | `for` without `set!` of the loop var | [fn-for-has-no-step](../rules/fn-for-has-no-step.md) |
 | `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` with no `main` of yours | a `use`d module defines `main` | check the transitive `use` chain |
 | Link error `undefined reference` to a trait method | bare method call; trait call inside `struct-get`; no impl | qualify, bind first, add impl |

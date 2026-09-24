@@ -9,7 +9,7 @@
 - Folds integer arithmetic and comparisons on literals: `(+ (* 2 3) 4)` → `mov rax, 10`.
 - Does **not** fold: division/remainder by constant zero (still fails at run time), floats (`IFlt` is source text), bitwise opcodes (historical seed limitation).
 - `(IIf (IConst 1) a b)` → `a`; `(IIf (IConst 0) a b)` → `b`; `(IWhile (IConst 0) body)` → `(IConst 0)`; constant-true `while` is left alone.
-- No DCE of unused lets, no copy propagation, no CSE, no inlining, no TCO.
+- No DCE of unused lets, no copy propagation, no CSE, no inlining. (Direct tail calls become jumps in codegen, not in the optimizer.)
 
 ## See Also
 

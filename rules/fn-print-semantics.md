@@ -25,7 +25,7 @@
 
 ## Notes
 
-- Formats follow the inferred type: Int `%lld`, Float `%f` (six decimals), String `%s`, Bool as `1`/`0`. A value whose type has a `Show` impl prints `(Show.show v)`: `[1, 2]`, `Some(x)`, `{k: v}`, derived `Name(a, b)` ([trait-derive-show](trait-derive-show.md)). A record without a `Show` impl prints its **address**. At the REPL, `=>` results print structurally.
+- Formats follow the inferred type: Int `%lld`, Float `%f` (six decimals), String `%s`, Bool as `1`/`0`. A value whose type has a `Show` impl prints `(Show.show v)`: `[1, 2]`, `Some(x)`, `{k: v}`, derived `Name(a, b)` ([trait-derive-show](trait-derive-show.md)). A record without a `Show` impl prints its **address**; so does an Option/Result/List whose payload type has no `Show` impl (the container is printed raw). At the REPL, `=>` results print structurally.
 - Number to text: `(Show.show n)`; compiler code uses `(ffi-call "zyl_cstr_from_int" arena n 1000)`.
 - `read-line` is parsed but not lowered (evaluates to 0). `exit` and `close` are not lowered either. File I/O: `file-open`/`file-read`/`file-write`/`file-close`.
 - `print` is not capability-gated in packages; `print` of a `Secret` is `E_SECRET_DEBUG`.

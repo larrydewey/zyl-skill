@@ -50,7 +50,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 2. **Inferred types drive `print`, `=`/`<` and Float arithmetic** — for fields, pattern binders, captures, `Vec`/`Map` elements and generic results alike; a generic body that depends on its type is compiled per concrete type. Only values of conflicting/unknown type (mixed-type data, untyped FFI results) fall back to words: use `print-string`/`str-eq` there. `print` of a value with a `Show` impl prints its text. → [fn-types-drive-codegen](rules/fn-types-drive-codegen.md)
 3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), contracts, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` and `unwrap` work now, but panic without your message.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
+5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), `checkpoint` rollback and contract profiles, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` shows a string-literal message; `unwrap` panics with `unwrap on None`.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
@@ -127,7 +127,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 2. Functions, Bindings & Control Flow (CRITICAL)
 
-- [`fn-types-drive-codegen`](rules/fn-types-drive-codegen.md) **[CRITICAL]** - Let inference type your values: `print`, `=`/`<` and arithmetic follow inferred types everywhere; fall back to typed printers and `str-eq` only for data with no single type.
+- [`fn-types-drive-codegen`](rules/fn-types-drive-codegen.md) **[CRITICAL]** - Let inference type your values: `print`, `=`/`<` and arithmetic follow the inferred type of any expression (fields, pattern binders, captures, container elements, generic results); annotate only to document intent, and watch for data that has no single type.
 - [`fn-begin-multi-form-bodies`](rules/fn-begin-multi-form-bodies.md) **[CRITICAL]** - Wrap every body that has more than one form in `begin`.
 - [`fn-conditionals`](rules/fn-conditionals.md) - Always give `if` an else branch and `cond` an `else` clause in value position; conditions must be real Bools.
 - [`fn-for-has-no-step`](rules/fn-for-has-no-step.md) - `for` has no step clause: the body must `set!` the loop variable, or the loop never ends.
@@ -135,13 +135,13 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-integer-arith-unchecked`](rules/fn-integer-arith-unchecked.md) - Guard divisors and overflow yourself: compiled integer arithmetic wraps silently and division by zero kills the process with SIGFPE.
 - [`fn-let-single-binding`](rules/fn-let-single-binding.md) **[CRITICAL]** - `let` binds exactly one name; nest `let`s for several, and prefer the bare `(let name value body)` spelling.
 - [`fn-main-and-exit-status`](rules/fn-main-and-exit-status.md) - Every executable needs `(defn main () ...)` with no parameters; its value is the exit status, so end it with an explicit `0`.
-- [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let`, `let*` or TCO: structure code as small recursive helpers with accumulators, or `while` loops.
+- [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (direct tail calls with at most six arguments are jumps), or `while` loops.
 - [`fn-no-return-type-slot`](rules/fn-no-return-type-slot.md) - Parameters are a bare name or `(name Type)`; there is no return-type annotation and no annotation on `let`.
 - [`fn-no-toplevel-def`](rules/fn-no-toplevel-def.md) - Use a zero-argument `defn` for constants; a top-level `def` is not readable in compiled code.
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and evaluates to 0; build one-line output with `str-concat`.
 - [`fn-string-equality`](rules/fn-string-equality.md) - `=`/`!=` on two Strings compare contents and `<`/`>` order them by bytes wherever their type is known (literals, fields, parameters, container elements, generic instances); use `str-eq` for values whose type may be conflicting or unknown.
 - [`fn-underscore-discard`](rules/fn-underscore-discard.md) - Use `_` (or a `_`-prefixed name) for anything deliberately unused; never invent dummy names.
-- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, `invariant`, and `with-resource` cleanup.
+- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, and `with-resource` cleanup.
 
 ### 3. Structs, ADTs & Collections (CRITICAL)
 
@@ -171,14 +171,14 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 ### 5. Error Handling (CRITICAL)
 
 - [`err-helper-argument-order`](rules/err-helper-argument-order.md) - Option/Result helpers take the value first and the function second; `collections/collections` list helpers take the collection **last**; `-unwrap` helpers require a default.
-- [`err-no-assert-unwrap`](rules/err-no-assert-unwrap.md) - `assert` and `unwrap` work but lose information: `assert` panics with a fixed `assert failed`, and `unwrap` panics with `unwrap on None` even for an `Err`. Prefer `error` and the `-expect` helpers where the message matters.
+- [`err-no-assert-unwrap`](rules/err-no-assert-unwrap.md) - `assert` shows a string-literal message (`PANIC: msg`), otherwise a fixed `assert failed`; `unwrap` panics with `unwrap on None` even for an `Err`. Use literal messages and the `-expect` helpers where the message matters.
 - [`err-result-for-expected-failures`](rules/err-result-for-expected-failures.md) - Return `Result` (`Ok`/`Err`) for failures a caller can handle, `Option` (`Some`/`None`) for absence; reserve `error` for unrecoverable conditions.
 - [`err-try-catches-error-not-err`](rules/err-try-catches-error-not-err.md) **[CRITICAL]** - `try`/`catch` intercepts `error` panics only; an `(Err ...)` value passes straight through it.
-- [`err-try-even-arity-hang`](rules/err-try-even-arity-hang.md) **[CRITICAL]** - Do not rely on catching an `error` raised inside a function called with an even number of arguments; prefer `Result` for failures you expect to handle.
+- [`err-try-even-arity-hang`](rules/err-try-even-arity-hang.md) - Catching `error` from a call of any arity works now (the 2/4-argument hang was fixed 2026-09-24); remove old workarounds that kept erroring functions at odd arity.
 
 ### 6. Contracts (HIGH)
 
-- [`contract-not-enforced`](rules/contract-not-enforced.md) - Treat contracts as documentation: `requires`/`ensures` conditions are evaluated and discarded, and `invariant`, result binding, profiles and rollback do not exist.
+- [`contract-not-enforced`](rules/contract-not-enforced.md) - Use `requires`/`ensures`/`invariant` for checked contracts (`E_CONTRACT_VIOLATION`, `result` in `ensures`); don't expect profiles, `checkpoint` rollback or typed `recover` arms.
 
 
 ## Tier 2 — The Language Model

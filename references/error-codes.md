@@ -101,10 +101,10 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_REGION_ESCAPE`, `E_UNINITIALIZED_USE`, `E_ATOMIC_ABA`, `E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT` | C | |
 | `E_CODEGEN`, `E_CODEGEN_BUFFER_LIMIT` | C | |
 | `E_USER_ERROR` | C | `error` prints `PANIC: <msg>` instead |
-| `E_ASSERT_FAIL` | C | a failing `assert` panics with `assert failed`, no code |
+| `E_ASSERT_FAIL` | C | never raised: a failing `assert` panics with its string-literal message, or `assert failed` |
 | `E_NULL_POINTER`, `E_BYTE_OOB`, `E_BYTEBUF_CAP_EXCEEDED`, `E_BYTEBUF_OVERLAP`, `E_BYTEBUF_INVALID`, `E_ALIGNMENT_FAILED`, `E_ALIGN_CHECK_FAILED` | C | byte ops fail closed returning 0 |
 | `E_OVERFLOW` | C | ints wrap |
-| `E_CONTRACT_VIOLATION` | C | contracts not enforced |
+| `E_CONTRACT_VIOLATION` | R | failed `requires`/`ensures`/`invariant`: `precondition of f failed: C` (also `postcondition`, `invariant`) |
 | `E_FFI_TIMEOUT`, `E_FFI_TYPE_NOT_PINNABLE` | C | timeouts dropped; pinnability → `E_INVALID_CAPABILITY` |
 | `E_TEST_FAILURE`, `E_TEST_RUNNER_ERROR` | C | tests print `FAIL` |
 | `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_UNSUPPORTED_INTERPRETED`, `E_FFI_SYMBOL_NOT_FOUND`, `E_NO_MAIN`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |

@@ -1,6 +1,6 @@
 # err-no-assert-unwrap
 
-> `assert` and `unwrap` work but lose information: `assert` panics with a fixed `assert failed`, and `unwrap` panics with `unwrap on None` even for an `Err`. Prefer `error` and the `-expect` helpers where the message matters.
+> `assert` shows a string-literal message (`PANIC: msg`), otherwise a fixed `assert failed`; `unwrap` panics with `unwrap on None` even for an `Err`. Use literal messages and the `-expect` helpers where the message matters.
 
 ## Why It Matters
 
@@ -8,31 +8,35 @@ Both were no-ops until 2026-09-24 (`assert` checked nothing, `unwrap` evaluated 
 
 | Form | Success | Failure |
 |---|---|---|
-| `(assert c "msg")` | 0 | `PANIC: assert failed`, exit 1; your `"msg"` is dropped; no `E_ASSERT_FAIL` code |
+| `(assert c "msg")` | 0 | `PANIC: msg`, exit 1 |
+| `(assert c)`, or a non-literal message | 0 | `PANIC: assert failed`, exit 1 |
+| `(assert-true c "msg")` (outside a test) | | `PANIC: msg`; without a literal message `assert-true failed` |
 | `(unwrap (Some v))`, `(unwrap (Ok v))` | `v` | — |
 | `(unwrap None)`, `(unwrap (Err e))` | — | `PANIC: unwrap on None`, exit 1, for both |
 
-Both unwind to the nearest `try`, and inside a `test` they fail that test.
+There is still no `E_ASSERT_FAIL` code. All of these unwind to the nearest `try`, and inside a `test` they fail that test.
 
 ## Bad
 
 ```lisp
-(assert (> n 0) "n must be positive")          ; failure says only "assert failed"
+(assert (> n 0) (str-concat "bad n: " name))   ; not a literal: says only "assert failed"
 (let v (unwrap (parse s)) (* v 2))             ; an Err reports "unwrap on None"
 ```
 
 ## Good
 
 ```lisp
-(if (<= n 0) (error "n must be positive") 0)
+(assert (> n 0) "n must be positive")          ; PANIC: n must be positive
+(if (<= n 0) (error (str-concat "bad n: " name)) 0)   ; computed message
 (let v (result-expect (parse s) "bad number") (* v 2))
 (let v (option-unwrap (lookup k) -1) ...)      ; with a default
 ```
 
 ## Notes
 
-- In tests, `assert-true`, `assert-false` and `assert-equal` report better (outside a test they panic and exit 1 on failure).
+- Inside a `test`, a failure is reported only as `FAIL` ([test-read-summary-line](test-read-summary-line.md)).
 - `assert-fail` evaluates its expression and always passes.
+- For function pre/postconditions, `requires`/`ensures` give a message naming the function ([contract-not-enforced](contract-not-enforced.md)).
 
 ## See Also
 

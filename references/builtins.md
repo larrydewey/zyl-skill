@@ -90,9 +90,9 @@ No overflow checks; bitwise ops not constant-folded.
 
 `(byte n)`, `(bytebuf Region cap)`, `bytebuf-cap/len/ptr`, `(byteslice buf off len)`, `(byteslice-sub s off len)`, `(bytebuf-append dst slice)`, `(load-u8 :le buf off)`, `load-i8`, `(store-u8 :le buf off v)`, `store-i8`, `bytebuf-atomic-{load,store,add,sub,fetch-add,max,min,cas}`, `(align-check ptr n)`. Wider widths → `E_RESERVED_KEYWORD`.
 
-## Contracts (evaluated/ignored)
+## Contracts
 
-`requires`, `ensures` (condition evaluated, discarded), `recover` (body only), `checkpoint` (identity), `contracts off FORM` (FORM). `invariant`: undefined function.
+`(requires C)`, `(invariant C)` (checked where written), `(ensures C)` (leading `defn` body form; checked after the body, value bound to `result`) — failure panics `E_CONTRACT_VIOLATION: precondition of f failed: C` (`postcondition`, `invariant`), catchable by `try`. `(recover BODY ((T) fallback) ...)` = `(try BODY (catch _ fallback))` with the first arm. `(checkpoint E)` = `E`. `(contracts off FORM)` strips contracts inside `FORM` (lexically); bare top-level `(contracts off)` strips the next form. See [contract-not-enforced](../rules/contract-not-enforced.md).
 
 ## Testing
 

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`zyl_run_tests` returns 1 when any test fails, but per Chapter 11 that value does not currently become the process exit status: a test binary can exit 0 with failures. (Chapter 29 says a `main` ending in `(run-tests)` exits with the pass/fail status; treat the exit code as unreliable either way.) Zyl's own `run_regression_tests.sh` greps for `FAIL` for exactly this reason. Assertion messages are accepted but not printed; failures report only `FAIL`.
+`zyl_run_tests` returns 1 when any test fails, but per Chapter 11 that value does not currently become the process exit status: a test binary can exit 0 with failures. (Chapter 29 says a `main` ending in `(run-tests)` exits with the pass/fail status; treat the exit code as unreliable either way.) Zyl's own `run_regression_tests.sh` greps for `FAIL` for exactly this reason. Inside a test, assertion messages are not printed; failures report only `FAIL` (outside a test, `assert`/`assert-true` panic with a string-literal message).
 
 ## Good
 

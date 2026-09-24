@@ -17,18 +17,18 @@ The spec (`zyl_specification.txt` v5.0) is normative for the language; the sourc
 | Closures | capture inference, region-assigned | capture by value, captures keep their types; set! of captures rejected; recursive lambdas unsupported; spawn captures crash |
 | Match | exhaustive constructor patterns | exhaustive (constructor-name based); literal/OR/range/guard extension; no nested patterns; duplicate arms unreported |
 | Numerics | checked overflow, `E_DIVISION_BY_ZERO` | wrapping; SIGFPE (interpreter reports it); oversized literals → 0 |
-| Errors | `error` returns `(Err msg)`; `assert`, `unwrap` | `error` panics/unwinds to `try`; `assert`/`unwrap` panic without their message; try hang bug on 2/4-arg fns |
-| Contracts | profiles, injection phase 10 | parsed; conditions evaluated and ignored; `invariant` undefined |
+| Errors | `error` returns `(Err msg)`; `assert`, `unwrap` | `error` panics/unwinds to `try` (any arity; the 2/4-arg hang is fixed); `assert`/`assert-true` show a string-literal message, else `assert failed`; `unwrap` panics `unwrap on None`; no `E_ASSERT_FAIL` |
+| Contracts | profiles, injection phase 10 | `requires`/`ensures` (`result` bound)/`invariant` enforced, `E_CONTRACT_VIOLATION`, lowered in `expr_inner.zyl`; `contracts off` strips lexically; `recover` = try with first arm; `checkpoint` identity; no profiles |
 | Actors | receive, deterministic FIFO, Send checks | spawn + closure messages via FFI; `send` discarded; no receive; OS-scheduled (non-deterministic output); `let-mut`/Secret syntactic checks |
 | FFI | Pin + pinnable + enforced timeout | direct SysV call, ints/pointers only, no floats; timeout dropped; pin needed only for Secret; no callbacks |
 | Bytes | 8/16/32/64-bit, region rules | 8-bit only (others `E_RESERVED_KEYWORD`); region rules unenforced |
 | Secrets | (implementation-defined) | syntactic taint checker; annotations stop at `math/secret/secret`; manual zeroize |
 | Macros | hygienic, innermost-first, terminating | all implemented; plain-identifier params; no quasiquote |
 | Testing | suites, fixtures, properties, compile tests | flat `test` + `run-tests` + 3 assertions; rest parsed/ignored |
-| Stack safety | TCO or heap frames | no TCO; 64 GiB-reserved stack for `main`; actors ~8 MB |
+| Stack safety | TCO or heap frames | direct tail calls (≤6 args) are jumps; otherwise 64 GiB-reserved stack for `main`; actors ~8 MB |
 | ICNF | SSA with region annotations | untyped structured tree; one region rewrite |
 | Optimization | safe only | int constant folding + dead-branch elimination |
-| Pipeline | 11 phases | see [pipeline.md](pipeline.md); region inference last; contract injection not wired |
+| Pipeline | 11 phases | see [pipeline.md](pipeline.md); region inference last; contracts lowered in the front end (`expr_inner.zyl`), no separate injection phase |
 | Packages (§31) | full | implemented; index URL placeholder; git deps not fetched; only root native block built; vendor unused; capability check skips `main`/tests |
 | Hash finalization | ICNF hash etc. | `.buildinfo` with compiler, graph, asm hashes (asm instead of ICNF); graph hash not mixed into binary |
 | Determinism | total | holds for single-threaded, FFI-free programs; assembly and binaries reproducible |

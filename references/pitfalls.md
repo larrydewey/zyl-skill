@@ -24,9 +24,9 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 16 | One-armed `if` / `cond` without `else` → 0 | [fn-conditionals](../rules/fn-conditionals.md) |
 | 17 | Prelude `when`/`unless` evaluate the body even when false | [fn-conditionals](../rules/fn-conditionals.md) |
 | 18 | `read-line`/`exit`/`close`/`make-variant` not lowered (→ 0) | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
-| 19 | Contracts evaluated and ignored | [contract-not-enforced](../rules/contract-not-enforced.md) |
+| 19 | `checkpoint` does not roll back; `recover` uses its first arm whatever the error type | [contract-not-enforced](../rules/contract-not-enforced.md) |
 | 20 | `try` does not catch `Err` values | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
-| 21 | `error` in a 2/4-arg function under `try` can hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
+| 21 | (fixed 2026-09-24) `error` in a 2/4-arg function under `try` used to hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
 | 22 | Rebuilt record with swapped fields | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 23 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
 | 24 | `<`/`>` on records order String/nested fields by address (`==` is deep) | [data-equality-shallow](../rules/data-equality-shallow.md) |

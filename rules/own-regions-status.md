@@ -27,7 +27,7 @@ The spec's five regions and rules R1–R8 describe a complete static system; the
 
 ## Notes
 
-- Deep recursion relies on the big `main` stack, not TCO (spec §14).
+- Direct tail calls (≤6 args) are jumps; other deep recursion relies on the big `main` stack (spec §14).
 - Capability kinds: see [own-capability-kinds](own-capability-kinds.md).
 
 ## See Also

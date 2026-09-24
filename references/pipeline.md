@@ -25,13 +25,13 @@
 | 15 | Link | `cc -no-pie out.s actor_runtime.c -o out -lpthread` (driver/`cli.zyl`) | linker errors |
 | — | `zyl build` extras | native objects before link; `<name>.buildinfo` after | `E_PKG_NATIVE_*` |
 
-`compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Not wired: `contract_injection.zyl`.
+`compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Contracts are lowered to `assert-true` checks in `expr_inner.zyl`; there is no contract-injection stage.
 
 Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and enforces only annotation clashes at calls; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
 
 ## Compiler module map (38 modules)
 
-Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_annotate` (active), `type_system type_inference` (older inferer; data types and an empty context for monomorphization) · middle `derive monomorphization closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report` · unwired `contract_injection`.
+Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_annotate` (active), `type_system type_inference` (older inferer; data types and an empty context for monomorphization) · middle `derive monomorphization closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report`.
 
 ## Driver and build
 

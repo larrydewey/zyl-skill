@@ -1,6 +1,6 @@
 # fn-unlowered-forms
 
-> Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, `invariant`, and `with-resource` cleanup.
+> Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, and `with-resource` cleanup.
 
 ## Why It Matters
 
@@ -13,12 +13,12 @@ Recognizing a form is not implementing it. These compile without complaint and t
 | `(close h)` | nothing | `file-close` |
 | `(make-struct Name ...)` | 0 | `(make-Name ...)` |
 | `(make-variant (T) V ...)` | 0 (matching it segfaults) | `(V ...)` |
-| `(invariant c)` | `E_UNBOUND_VARIABLE` (undefined function) | explicit check |
 | `(with-resource (n init) body)` | binds `n`; runs **no** release step | release explicitly |
 | `test-suite`, `setup`, `teardown`, `test-property`, `test-compile`, `assert-fail` | see [test-unimplemented-features](test-unimplemented-features.md) | flat `test` forms |
-| `requires`/`ensures`/`recover`/`checkpoint`/`contracts` | see [contract-not-enforced](contract-not-enforced.md) | explicit checks |
+| `(checkpoint E)` | `E`; no rollback | explicit state handling |
+| profiles, typed `recover` arms | see [contract-not-enforced](contract-not-enforced.md) | `requires`/`ensures`/`invariant` are enforced |
 
-`assert` and `unwrap` were on this list until 2026-09-24; they are lowered now but lose their messages ([err-no-assert-unwrap](err-no-assert-unwrap.md)).
+`assert` and `unwrap` were on this list until 2026-09-24; they are lowered now; `assert` shows a string-literal message and `unwrap` panics with `unwrap on None` ([err-no-assert-unwrap](err-no-assert-unwrap.md)). Contracts (`requires`/`ensures`/`invariant`) are enforced since the same date ([contract-not-enforced](contract-not-enforced.md)).
 
 ## Bad
 

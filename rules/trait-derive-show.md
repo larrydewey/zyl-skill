@@ -29,6 +29,7 @@
 - Works for generic and recursive ADTs: `(StMk "k" (Some 2))` shows `StMk(k, Some(2))`.
 - Strings inside shown data are not quoted.
 - `==` on records is already deep structural without `Eq`, and `<` compares field words without `Ord` ([data-equality-shallow](data-equality-shallow.md)).
+- `print` of an Option/Result/List whose payload type has no `Show` impl prints the raw value (an address), not garbage. An explicit `(Show.show x)` on a type with no impl still misbehaves (it falls back to runtime tag dispatch) — derive or write the impl first.
 - The REPL keeps a `derive` entry as a definition.
 
 ## See Also

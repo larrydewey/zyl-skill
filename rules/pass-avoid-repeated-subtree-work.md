@@ -8,7 +8,7 @@ Type inference once inferred the last statement of every body twice. With right-
 
 ## Notes
 
-- Deep recursion over trees is normal (no TCO; the big stack absorbs it).
+- Deep recursion over trees is normal (non-tail recursion; the big stack absorbs it).
 - Allocate from the per-compile arena; it is never freed during the compile (`E_OUT_OF_MEMORY` past the budget).
 
 ## See Also

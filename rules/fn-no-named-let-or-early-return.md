@@ -1,10 +1,10 @@
 # fn-no-named-let-or-early-return
 
-> There is no `return`, named `let`, `let*` or TCO: structure code as small recursive helpers with accumulators, or `while` loops.
+> There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (direct tail calls with at most six arguments are jumps), or `while` loops.
 
 ## Why It Matters
 
-The last expression is the function's value. Named let and `let*` are not supported. Every call, including tail calls, is a real `call` instruction: deep recursion works only because `main` runs on a very large reserved stack (64 GiB reservation, falling back to 16/4/1 GiB). Actor threads get the default ~8 MB pthread stack, so deep recursion that works in `main` can overflow in an actor.
+The last expression is the function's value. Named let and `let*` are not supported. A direct call to a top-level function in tail position (`if` branch, `let` body, last `begin` form, `match` arm) with at most six arguments is a jump and runs in constant stack. Every other call (through a function value, more than six arguments, inside `try`/`while`) is a real `call`: deep recursion there works only because `main` runs on a very large reserved stack (64 GiB reservation, falling back to 16/4/1 GiB). Actor threads get the default ~8 MB pthread stack, so deep recursion that works in `main` can overflow in an actor.
 
 ## Bad
 

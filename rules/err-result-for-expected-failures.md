@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Errors are values in Zyl. There is no null, no exceptions for control flow, and no `?` operator. `error` aborts the program (`PANIC: msg`, exit 1) unless a `try` intercepts it — and `try` has a hang bug (see [err-try-even-arity-hang](err-try-even-arity-hang.md)).
+Errors are values in Zyl. There is no null, no exceptions for control flow, and no `?` operator. `error` aborts the program (`PANIC: msg`, exit 1) unless a `try` intercepts it.
 
 ## Good
 

@@ -29,9 +29,9 @@
 | Form | Notes |
 |---|---|
 | `(assert-equal actual expected)` | as above |
-| `(assert-true e)` / `(assert-true e "msg")` | message accepted, not printed |
+| `(assert-true e)` / `(assert-true e "msg")` | outside a test, fails with `msg` (string literal) or `assert-true failed`; inside a test, `FAIL` |
 | `(assert-false e)` / with message | |
-| `(assert e "msg")` | fails with `assert failed` (message not printed) |
+| `(assert e "msg")` | outside a test, `PANIC: msg` (string literal) or `assert failed`; inside a test, `FAIL` |
 | `(assert-fail e)` | evaluates `e`, **always passes** |
 
 Outside a test, a failed assertion prints `PANIC: assert-equal failed` and exits 1.
