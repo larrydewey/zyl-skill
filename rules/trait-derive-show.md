@@ -28,7 +28,7 @@
 - Derive once per type: two `derive`s naming `Show` define the impl twice (assembler error).
 - Works for generic and recursive ADTs: `(StMk "k" (Some 2))` shows `StMk(k, Some(2))`.
 - Strings inside shown data are not quoted.
-- `==`/`<` on records already compare one level deep without `Eq`/`Ord` ([data-equality-shallow](data-equality-shallow.md)).
+- `==` on records is already deep structural without `Eq`, and `<` compares field words without `Ord` ([data-equality-shallow](data-equality-shallow.md)).
 - The REPL keeps a `derive` entry as a definition.
 
 ## See Also

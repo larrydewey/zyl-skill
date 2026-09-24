@@ -61,7 +61,7 @@
 | truthiness of non-nil | Bool only; one-armed `if` → 0 |
 | `car`/`cdr` | `Cons`/`Nil` ADT; `car`/`cdr` return `Option` |
 | `eval` | none in compiled programs (REPL interprets entries) |
-| dynamic typing | static inference (not enforced) |
+| dynamic typing | static inference (enforced only for annotation clashes at calls) |
 | GC | region/arena memory |
 | `when`/`unless` macros | eager functions in the prelude; define macros for laziness |
 | symbols as data, keywords as values | keywords only inside specific forms |

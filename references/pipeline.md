@@ -27,7 +27,7 @@
 
 `compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Not wired: `contract_injection.zyl`.
 
-Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and is not enforced; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
+Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and enforces only annotation clashes at calls; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
 
 ## Compiler module map (38 modules)
 

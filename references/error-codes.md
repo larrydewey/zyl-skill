@@ -63,7 +63,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_DUPLICATE_VARIANT` | R | variant repeated in one `deftype` |
 | `E_DUPLICATE_PARAMETER` | U | repeated param (`_`/`_x` exempt), from `unused_check` |
 | `E_INVALID_CAPABILITY` | R | non-FFI_Pinnable `ffi-pin` operand / inline closure in `ffi-call` |
-| `E_TYPE_MISMATCH`, `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_TYPE`, `E_UNKNOWN_GENERIC_PARAM`, `E_CANNOT_INFER` | C | type errors are **not rejected** |
+| `E_TYPE_MISMATCH` | R | argument definitely clashing with a top-level function's parameter annotation or a constructor's field type (`type_annotate`); nothing else |
+| `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_TYPE`, `E_UNKNOWN_GENERIC_PARAM`, `E_CANNOT_INFER` | C | other type errors are **not rejected** |
 
 ## Matching
 

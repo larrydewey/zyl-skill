@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-A generic body that applies an operator to a type parameter is instantiated per argument-type tuple ([gen-per-type-instances](gen-per-type-instances.md)), so `(defn smaller (a b) (if (< a b) a b))` compares numbers for Ints and text for Strings. On two records, `==`/`<` compare one level deep ([data-equality-shallow](data-equality-shallow.md)) when the operands are known records; inside an instance they are.
+A generic body that applies an operator to a type parameter is instantiated per argument-type tuple ([gen-per-type-instances](gen-per-type-instances.md)), so `(defn smaller (a b) (if (< a b) a b))` compares numbers for Ints and text for Strings. On two records, `==` calls the record type's generated `T.==` (deep, by content) and `<` compares raw field words ([data-equality-shallow](data-equality-shallow.md)); inside an instance the operand types are known.
 
 ## Good
 

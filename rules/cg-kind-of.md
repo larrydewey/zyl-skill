@@ -10,7 +10,7 @@
 |---|---|
 | String | `print` uses `%s`; `=`/`!=` call `zyl_cstr_eq`; `<`/`>`/`<=`/`>=` call `zyl_cstr_cmp` |
 | Float | `print` `%f`; SSE arithmetic; `comisd` |
-| variant | `=`/`!=` → `zyl_variant_eq`; `<` etc. → `zyl_variant_cmp` |
+| variant | `=`/`!=` → `zyl_variant_eq` (fallback only: ADT `==` of a known type usually became a call to `T.==` in the type pass); `<` etc. → `zyl_variant_cmp` |
 | word (default) | integer ops, `%lld`, pointer equality |
 
 ## Keeping kinds

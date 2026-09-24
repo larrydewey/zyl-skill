@@ -28,7 +28,7 @@ A field is one 8-byte word at run time. Its *declared* type (recorded at parse t
 
 - Uppercase unknown names in fields are type parameters: `(deftype Pair (Mk A B))`.
 - A field of an applied type works: `(Path (Vec String) Err)`, `(Obj (Map String Val))`.
-- Record the fields' types even when unannotated code would infer them; it documents the data and survives heterogeneous use.
+- Record the fields' types even when unannotated code would infer them; it documents the data, survives heterogeneous use, and constructor arguments are checked against them (`E_TYPE_MISMATCH` on a definite clash, e.g. `1`/`0` for a `Bool` field: use `true`/`false`).
 
 ## See Also
 

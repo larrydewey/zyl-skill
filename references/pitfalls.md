@@ -29,8 +29,8 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 21 | `error` in a 2/4-arg function under `try` can hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
 | 22 | Rebuilt record with swapped fields | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 23 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
-| 24 | Shallow `==`/`assert-equal` on nested data | [data-equality-shallow](../rules/data-equality-shallow.md) |
-| 25 | Type errors (`(+ 1 "a")`, wrong annotation) accepted | [type-inference-does-not-reject](../rules/type-inference-does-not-reject.md) |
+| 24 | `<`/`>` on records order String/nested fields by address (`==` is deep) | [data-equality-shallow](../rules/data-equality-shallow.md) |
+| 25 | Type errors (`(+ 1 "a")`, Int/Float mix) accepted; only annotation clashes at calls rejected | [type-inference-does-not-reject](../rules/type-inference-does-not-reject.md) |
 | 26 | `((T : Ord) a b)` adds a value parameter | [gen-no-type-parameter-syntax](../rules/gen-no-type-parameter-syntax.md) |
 | 27 | Trait call on mixed-type data (runtime fallback) with ADT/primitive impls picks the wrong impl | [trait-static-dispatch](../rules/trait-static-dispatch.md) |
 | 28 | `derive` (except `Show`), `alias`, `defstruct+ :derive`, `(module …)`, `(export …)` do nothing | [trait-derive-show](../rules/trait-derive-show.md) |

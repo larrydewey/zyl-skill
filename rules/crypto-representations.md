@@ -23,7 +23,7 @@ Every module follows these conventions; mixing a packed buffer or a C string int
 
 ## `math/words`
 
-`(w-alloc arena n)`, `(w-get base i)`, `(w-set base i v)`, `w-fill`, `w-copy`, `(w-from-hex arena "0a0b")`, `(w-from-string arena "abc")`, `(w-hex-bytes base n)`, `w-hex-words`.
+`(w-alloc arena n)`, `(w-get base i)`, `(w-set base i v)`, `w-fill`, `w-copy`, `(w-from-hex arena "0a0b")`, `(w-from-string arena "abc")`, `(w-hex-bytes base n)`, `w-hex-words`. Their parameters are annotated `Int`: storing a String (or Float) through `w-set` is `E_TYPE_MISMATCH`.
 
 ## Notes
 

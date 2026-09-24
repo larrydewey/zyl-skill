@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`(+ 1 2.5)` is neither rejected nor converted: it computes a wrong answer (`(+ 1.5 2)` evaluates to `1.5`). There are no conversion built-ins: `(float 42)` and `(int 3.7)` fail at link time as undefined functions. The type checker does not catch mixing (it rejects no type errors at all).
+`(+ 1 2.5)` is neither rejected nor converted: it computes a wrong answer (`(+ 1.5 2)` evaluates to `1.5`). There are no conversion built-ins: `(float 42)` and `(int 3.7)` fail at link time as undefined functions. The type checker does not catch mixing in an operation; it rejects only a Float passed to an `Int`-annotated parameter or field (`E_TYPE_MISMATCH`), and vice versa.
 
 ## Bad
 
@@ -32,4 +32,4 @@
 ## See Also
 
 - [fn-types-drive-codegen](fn-types-drive-codegen.md) - how Float operands are recognized
-- [type-inference-does-not-reject](type-inference-does-not-reject.md) - no type errors
+- [type-inference-does-not-reject](type-inference-does-not-reject.md) - what is and is not rejected

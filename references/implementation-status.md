@@ -4,7 +4,7 @@ The spec (`zyl_specification.txt` v5.0) is normative for the language; the sourc
 
 | Area | Spec | Today |
 |---|---|---|
-| Type checking | HM with capability/trait constraints, errors rejected | HM with let-polymorphism (`type_annotate.zyl`), **not enforced** (conflicts → unknown); drives print formats, String/Float ops, trait resolution, per-type instances |
+| Type checking | HM with capability/trait constraints, errors rejected | HM with let-polymorphism (`type_annotate.zyl`), **not enforced** (conflicts → unknown) except `E_TYPE_MISMATCH` for definite clashes with parameter/field annotations at calls; drives print formats, String/Float ops, trait resolution, per-type instances, generated ADT `==` |
 | Generic functions | `((T : Bound) x)` groups, monomorphized | groups do not parse; unannotated params are polymorphic; shared body, plus `f~T` instances where the body depends on the type (≤32 each) |
 | Generic ADTs | yes | yes (same-type constraint not enforced); no generic structs |
 | Traits | static resolution, bounds, coherence | static resolution from inferred receiver types (runtime tag match only when unknown); `trait` signatures type calls; prelude `Show`; orphan rule enforced; C1 fails in assembler; no bounds, defaults, dyn, assoc types |

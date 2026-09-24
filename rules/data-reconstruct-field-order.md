@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Constructors are positional and field types are not checked. Rebuilding a record with two fields swapped compiles and silently mislabels every downstream use. In the self-hosted compiler, where state records (`CGS`, `ST`, `Stats`...) are rebuilt constantly, a swapped field shows up as "garbage where a variable should be" or a wrong count far from the bug.
+Constructors are positional, and field types catch a swap only when the two types definitely differ (`E_TYPE_MISMATCH`). Rebuilding a record with two same-typed or untyped fields swapped compiles and silently mislabels every downstream use. In the self-hosted compiler, where state records (`CGS`, `ST`, `Stats`...) are rebuilt constantly, a swapped field shows up as "garbage where a variable should be" or a wrong count far from the bug.
 
 ## Bad
 

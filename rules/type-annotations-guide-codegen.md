@@ -1,14 +1,14 @@
 # type-annotations-guide-codegen
 
-> Treat parameter annotations as documentation that also constrains inference; they are optional (inference usually finds the same type) and unchecked.
+> Treat parameter annotations as documentation that constrains inference and is checked at direct calls: a definitely clashing argument is `E_TYPE_MISMATCH`; they are optional (inference usually finds the same type).
 
 ## Why It Matters
 
-`(name Type)` unifies the parameter with `Type` during inference, and `Secret` feeds Secret tracking. Without it, inference usually infers the same type from use. Annotations are **not** checked: passing a Float to an `(a Int)` parameter compiles and computes on the bits (the conflict just makes those types unknown). There is no annotation for return types, `let` bindings or function types.
+`(name Type)` unifies the parameter with `Type` during inference, and `Secret` feeds Secret tracking. Without it, inference usually infers the same type from use. At a call to a top-level function, an argument whose inferred type definitely clashes with the annotation (`(add 1.5 2.0)` for `(a Int)`, `(Cons "a" Nil)` for `(xs (List Int))`) is `E_TYPE_MISMATCH`, labelled at the parameter. Unknown/type-variable parts and `Unit` never clash; lambda params and trait-method calls are not checked. There is no annotation for return types, `let` bindings or function types.
 
 ## Accepted annotation names
 
-`Int`, `Float`, `Bool`, `String`, `Unit`, `Byte`, struct and ADT names, `Secret`, `(Secret Int)`. Unknown names (`Bogus`, an `alias` name) are silently accepted.
+`Int`, `Float`, `Bool`, `String`, `Unit`, `Byte`, struct and ADT names, `Secret`, `(Secret Int)`. Unknown names (`Bogus`, an `alias` name) are silently accepted as type variables (never clash).
 
 ## Good
 
@@ -23,6 +23,7 @@
 - Applied types are written as lists: `(v (Vec String))`, `(m (Map String Val))`. `Vec<T>` is notation only: `<` and `>` are identifier characters.
 - Function types (`TFun`) exist only inside the inferer.
 - `(alias Name Type)` has no effect.
+- `Bool` params reject `1`/`0`: pass `true`/`false`.
 
 ## See Also
 

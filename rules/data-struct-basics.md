@@ -19,7 +19,7 @@ p.x                       ; one identifier named "p.x"
 ```lisp
 (defstruct Point x y)                      ; bare field names
 (defstruct Size (w) (h))                   ; parenthesized
-(defstruct Person (name String) (age Int)) ; typed (types are documentation)
+(defstruct Person (name String) (age Int)) ; typed (constructor args checked)
 
 (defn main ()
   (let p (make-Point 3 4)
@@ -37,7 +37,7 @@ p.x                       ; one identifier named "p.x"
 - `struct-get` lowers to a `match` with one arm per struct type that has that field.
 - A trait call written directly as the first argument of `struct-get` is not rewritten and fails to link; bind it first (see [trait-qualified-calls](trait-qualified-calls.md)).
 - `defstruct+` defines exactly the same struct (its `:derive` clause is a no-op).
-- Field type annotations are dropped in lowering; they are not checked.
+- Field type annotations are checked at constructor calls: `(make-Person 30 "Ann")` is `E_TYPE_MISMATCH` (definite clashes only; pass `true`/`false` to Bool fields). Arity is not checked, and the types are dropped in lowering.
 - Generic structs are not supported; use a generic ADT.
 
 ## See Also

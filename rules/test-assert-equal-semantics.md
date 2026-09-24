@@ -1,6 +1,6 @@
 # test-assert-equal-semantics
 
-> Assert on scalars, strings and flat records; for nested data assert on individual fields or a computed count/sum.
+> Assert directly on scalars, strings and records (nested ones too — they compare by content); only records with a `Secret` field or an uninferable type fall back to shallow comparison.
 
 ## Why It Matters
 
@@ -8,7 +8,7 @@
 
 - Ints, Bools: by value. Floats: by value with tolerance `1e-5` (chosen when either side's inferred type is Float, or, when neither side is a String, contains a float literal).
 - Strings: by content — `(assert-equal "ab" (str-concat "a" "b"))` passes.
-- Structs/ADTs: **shallow** — tag plus each field as a raw word. Nested structs/lists/ADTs compare by address, so `(assert-equal (Cons 1 Nil) (Cons 1 Nil))` and `(assert-equal (Some (Some 1)) (Some (Some 1)))` **fail**.
+- Structs/ADTs: lowered to `(assert-true (== l r))`, i.e. deep structural equality via the generated `T.==` ([data-equality-shallow](data-equality-shallow.md)), so `(assert-equal (Cons 1 Nil) (Cons 1 Nil))` and `(assert-equal (Some (Some 1)) (Some (Some 1)))` pass. A type with a `Secret` field, or an operand of unknown type, falls back to shallow tag-plus-words `zyl_variant_eq`.
 
 ## Good
 
@@ -18,7 +18,8 @@
   (begin
     (assert-equal (+ 1 2) 3)
     (assert-equal (struct-get (make-Point 1 2) "x") 1)
-    (assert-equal (make-Point 1 2) (make-Point 1 2))   ; flat: passes
+    (assert-equal (make-Point 1 2) (make-Point 1 2))   ; passes
+    (assert-equal (my-map inc (Cons 1 (Cons 2 Nil))) (Cons 2 (Cons 3 Nil)))   ; deep: passes
     (assert-equal (list-length (my-map inc (Cons 1 (Cons 2 Nil)))) 2)
     (assert-equal (list-sum (my-map inc (Cons 1 (Cons 2 Nil)))) 5)))
 ```

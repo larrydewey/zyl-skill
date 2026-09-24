@@ -25,7 +25,7 @@ Everything after the parameter list is the body. A return type written there is 
 ## Notes
 
 - Annotation type names: `Int`, `Float`, `Bool`, `String`, `Unit`, `Byte`, a struct/ADT name, `Secret` or `(Secret Int)`. Unknown names such as `(v Bogus)` are accepted silently.
-- Annotations are not enforced (see [type-inference-does-not-reject](type-inference-does-not-reject.md)) and they constrain the inferred types code generation follows (see [fn-types-drive-codegen](fn-types-drive-codegen.md)).
+- Annotations are checked only at direct calls, for definite clashes (`E_TYPE_MISMATCH`, see [type-inference-does-not-reject](type-inference-does-not-reject.md)), and they constrain the inferred types code generation follows (see [fn-types-drive-codegen](fn-types-drive-codegen.md)).
 - Parameters are immutable (`TCap`); `set!` on one is `E_MUT_CONFLICT`.
 - `defn` is the canonical form; `defun` is not reliably recognized (the book's chapters disagree) — do not use it.
 - Duplicate parameter names are `E_DUPLICATE_PARAMETER`, except `_` and `_`-prefixed names.

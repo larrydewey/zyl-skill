@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`(tuple 1 2)` is an undefined function. Generic structs are not supported. `(alias UserId Int)` is accepted but has **no effect** and does not even introduce `UserId` as a name (an annotation `(id UserId)` is accepted only because annotations are unchecked).
+`(tuple 1 2)` is an undefined function. Generic structs are not supported. `(alias UserId Int)` is accepted but has **no effect** and does not even introduce `UserId` as a name (an annotation `(id UserId)` is accepted only because unknown annotation names are type variables).
 
 ## Good
 

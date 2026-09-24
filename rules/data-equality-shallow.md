@@ -1,42 +1,42 @@
 # data-equality-shallow
 
-> `==` and `<` on structs/ADTs compare one level deep; compare nested values and strings field by field yourself.
+> `==`/`!=` on structs/ADTs compare deeply by content; `<`/`>` still compare raw field words, so order nested or String fields yourself.
 
 ## Why It Matters
 
-`==`/`!=` compare the tag and then each field **word**; `<`, `>`, `<=`, `>=` compare fields lexicographically (runtime `zyl_variant_eq`/`zyl_variant_cmp`, using the hidden size header). A field holding a string, list or other ADT is compared by **address**. Two separately built `(Cons 1 (Cons 2 Nil))` are not equal; nor are two `(Some "a")` built from different string allocations.
+The type pass generates a per-type equality function `T.==` for each struct/ADT (specialized per element type for generic ones): it matches both operands and compares field pairs with `==`, so nested ADTs, lists (element-wise), Strings (content) and Floats compare by value, wherever the values come from (literals, variables, parameters, call results). `=` is `==`. Ordering is different: `<`, `>`, `<=`, `>=` call runtime `zyl_variant_cmp`, lexicographic over the raw field **words** (hidden size header), so String, list and nested-ADT fields order by **address**.
 
 ## Bad
 
 ```lisp
-(== (Cons 1 (Cons 2 Nil)) (Cons 1 (Cons 2 Nil)))   ; 0: tails differ by address
-(assert-equal (Some (Some 1)) (Some (Some 1)))     ; FAIL
+(< (Some "b") (Some "a"))                 ; by address: 1 here, meaningless
+(defstruct Tok (k Int) (text Secret))
+(== t1 t2)                                ; Secret field: shallow word compare
 ```
 
 ## Good
 
 ```lisp
-(== (Some 1) (Some 1))                  ; 1: one level, Int fields
+(== (Cons 1 (Cons 2 Nil)) (Cons 1 (Cons 2 Nil)))   ; 1
+(== (Some "a") (Some (str-concat "" "a")))         ; 1: String content
+(assert-equal (Some (Some 1)) (Some (Some 1)))     ; passes
 (defstruct Pt (x) (y))
-(== (make-Pt 1 2) (make-Pt 1 2))        ; 1
-(< (make-Pt 1 2) (make-Pt 2 0))         ; 1
+(< (make-Pt 1 2) (make-Pt 2 0))                    ; 1: Int fields order fine
 
-(defn list-eq (a b)                     ; deep equality: write it
-  (match a
-    (Nil (match b (Nil 1) (Cons _ _ 0)))
-    (Cons x xs (match b
-                 (Nil 0)
-                 (Cons y ys (if (== x y) (list-eq xs ys) 0))))))
+(defn name-lt (a b)                                ; order by String content: write it
+  (match a (Some x (match b (Some y (< x y)) (None 0))) (None 1)))
 ```
 
 ## Notes
 
+- Types with a `Secret` field get no `T.==`; they keep the shallow tag-plus-words `zyl_variant_eq`. So does any operand whose type inference cannot determine (a conflict makes it unknown).
 - Different struct types are never equal (tag differs), but mixing them raises no type error.
-- `derive Eq/Ord` is a no-op: you get exactly this behavior with or without it (only `derive Show` generates code).
-- Appendix C of the book says structs compare "by identity"; the chapters (2, 15, 18, 20) and the runtime describe the shallow structural comparison above. When correctness matters, compare fields explicitly.
-- `print` of a struct/ADT prints its address (compiled); the REPL prints structurally.
+- `derive Eq/Ord` is a no-op and not needed (only `derive Show` generates code).
+- Appendix C of the book says structs compare "by identity"; that is wrong.
+- `print` of a struct/ADT prints its address (compiled) unless it has a `Show` impl; the REPL prints structurally.
 
 ## See Also
 
 - [trait-derive-show](trait-derive-show.md)
 - [test-assert-equal-semantics](test-assert-equal-semantics.md)
+- [det-no-address-dependent-output](det-no-address-dependent-output.md)

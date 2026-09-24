@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-This is the core modelling tool: every "one of several shapes" value, every result, every tree. Field types are type *names* used for inference and monomorphization, not checked constraints: `(Circle "x")` compiles even if declared `(Circle Int)`.
+This is the core modelling tool: every "one of several shapes" value, every result, every tree. Fields are types only, positional, with no names: `(EC name String phase Int)` declares **four** fields (`name` and `phase` become type parameters). Constructor arguments are checked against concrete field types: `(Circle 1.5)` for `(Circle Int)` is `E_TYPE_MISMATCH`. Arity is not checked.
 
 ## Good
 
@@ -28,7 +28,8 @@ This is the core modelling tool: every "one of several shapes" value, every resu
 - A variant name repeated inside one `deftype` is `E_DUPLICATE_VARIANT`.
 - Recursive fields are ordinary pointer words: no `Box` needed or available.
 - Tags are 0-based in declaration order per `deftype`. Each variant block is sized to its own fields; nullary variants are still heap blocks holding just the tag.
-- The spec's same-type constraint (`(Make 1 "x")` should fail for `(Make T T)`) is not enforced.
+- Type-parameter fields never clash, so the spec's same-type constraint (`(Make 1 "x")` should fail for `(Make T T)`) is not enforced.
+- Want named fields? Use `defstruct` (`(name Type)` fields).
 - `Option`, `Result`, `List` already exist in the prelude.
 
 ## See Also

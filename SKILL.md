@@ -46,7 +46,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 
 ## The Ten Facts
 
-1. **The type checker rejects nothing.** Hindley–Milner inference drives codegen, trait dispatch and per-type instances, but ill-typed programs compile: a conflict just makes the types involved unknown. `(+ 1 "a")`, `(+ 1.5 2)` and a Float passed to an `(a Int)` parameter compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
+1. **The type checker rejects almost nothing.** Hindley–Milner inference drives codegen, trait dispatch and per-type instances; the only rejection is `E_TYPE_MISMATCH` for an argument that definitely clashes with a top-level function's parameter annotation or a constructor's field type. Everything else compiles: `(+ 1 "a")` and `(+ 1.5 2)` compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
 2. **Inferred types drive `print`, `=`/`<` and Float arithmetic** — for fields, pattern binders, captures, `Vec`/`Map` elements and generic results alike; a generic body that depends on its type is compiled per concrete type. Only values of conflicting/unknown type (mixed-type data, untyped FFI results) fall back to words: use `print-string`/`str-eq` there. `print` of a value with a `Show` impl prints its text. → [fn-types-drive-codegen](rules/fn-types-drive-codegen.md)
 3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
@@ -147,7 +147,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 - [`data-adt-declaration`](rules/data-adt-declaration.md) - Declare sum types with `(deftype Name (Variant FieldType...) ...)`; an unknown uppercase field type is a type parameter.
 - [`data-collections-persistent`](rules/data-collections-persistent.md) - `Vec` is generic (`(Vec T)`), `core/map` is `(Map String V)`, and `collections/map`/`collections/set` hold `Int`s; every operation returns an updated value: always rebind to the result and treat the old value as used up.
-- [`data-equality-shallow`](rules/data-equality-shallow.md) - `==` and `<` on structs/ADTs compare one level deep; compare nested values and strings field by field yourself.
+- [`data-equality-shallow`](rules/data-equality-shallow.md) - `==`/`!=` on structs/ADTs compare deeply by content; `<`/`>` still compare raw field words, so order nested or String fields yourself.
 - [`data-field-types`](rules/data-field-types.md) - Declare field types on `deftype` variants and `defstruct` fields: a pattern-bound name or `struct-get` result carries the declared type, so Strings and Floats read back from records print and compute correctly.
 - [`data-no-redeclare-prelude`](rules/data-no-redeclare-prelude.md) - Never redeclare `Option`, `Result`, `List` or any prelude function name; pick another name.
 - [`data-no-tuples-no-generic-structs`](rules/data-no-tuples-no-generic-structs.md) - Use a struct or a single-variant ADT where you want a tuple; use a generic ADT where you want a generic struct; don't rely on `alias`.
@@ -195,8 +195,8 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 8. Type System (CRITICAL)
 
-- [`type-annotations-guide-codegen`](rules/type-annotations-guide-codegen.md) - Treat parameter annotations as documentation that also constrains inference; they are optional (inference usually finds the same type) and unchecked.
-- [`type-inference-does-not-reject`](rules/type-inference-does-not-reject.md) **[CRITICAL]** - Be your own type checker: the compiler infers types but does not reject ill-typed programs.
+- [`type-annotations-guide-codegen`](rules/type-annotations-guide-codegen.md) - Treat parameter annotations as documentation that constrains inference and is checked at direct calls: a definitely clashing argument is `E_TYPE_MISMATCH`; they are optional (inference usually finds the same type).
+- [`type-inference-does-not-reject`](rules/type-inference-does-not-reject.md) **[CRITICAL]** - Be your own type checker: the compiler rejects only definite clashes with a parameter or field annotation at a call; every other ill-typed program compiles.
 - [`type-value-representation`](rules/type-value-representation.md) - Reason about values as single 64-bit words with a fixed, documented layout.
 
 ### 9. Generics (HIGH)
@@ -285,7 +285,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 18. Testing (HIGH)
 
-- [`test-assert-equal-semantics`](rules/test-assert-equal-semantics.md) - Assert on scalars, strings and flat records; for nested data assert on individual fields or a computed count/sum.
+- [`test-assert-equal-semantics`](rules/test-assert-equal-semantics.md) - Assert directly on scalars, strings and records (nested ones too — they compare by content); only records with a `Secret` field or an uninferable type fall back to shallow comparison.
 - [`test-compiler-internals`](rules/test-compiler-internals.md) - Test compiler passes by `use`ing the compiler modules and asserting on their results, not only with black-box compile-fail files.
 - [`test-program-library-tests-split`](rules/test-program-library-tests-split.md) - Structure a project as a library module (no `main`), a program file (`use` + `main`), and a test file (`use` + tests + `run-tests`).
 - [`test-read-summary-line`](rules/test-read-summary-line.md) - Judge a test run by its output (`FAIL` lines and the `test result:` summary), not by the exit status.

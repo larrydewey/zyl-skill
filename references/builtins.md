@@ -10,7 +10,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `defun` | not reliably recognized — use `defn` |
 | `(def name v)` | top level: **not readable** in compiled code; REPL only |
 | `(deftype Name (Variant FieldType...) ...)` | nullary `(V)` or `V`; unknown uppercase field types are type params |
-| `(defstruct Name f (f) (f Type)...)` | constructor `make-Name`; also `(Name ...)`; field types dropped |
+| `(defstruct Name f (f) (f Type)...)` | constructor `make-Name`; also `(Name ...)`; field types checked at constructor calls (definite clashes), then dropped |
 | `defstruct+` | same as `defstruct`; `(:derive [...])` not parsed |
 | `(trait Name (method params...) ...)` | documentation + orphan-rule locality only |
 | `(impl Trait Type (defn m (self ...) ...) ...)` | call `(Trait.m recv ...)` |
@@ -45,7 +45,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 |---|---|
 | `+ - *` | n-ary fold left; only `(- x)` unary; `(+ x)` `(* x)` → 0 |
 | `/` `%` | trunc toward zero; `%` sign of dividend; /0 → SIGFPE; Secret operand rejected |
-| `= == != < > <= >=` | `=`≡`==`; Strings by content (`<` byte order) when their type is known; structs/ADTs shallow structural |
+| `= == != < > <= >=` | `=`≡`==`; Strings by content (`<` byte order) when their type is known; structs/ADTs: `==`/`!=` deep by content (generated `T.==`; shallow words for Secret-field or unknown types), `<` etc. raw field words |
 | `bit-and bit-or bit-xor` | n-ary |
 | `bit-not` | exactly 1 arg |
 | `shl shr ashr` | `shr` logical, `ashr` arithmetic; counts ≥ 64 defined (0 / sign fill) |
