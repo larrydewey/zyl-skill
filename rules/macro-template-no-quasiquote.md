@@ -9,7 +9,7 @@
 ## Bad
 
 ```lisp
-(defmacro my-unless (c body) `(if ,c 0 ,body))   ; rest of file vanishes
+(defmacro my-unless (c body) `(if ,c 0 ,body))   ; E_INVALID_CHAR at the backquote
 (defmacro log2 (e)
   (print "evaluating")                          ; silently dropped
   e)

@@ -15,6 +15,7 @@ REPL entries go through the real compiler phases and are evaluated by the ICNF i
 - Start-up: default modules (`core/core`, `core/list`, `core/option`, `core/result`, `allocator/allocator`), then `~/.zyl/replrc` (`$ZYL_REPLRC`), then `.zyl-session` in the start directory (rewritten after every changing entry).
 - History: `~/.zyl/repl_history` (`$ZYL_REPL_HISTORY`, `$ZYL_STATE_DIR`).
 - Non-tty stdin: script mode (no rc, session, history or banner).
+- `def` bindings made at the prompt are live values, and a later `defn` can use them: `(def k 41)` then `(defn f (x) (+ x k))` then `(f 1)` gives 42 (Strings too). Each prompt def is emitted into the session program as a top-level def that reads a runtime table, so its expression is **not re-run** (side effects happen once); `:reset` clears the table.
 - Redefining a name needs `:reset`.
 - `:type` often answers *unresolved* for applications (a known inference gap).
 - Line editor: arrows/word motion, multi-line until the form closes, Ctrl-R, Tab completion, highlighting.

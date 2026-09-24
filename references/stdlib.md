@@ -17,16 +17,16 @@ The stdlib is the implicit package `zyl/std`: no manifest entry, every definitio
 
 | Module | Definitions |
 |---|---|
-| `collections/vec` | `(deftype Vec (VecC Int Int Int Int T))` (phantom `T`); `vec-create arena cap` (0 = private arena), `vec-create-default cap`, `vec-len`, `vec-cap`, `vec-get v i` → T (word -1 OOB), `vec-set v i x`, `vec-push v x`, `vec-pop`, `vec-last` (word -1 empty), `vec-free`; prints `[a, b]` |
-| `collections/map` | `map-create arena cap`, `map-create-default`, `map-len`, `map-cap`, `map-put m k v`, `map-get m k default`, `map-has`, `map-remove`, `map-find m k i len`, `map-free` |
-| `collections/set` | `set-create arena cap`, `set-len`, `set-cap`, `set-contains`, `set-add`, `set-remove`, `set-find s k i` |
+| `collections/vec` | `(deftype Vec (VecC Int Int Int Int T))` (phantom `T`); `vec-create arena cap` (arena = `arena-create` handle, or <= 0 = new private arena, never freed; other positive Ints crash; `cap` < 0 means 0; growth doubles in the same arena), `vec-create-default cap`, `vec-len`, `vec-cap`, `vec-get v i` → T (word -1 OOB), `vec-set v i x`, `vec-push v x`, `vec-pop`, `vec-last` (word -1 empty), `vec-free`; prints `[a, b]` |
+| `collections/map` | `map-create arena cap` (arena/cap as for `vec-create`), `map-create-default`, `map-len`, `map-cap`, `map-put m k v`, `map-get m k default`, `map-has`, `map-remove`, `map-find m k i len`, `map-free` |
+| `collections/set` | `set-create arena cap` (as for `vec-create`), `set-len`, `set-cap`, `set-contains`, `set-add`, `set-remove`, `set-find s k i` |
 | `collections/collections` | `(deftype Assoc (Empty) (AssocNode K V (Assoc K V)))`; `assoc-empty`, `assoc-put k v m`, `assoc-get k default m`, `assoc-has k m`, `assoc-remove`, `assoc-size`, `assoc-keys`, `assoc-values`, `assoc-map f m`, `assoc-fold f acc m`; `list-map f xs`, `list-filter pred xs`, `list-fold f acc xs`, `list-take n xs`, `list-drop n xs`, `list-nth n xs`, `list-set idx val xs`, `list-contains x xs`, `list-range lo hi`, `list-count pred xs` — **collection last** |
 
 ## Systems
 
 | Module | Definitions |
 |---|---|
-| `allocator/allocator` | `alloc-malloc n`, `alloc-free p`, `alloc-read-int addr`, `alloc-write-int addr v`, `alloc-int v`, `alloc-incr`, `alloc-decr`, `alloc-strlen`, `arena-create block-size`, `arena-alloc a n`, `arena-alloc-zeroed a n`, `arena-reset`, `arena-destroy`, `arena-used`, `arena-capacity`, `str-len`, `str-length`, `str-concat`, `str-substring`, `str-eq` (1/0), `str-intern arena s`, `buf-append dst src` (appends at strlen), `error msg` |
+| `allocator/allocator` | `alloc-malloc n`, `alloc-free p`, `alloc-read-int addr`, `alloc-write-int addr v`, `alloc-int v`, `alloc-incr`, `alloc-decr`, `alloc-strlen`, `arena-create block-size` (< 16 = 64 KiB default; 0 on OOM), `arena-alloc a n`, `arena-alloc-zeroed a n`, `arena-reset`, `arena-destroy`, `arena-used`, `arena-capacity`, `str-len`, `str-length`, `str-concat`, `str-substring`, `str-eq` (1/0), `str-intern arena s`, `buf-append dst src` (appends at strlen), `error msg` |
 | `atomic/atomic` | `atomic-load addr`, `atomic-store`, `atomic-add`, `atomic-sub`, `atomic-max`, `atomic-min`, `atomic-cas addr expected new`, `atomic-fetch-add`, `atomic-incr`, `atomic-decr` |
 | `actor/actor` | `actor-spawn`, `actor-send`, `actor-send-with-timeout` (timeout ignored; Result), `actor-is-alive`, `actor-wait`, `actor-terminate` — needs `actor` capability |
 | `ffi/ffi` | `ffi-pin-value`, `ffi-unpin-value`, `ffi-safe-call`, `ffi-pin-call-unpin` (no checking) — needs `ffi` |

@@ -6,7 +6,7 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 
 | # | Pitfall | Rule |
 |---|---|---|
-| 1 | Stray `'` `` ` `` `,` `@` `#` `|` … outside strings truncates the rest of the file | [syn-no-stray-characters](../rules/syn-no-stray-characters.md) |
+| 1 | (fixed 2026-09-24) a stray `'` `` ` `` `,` `@` `#` … outside strings used to truncate the rest of the file; it is now a located `E_INVALID_CHAR` (an older installed compiler still truncates) | [syn-no-stray-characters](../rules/syn-no-stray-characters.md) |
 | 2 | Integer literal ≥ 2^63 (e.g. `0xFF51AFD7ED558CCD`) becomes `0` | [syn-int-literal-range](../rules/syn-int-literal-range.md) |
 | 3 | Unknown string escape → empty string; `\0` truncates | [syn-string-literals](../rules/syn-string-literals.md) |
 | 4 | Misspelled constructor in the **last** match arm is a catch-all | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
@@ -24,16 +24,16 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 16 | One-armed `if` / `cond` without `else` → 0 | [fn-conditionals](../rules/fn-conditionals.md) |
 | 17 | Prelude `when`/`unless` evaluate the body even when false | [fn-conditionals](../rules/fn-conditionals.md) |
 | 18 | `read-line`/`exit`/`close`/`make-variant` not lowered (→ 0) | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
-| 19 | `checkpoint` does not roll back; `recover` uses its first arm whatever the error type | [contract-not-enforced](../rules/contract-not-enforced.md) |
+| 19 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-not-enforced](../rules/contract-not-enforced.md) |
 | 20 | `try` does not catch `Err` values | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 21 | (fixed 2026-09-24) `error` in a 2/4-arg function under `try` used to hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
 | 22 | Rebuilt record with swapped fields | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 23 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
-| 24 | `<`/`>` on records order String/nested fields by address (`==` is deep) | [data-equality-shallow](../rules/data-equality-shallow.md) |
+| 24 | `<`/`>` on records order String/nested fields by address (`==` is deep; derive `Ord` and call `Ord.compare`) | [data-equality-shallow](../rules/data-equality-shallow.md) |
 | 25 | Type errors (`(+ 1 "a")`, Int/Float mix) accepted; only annotation clashes at calls rejected | [type-inference-does-not-reject](../rules/type-inference-does-not-reject.md) |
 | 26 | `((T : Ord) a b)` adds a value parameter | [gen-no-type-parameter-syntax](../rules/gen-no-type-parameter-syntax.md) |
 | 27 | Trait call on mixed-type data (runtime fallback) with ADT/primitive impls picks the wrong impl | [trait-static-dispatch](../rules/trait-static-dispatch.md) |
-| 28 | `derive` (except `Show`), `alias`, `defstruct+ :derive`, `(module …)`, `(export …)` do nothing | [trait-derive-show](../rules/trait-derive-show.md) |
+| 28 | `alias`, `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
 | 29 | Macro argument used twice is evaluated twice; macro body keeps only its last form | [macro-args-spliced](../rules/macro-args-spliced.md) |
 | 30 | `ffi-call` without timeout drops the last real argument | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
 | 31 | Float passed to C `double` | [ffi-int64-only-no-floats](../rules/ffi-int64-only-no-floats.md) |
@@ -43,7 +43,7 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 35 | `main` returns without waiting: actor work killed | [actor-always-wait](../rules/actor-always-wait.md) |
 | 36 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 37 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
-| 38 | Unannotated helper, or `set!` into an existing `let-mut`, launders a `Secret`; heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
+| 38 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
 | 39 | `test-suite` drops its tests; `assert-fail` always passes | [test-unimplemented-features](../rules/test-unimplemented-features.md) |
 | 40 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
 | 41 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |

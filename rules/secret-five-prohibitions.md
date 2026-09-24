@@ -21,7 +21,7 @@ Each prohibited use leaks through timing, cache or an output channel. They are c
 ```lisp
 (defn leak ((k Secret))
   (if (= k 0) 1 2))
-;; PANIC: in `local/main@0::leak::leak`: E_CT_VIOLATION: secret-dependent branch ...
+;; error[E_CT_VIOLATION]: in `leak`: secret-dependent branch ...   (located: --> file:line:col)
 
 (defn check ((k Secret))
   (error (str-concat "bad key " (ffi-call "zyl_int_text" k 1000))))   ; E_SECRET_DEBUG

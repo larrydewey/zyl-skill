@@ -40,7 +40,7 @@
 
 | Vec (`collections/vec`) | Map (`core/map`) | Int map (`collections/map`) | Int set (`collections/set`) |
 |---|---|---|---|
-| `(vec-create arena cap)` (arena 0 = private) | `(map-new)` | `(map-create arena cap)` | `(set-create arena cap)` |
+| `(vec-create arena cap)` (arena: handle, or <= 0 = new private) | `(map-new)` | `(map-create arena cap)` | `(set-create arena cap)` |
 | `vec-create-default cap` | | `map-create-default cap` | |
 | `vec-push v x` (grows) | `map-insert m k v` (replaces) | `map-put m k v` | `set-add s k` |
 | `vec-get v i` (OOB: the word `-1`) | `map-get m k` → `Option`; `map-get-or` | `map-get m k default` | `set-contains s k` |
@@ -51,6 +51,9 @@
 
 - `core/map` keys must be Strings (compared with `str-eq`); it is an association list (deterministic, O(n)).
 - `vec-get`/`vec-last` out of range return the word `-1` typed as `T`: check `vec-len` first for non-Int elements.
+- The `arena` argument is either a handle from `(arena-create block-size)` or any value <= 0, which creates a new private arena for that one collection that is **never freed** (so `(vec-create 0 n)` in a loop leaks one arena per call; `*-create-default` do the same). Any other positive `Int` (an address, a count, a destroyed handle) is not an arena: unchecked, it reads garbage or crashes.
+- `cap` is the initial capacity in elements: 0 is fine (first push allocates 16), a negative value means 0, growth doubles and copies within the same arena (old storage stays until the arena is reset).
+- `arena-reset`/`arena-destroy` free every collection built in that arena at once; a collection is valid only while its arena lives. Sending a collection to an actor shares it (not copied). `core/map` needs no arena (runtime heap). See [own-heap-never-freed](own-heap-never-freed.md).
 - Not available: `vec-slice`, `vec-append`, `vec-clear`, set union/intersection.
 
 ## See Also

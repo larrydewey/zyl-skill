@@ -26,7 +26,7 @@ Generic ADTs are the supported, tested form of generics (`tests/regression/gener
 ## Notes
 
 - All instances share constructors, layout and `match` code; per-instance names (`Option_Int`) exist only inside type inference.
-- `derive` on a generic ADT is a no-op.
+- `derive` works on a generic ADT: `(deftype Box (Bx A))` + `(derive Box Show Eq Ord)` gives `Bx(3)`, `Bx(s)`, and `Eq.eq`/`Ord.compare` per instantiation (Strings by content). Write the type parameter as an uppercase name (`T`, `A`); with a lowercase field type such as `a` the String instance shows an address and `Eq.eq` compares words.
 - No higher-kinded types, associated types or const generics: pass operations in as function arguments.
 
 ## See Also

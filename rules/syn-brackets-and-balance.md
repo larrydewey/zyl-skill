@@ -33,5 +33,5 @@ Before parsing, `sexp_balance.zyl` rejects unclosed openers (`E_UNBALANCED_UNCLO
 
 ## See Also
 
-- [syn-no-stray-characters](syn-no-stray-characters.md) - the other silent truncation
+- [syn-no-stray-characters](syn-no-stray-characters.md) - stray bytes are a located `E_INVALID_CHAR`
 - [boot-parens-per-file](boot-parens-per-file.md) - a missing closer swallows the rest of its file

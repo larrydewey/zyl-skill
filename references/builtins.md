@@ -8,18 +8,19 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 |---|---|
 | `(defn name (param...) body...)` | param = `name` or `(name Type)`; no return type; wrap multi-form bodies in `begin` |
 | `defun` | not reliably recognized — use `defn` |
-| `(def name v)` | top level: **not readable** in compiled code; REPL only |
+| `(def name v)` | top level: immutable global, evaluated once in source order before `main`/tests (`set!` on it is `E_MUT_CONFLICT`); in the REPL, later prompt definitions can use it |
 | `(deftype Name (Variant FieldType...) ...)` | nullary `(V)` or `V`; unknown uppercase field types are type params |
 | `(defstruct Name f (f) (f Type)...)` | constructor `make-Name`; also `(Name ...)`; field types checked at constructor calls (definite clashes), then dropped |
-| `defstruct+` | same as `defstruct`; `(:derive [...])` not parsed |
+| `defstruct+` | same as `defstruct`; a trailing `(:derive [Trait...])` is rewritten into `(derive Name Trait...)` |
 | `(trait Name (method params...) ...)` | documentation + orphan-rule locality only |
-| `(impl Trait Type (defn m (self ...) ...) ...)` | call `(Trait.m recv ...)` |
-| `(derive Type Trait...)` / `(derive Type [Trait...])` | `Show` generates an impl (`Secret` fields → `<secret>`, `impl-not Show` fields → `<hidden>`); other traits no-op |
+| `(impl Trait Type (defn m (self ...) ...) ...)` | call `(Trait.m recv ...)`, `(recv.m ...)` or `((expr).f.m ...)`; a call on a known type with no impl is `E_TRAIT_NOT_FOUND` |
+| `(derive Type Trait...)` / `(derive Type [Trait...])` | generates an impl per trait: `Show` (`Name(a, b)` / `Name { f: v }`; `Secret` fields → `<secret>`, `impl-not Show` fields → `<hidden>`), `Debug` (same, strings quoted), `Eq` (`Eq.eq`, structural), `Ord` (`Ord.compare` → -1/0/1: variant declaration order, then fields lexicographically), `Hash` (`Hash.hash`, deterministic Int), `Clone` (identity). Every field type must implement the trait, no `Secret` field under Eq/Ord/Hash, only these six names — else located `E_TRAIT_NOT_DERIVABLE` |
+| prelude traits (`core/show`) | `Show`, `Debug`, `Eq`, `Ord`, `Hash`, `Clone`: impls for `Int Float Bool String` and `List`/`Option`/`Result`; `Vec`/`Map` only `Show` |
 | `(impl-not Trait Target)` | top-level; `Target` a type or a trait (all implementors); any impl/derive of the pair, or an impl of `Trait` whose result derives from a protected value, is `E_IMPL_FORBIDDEN`; for `Show` the target gets a compiler-made `<hidden>` Show |
-| prelude `(trait Secret (wipe (self) Int))` | `(impl Secret T ...)` makes `T` key material: constructors yield secrets, params/fields of `T` are secret, prints `<secret>`, `(k.wipe)` erases; prelude `(impl-not Show Secret)` |
+| prelude `(trait Secret (wipe (self) Int))` | `(impl Secret T ...)` makes `T` key material: constructors yield secrets, params/fields of `T` are secret, prints `<secret>`, `(k.wipe)` erases; prelude `(impl-not Show Secret)` and `(impl-not Debug/Eq/Ord/Hash Secret)` |
 | `(alias Name Type)` | no-op |
 | `(defmacro name (params) template)`, `macro` | top level only; one body form |
-| `(use path ...)`, `(pub <def>)`, `(feature-gate f <def>)`, `(module n)` (ignored), `(export n)` (dropped) | |
+| `(use path ...)`, `(pub <def>)`, `(feature-gate f <def>)` (top level only, else `E_PKG_FEATURE_NESTED`), `(module n)` (ignored), `(export n)` (dropped) | |
 
 ## Bindings and control
 
@@ -66,7 +67,7 @@ No overflow checks; bitwise ops not constant-folded.
 
 ## Data
 
-`(struct-get v "field")`, `(make-Name ...)`, constructor application. `make-struct`, `make-variant`: **NL**. `tuple`: undefined.
+`(struct-get v "field")`, `v.field`, `v.a.b`, `(expr).field` (any expression, chained: `(seg).b.y`), `(make-Name ...)`, constructor application. `make-struct`, `make-variant`: **NL**. `tuple`: undefined.
 
 ## I/O
 
@@ -96,7 +97,7 @@ No overflow checks; bitwise ops not constant-folded.
 
 ## Contracts
 
-`(requires C)`, `(invariant C)` (checked where written), `(ensures C)` (leading `defn` body form; checked after the body, value bound to `result`) — failure panics `E_CONTRACT_VIOLATION: precondition of f failed: C` (`postcondition`, `invariant`), catchable by `try`. `(recover BODY ((T) fallback) ...)` = `(try BODY (catch _ fallback))` with the first arm. `(checkpoint E)` = `E`. `(contracts off FORM)` strips contracts inside `FORM` (lexically); bare top-level `(contracts off)` strips the next form. See [contract-not-enforced](../rules/contract-not-enforced.md).
+`(requires C)`, `(invariant C)` (checked where written), `(ensures C)` (leading `defn` body form; checked after the body, value bound to `result`) — failure panics `E_CONTRACT_VIOLATION: precondition of f failed: C` (`postcondition`, `invariant`), catchable by `try`. `(recover BODY ((E_CODE) fb) ((String) fb) (_ fb))`: if `BODY` raises, arms are tried in order — an `E_` code matches by message prefix, a type-named or `_` arm matches anything, no match re-raises. `(checkpoint E)`: if `E` raises, the outer `let-mut` variables it `set!`s are restored, then the error is re-raised (byte-buffer writes are not undone). Profiles `strict`/`debug` (panic, default strict), `warn` (stderr `warning: E_CONTRACT_VIOLATION: ...`, continue), `off`/`production` (clauses compiled out): `--contracts=P` for the build, `(contracts P FORM)` for one form (lexically), bare top-level `(contracts P)` for the next form. See [contract-not-enforced](../rules/contract-not-enforced.md).
 
 ## Testing
 

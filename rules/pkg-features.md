@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Features are unified across the graph: the union of all requests is computed and the package compiled once with it (recorded in the lock). A gated definition that collides with a base definition is `E_PKG_FEATURE_COLLISION`; requesting an undeclared feature is `E_PKG_FEATURE_UNKNOWN`. A nested `feature-gate` is not rejected but never reaches the resolver's top-level scan and is compiled as an ordinary form.
+Features are unified across the graph: the union of all requests is computed and the package compiled once with it (recorded in the lock). A gated definition that collides with a base definition is `E_PKG_FEATURE_COLLISION`; requesting an undeclared feature is `E_PKG_FEATURE_UNKNOWN`. `feature-gate` is valid at top level only (spec 31.10): one inside another form is a located `E_PKG_FEATURE_NESTED`.
 
 ## Good
 
@@ -23,6 +23,7 @@ Features are unified across the graph: the union of all requests is computed and
 ## Notes
 
 - An optional dependency named in a `(feature ...)` enters the graph only when that feature is in the union.
+- `(defn f () (feature-gate simd ...))` is `E_PKG_FEATURE_NESTED`: gate the whole definition instead, `(feature-gate simd (defn f () ...))`.
 
 ## See Also
 

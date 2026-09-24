@@ -15,10 +15,9 @@ Recognizing a form is not implementing it. These compile without complaint and t
 | `(make-variant (T) V ...)` | 0 (matching it segfaults) | `(V ...)` |
 | `(with-resource (n init) body)` | binds `n`; runs **no** release step | release explicitly |
 | `test-suite`, `setup`, `teardown`, `test-property`, `test-compile`, `assert-fail` | see [test-unimplemented-features](test-unimplemented-features.md) | flat `test` forms |
-| `(checkpoint E)` | `E`; no rollback | explicit state handling |
-| profiles, typed `recover` arms | see [contract-not-enforced](contract-not-enforced.md) | `requires`/`ensures`/`invariant` are enforced |
+| `(alias A T)` | nothing; see [data-no-tuples-no-generic-structs](data-no-tuples-no-generic-structs.md) | the original type name |
 
-`assert` and `unwrap` were on this list until 2026-09-24; they are lowered now; `assert` shows a string-literal message and `unwrap` panics with `unwrap on None` ([err-no-assert-unwrap](err-no-assert-unwrap.md)). Contracts (`requires`/`ensures`/`invariant`) are enforced since the same date ([contract-not-enforced](contract-not-enforced.md)).
+`assert` and `unwrap` were on this list until 2026-09-24; they are lowered now; `assert` shows a string-literal message and `unwrap` panics with `unwrap on None` ([err-no-assert-unwrap](err-no-assert-unwrap.md)). Contracts (`requires`/`ensures`/`invariant`, profiles, `checkpoint` rollback, typed `recover` arms) are implemented since the same date ([contract-not-enforced](contract-not-enforced.md)), and `derive` generates Show, Debug, Eq, Ord, Hash and Clone impls ([trait-derive-show](trait-derive-show.md)).
 
 ## Bad
 

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`(Trait.method recv ...)` is resolved from the receiver's inferred type (spec §5.4) and redirected to `Trait.method_Type`. Inside a generic function the call is resolved per instance ([gen-per-type-instances](gen-per-type-instances.md)). Only when the receiver's type is unknown (conflicting data, e.g. one list holding a `Circle` and a `Rect`) does ICNF lowering fall back to a `match` on the receiver's runtime tag, with arms named after the impl types. That fallback is exact for structs (program-unique tags) but an arm named after a multi-variant ADT or a primitive is a catch-all there.
+`(Trait.method recv ...)` is resolved from the receiver's inferred type (spec §5.4) and redirected to `Trait.method_Type`. Inside a generic function the call is resolved per instance ([gen-per-type-instances](gen-per-type-instances.md)). Only when the receiver's type is unknown (conflicting data, e.g. one list holding a `Circle` and a `Rect`) does ICNF lowering fall back to a `match` on the receiver's runtime tag, with arms named after the impl types. That fallback is exact for structs (program-unique tags) but an arm named after a multi-variant ADT or a primitive is a catch-all there. A receiver of **known** type with no impl never reaches the fallback: it is a located `E_TRAIT_NOT_FOUND` (`no impl of `Area.area` for type `Int``).
 
 ## Good
 

@@ -23,7 +23,7 @@ Taint enters a callee only through **annotated** parameters. Pass a secret to a 
 
 - The checker is not a proof. `verify/timing.py` (dudect-style Welch t-test with a deliberately leaky positive control) measures gross leakage; run it via `./run_regression_tests.sh --full --no-boot --filter timing`.
 - `print` of a secret value is rejected (`E_SECRET_DEBUG`); only a secret inside a `Secret` field of a printed record is redacted (`<secret>`).
-- `set!` of a secret into an existing `let-mut` launders it the same way: the variable stays public.
+- `set!` no longer launders: a `let-mut` that is ever `set!` to a secret is secret for its whole scope (before and after the assignment), so a later `print` or branch on it is rejected (fixed 2026-09-24).
 
 ## See Also
 

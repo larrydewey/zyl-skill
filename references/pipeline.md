@@ -9,33 +9,48 @@
 | # | Stage | Function / module | Can raise |
 |---|---|---|---|
 | 1 | Balance check | `compile-check-balance` / `sexp_balance.zyl` (`sb-check-string`, `sb-hint`) | `E_UNBALANCED_*`, `E_UNTERMINATED_STRING` |
-| 2 | Lex + parse (no-dispatch: every form a generic list) | `zyl-lex`, `zyl-parse-file` / `lexer.zyl`, `parser.zyl`, `ast.zyl` | `E_MALFORMED_PARAMETER`, `E_BYTE_VALUE_OOB`, `E_MATCH_NONEXHAUSTIVE`, `E_RESERVED_KEYWORD`, field `set!` `E_MUT_CONFLICT` |
+| 2 | Lex + parse (no-dispatch: every form a generic list) | `zyl-lex`, `zyl-parse-file` / `lexer.zyl`, `parser.zyl`, `ast.zyl` | `E_INVALID_CHAR` (`check-lexed-to-end`), `E_UNTERMINATED_STRING`, `E_MALFORMED_PARAMETER`, `E_BYTE_VALUE_OOB`, `E_MATCH_NONEXHAUSTIVE`, `E_RESERVED_KEYWORD`, field `set!` `E_MUT_CONFLICT` |
 | 3 | Module resolution, qualification, orphan rule, Ast→ExprInner | `mr-resolve-program-full` / `module_resolver.zyl`, `qualify.zyl`, `expr_inner.zyl` (`convert-ast`), package modules | `E_MODULE_*`, `E_PKG_*` |
 | 4 | Macro expansion | `me-expand-program` / `macro_expand.zyl` (`me-collect`, `me-strip`, `me-rewrite`) | `E_MACRO_*`, arity, duplicate, unbound |
 | 5 | Checks | `compile-run-checks`: `cc-` capability, `dc-` duplicate, `ac-` arity, `mc-` mutability, `ec-` exhaustiveness, `uc-` unused (W_ to stderr), `sc-` secret | respective codes |
-| 6 | Derive expansion | `dv-expand-program` / `derive.zyl` (`derive Show` → impl) | |
+| 6 | Derive expansion | `dv-expand-program` / `derive.zyl` (Show/Debug/Eq/Ord/Hash/Clone → impls; `dv-check-fields`) | `E_TRAIT_NOT_DERIVABLE`, `E_IMPL_FORBIDDEN` |
 | 7 | Monomorphization (impl lifting; empty inferer) | `monomorphize` / `monomorphization.zyl` | |
 | 8 | Closure inlining | `ci-expand-program` / `closure_inline.zyl` (identity pass) | |
 | 9 | Assert lowering | `al-expand-program` / `assert_lowering.zyl` | |
-| 10 | Type annotation: HM, trait resolution, per-type instances (appended to the program) | `ta-annotate` / `type_annotate.zyl`; side tables `zyl_attr_*` 0 types, 1 kinds, 2 renames, 3 print-Show | |
+| 10 | Type annotation: HM, trait resolution, per-type instances (appended to the program) | `ta-annotate` / `type_annotate.zyl`; side tables `zyl_attr_*` 0 types, 1 kinds, 2 renames, 3 print-Show | `E_TYPE_MISMATCH`, `E_TRAIT_NOT_FOUND` (`ta-check-no-impl`) |
 | 11 | ICNF lowering | `ic-program` / `icnf.zyl` (`ic-expr-node`, `ic-lambda`, `ic-hoist`, `ic-ffi`) | `E_MATCH_ARM_COMPLEX`, `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` |
 | 12 | Optimization | `opt-optimize-fns` / `optimization.zyl` | |
 | 13 | Region inference | `ri-transform-fns` / `region_inference.zyl` | |
 | 14 | Codegen | `cg-program` / `codegen.zyl` | `E_UNBOUND_VARIABLE` (located), `E_CODEGEN_BUFFER_FULL` |
 | 15 | Link | `cc -no-pie out.s actor_runtime.c -o out -lpthread` (driver/`cli.zyl`) | linker errors |
-| — | `zyl build` extras | native objects before link; `<name>.buildinfo` after | `E_PKG_NATIVE_*` |
+| — | `zyl build`/`zyl test` extras | lowers first (`compile-to-fns`) to hash the canonical ICNF text (`icnf-text`, `icnf_print.zyl`); native objects before link; final hash appended to the assembly as `zyl_build_hash` (section `.zyl_build`); `<name>.buildinfo` after (`drv-compile-file`, `drv-build-hashes`) | `E_PKG_NATIVE_*` |
 
-`compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Contracts are lowered to `assert-true` checks in `expr_inner.zyl`; there is no contract-injection stage.
+`compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Contracts are lowered to `assert-true` checks in `expr_inner.zyl` under the active profile (`--contracts=P`, `(contracts P)`); there is no contract-injection stage.
 
-Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and enforces only annotation clashes at calls; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
+Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and enforces only annotation clashes at calls; phase 10 folded into the front end; phase 11 only for package builds. Phase isolation holds.
 
-## Compiler module map (38 modules)
+`<name>.buildinfo` (§31.12, no remaining deviation):
 
-Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_annotate` (active), `type_system type_inference` (older inferer; data types and an empty context for monomorphization) · middle `derive monomorphization closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report`.
+```lisp
+(buildinfo
+  (compiler-hash "blake3:...")   ; the compiler binary
+  (graph-hash "blake3:...")      ; from zyl.lock; empty without a lock
+  (graph (package "acme/json" "1.4.0" "blake3:..."))   ; resolved graph from the lock (lk-graph-text), sorted
+  (native-objects ("build/native/c_fast.c.o" "blake3:..."))  ; package-relative, manifest order
+  (icnf-hash "blake3:...")       ; canonical ICNF text, codegen kinds included
+  (asm-hash "blake3:...")        ; emitted assembly (informational, not in the final hash)
+  (final-hash "blake3:..."))     ; over compiler, graph, native and ICNF hashes; = zyl_build_hash in the binary
+```
+
+`objdump -s -j .zyl_build app` shows the embedded hash; the same package built in two directories gives byte-identical binaries. A plain `zyl file.zyl` writes no buildinfo.
+
+## Compiler module map (39 modules)
+
+Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_annotate` (active), `type_system type_inference` (older inferer; data types and an empty context for monomorphization) · middle `derive monomorphization closure_inline assert_lowering` · back `icnf icnf_print optimization region_inference codegen` · support `pipeline error_codes error_report doc` (`zyl doc`).
 
 ## Driver and build
 
-`selfhost/driver.zyl` (CLI, `drv-usage`) · `selfhost/lsp_main.zyl` (zyl-lsp) · the compiler is built from `selfhost/driver.zyl` through module resolution (no bundle since 2026-09-24) · seed `build/boot/stage2.s` / `stage2.bin` · wrapper `build/boot/zyl-self` · runtime `runtime/actor_runtime.c` (actors, arenas, pin, strings, span table, test harness, mangler `zyl_mangle_key`, big stack `zyl_call_on_big_stack`).
+`selfhost/driver.zyl` (CLI, `drv-usage`: `zyl <file.zyl> [-o] [--emit-asm] [--error-format=json] [--contracts=P]`, `new add fetch build test update vendor audit publish key repl eval doc`; package builds go through the content-hash cache in `drv-compile-file`) · `selfhost/lsp_main.zyl` (zyl-lsp) · the compiler is built from `selfhost/driver.zyl` through module resolution (no bundle since 2026-09-24) · seed `build/boot/stage2.s` / `stage2.bin` · wrapper `build/boot/zyl-self` · runtime `runtime/actor_runtime.c` (actors, arenas, pin, strings, span table, test harness, mangler `zyl_mangle_key`, big stack `zyl_call_on_big_stack`).
 
 ## Key data types
 

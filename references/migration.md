@@ -52,7 +52,7 @@
 
 | Lisp | Zyl |
 |---|---|
-| `'x`, `` `(… ,x) `` | none — and the characters truncate the file |
+| `'x`, `` `(… ,x) `` | none — the characters are a compile error (`E_INVALID_CHAR`) |
 | `#| … |#` | none; `;` only |
 | `(lambda (x) …)` | `fn` or `lambda` |
 | `define` at top level | `defn` for functions, `def` for constants |

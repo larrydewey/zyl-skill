@@ -15,7 +15,7 @@
 
 `fid`/`off` come from `(ffi-call "zyl_span_file" node 1000)` / `zyl_span_off`; a negative offset renders without a location. With `--error-format=json` (`zyl_diag_json`) every helper emits one JSON object instead, and `zyl_panic` wraps a bare `E_CODE: text` message the same way.
 
-Located today: `E_MALFORMED_PARAMETER`, balance errors, `E_ARITY_MISMATCH`, `E_NON_EXHAUSTIVE_MATCH`, `E_UNREACHABLE_MATCH_ARM`, `E_DUPLICATE_DEFINITION`, `E_UNBOUND_VARIABLE` (with did-you-mean), `E_MUT_CONFLICT` and `E_CAPABILITY_LEAK` (labelled with the binding), `E_PKG_CAPABILITY_VIOLATION` (labelled with the definition), and the unused/shadowing warnings. Secret errors, `E_INVALID_CAPABILITY` and most `expr_inner` errors still print a bare `PANIC:` line.
+Located today: `E_MALFORMED_PARAMETER`, balance errors, `E_ARITY_MISMATCH`, `E_NON_EXHAUSTIVE_MATCH`, `E_UNREACHABLE_MATCH_ARM`, `E_DUPLICATE_DEFINITION`, `E_UNBOUND_VARIABLE` (with did-you-mean), `E_MUT_CONFLICT` and `E_CAPABILITY_LEAK` (labelled with the binding), `E_PKG_CAPABILITY_VIOLATION` (labelled with the definition), `E_INVALID_CHAR`, `E_TRAIT_NOT_FOUND`, `E_TRAIT_NOT_DERIVABLE`, `E_TYPE_MISMATCH`, the secret-checker errors and both `E_IMPL_FORBIDDEN` forms (`sc-fail-at`), and the unused/shadowing warnings. `E_INVALID_CAPABILITY`, `E_UNTERMINATED_STRING` and most `expr_inner` errors still print a bare `PANIC:` line.
 
 ## Good
 

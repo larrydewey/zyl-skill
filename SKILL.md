@@ -11,11 +11,11 @@ description: >
   stdlib/compiler or selfhost/, or diagnosing boot/fixed-point failures.
 triggers:
   - .zyl files, zyl.pkg, zyl.lock
-  - zyl, zyl-self, zyl-lsp, zyl repl, zyl eval
+  - zyl, zyl-self, zyl-lsp, zyl repl, zyl eval, zyl doc
   - selfhost, stage1, stage2, stage3, boot.sh, fixed point, reseed
   - stdlib/compiler, icnf, codegen, ic-, cg-, mr-, sb-
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
   sources:
     - book/src (The Zyl Programming Language, Parts I-V and Appendices A-F)
     - zyl_specification.txt v5.0
@@ -46,11 +46,11 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 
 ## The Ten Facts
 
-1. **The type checker rejects almost nothing.** Hindley–Milner inference drives codegen, trait dispatch and per-type instances; the only rejection is `E_TYPE_MISMATCH` for an argument that definitely clashes with a top-level function's parameter annotation or a constructor's field type. Everything else compiles: `(+ 1 "a")` and `(+ 1.5 2)` compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
+1. **The type checker rejects almost nothing.** Hindley–Milner inference drives codegen, trait dispatch and per-type instances; the only type rejections are `E_TYPE_MISMATCH` for an argument that definitely clashes with a top-level function's parameter annotation or a constructor's field type, and `E_TRAIT_NOT_FOUND` for a trait call on a known type with no impl. Everything else compiles: `(+ 1 "a")` and `(+ 1.5 2)` compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
 2. **Inferred types drive `print`, `=`/`<` and Float arithmetic** — for fields, pattern binders, captures, `Vec`/`Map` elements and generic results alike; a generic body that depends on its type is compiled per concrete type. Only values of conflicting/unknown type (mixed-type data, untyped FFI results) fall back to words: use `print-string`/`str-eq` there. `print` of a value with a `Show` impl prints its text. → [fn-types-drive-codegen](rules/fn-types-drive-codegen.md)
-3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
+3. **No stray characters.** `'` `` ` `` `,` `@` `#` (and `$ & | ^ \`, non-ASCII) outside strings/comments are a located `E_INVALID_CHAR` — there is no quote, quasiquote, block comment or comma in import lists; an open string is `E_UNTERMINATED_STRING`. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), `checkpoint` rollback and contract profiles, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup. (`assert` shows a string-literal message; `unwrap` panics with `unwrap on None`.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
+5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup. (`assert` shows a string-literal message; `unwrap` panics with `unwrap on None`; `derive` generates Show/Debug/Eq/Ord/Hash/Clone impls; contract profiles, `checkpoint` rollback and typed `recover` arms work.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
@@ -122,7 +122,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`syn-int-literal-range`](rules/syn-int-literal-range.md) **[CRITICAL]** - Write any constant at or above 2^63 as its negative two's-complement `Int`; never write an unsigned-sized literal.
 - [`syn-keywords-and-symbols`](rules/syn-keywords-and-symbols.md) - Use `:keyword` tokens only where a form expects them; they are not values.
 - [`syn-naming-conventions`](rules/syn-naming-conventions.md) - kebab-case functions and variables, PascalCase types and variants, `?` predicates, `_` for unused, two-space indent; treat special-form names as reserved.
-- [`syn-no-stray-characters`](rules/syn-no-stray-characters.md) **[CRITICAL]** - Never write `'`, `` ` ``, `,`, `@`, `#`, `$`, `&`, `|`, `^`, `\` or non-ASCII bytes outside strings and comments.
+- [`syn-no-stray-characters`](rules/syn-no-stray-characters.md) - Never write `'`, `` ` ``, `,`, `@`, `#`, `$`, `&`, `|`, `^`, `\` or non-ASCII bytes outside strings and comments: each is a located `E_INVALID_CHAR`.
 - [`syn-string-literals`](rules/syn-string-literals.md) - Use only the supported escapes (`\n \t \r \0 \" \\ \e \xNN`); remember strings are NUL-terminated byte pointers.
 
 ### 2. Functions, Bindings & Control Flow (CRITICAL)
@@ -135,7 +135,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-integer-arith-unchecked`](rules/fn-integer-arith-unchecked.md) - Guard divisors and overflow yourself: compiled integer arithmetic wraps silently and division by zero kills the process with SIGFPE.
 - [`fn-let-single-binding`](rules/fn-let-single-binding.md) **[CRITICAL]** - `let` binds exactly one name; nest `let`s for several, and prefer the bare `(let name value body)` spelling.
 - [`fn-main-and-exit-status`](rules/fn-main-and-exit-status.md) - Every executable needs `(defn main () ...)` with no parameters; its value is the exit status, so end it with an explicit `0`.
-- [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (direct tail calls with at most six arguments are jumps), or `while` loops.
+- [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (tail calls, direct or through a function value, are jumps), or `while` loops.
 - [`fn-no-return-type-slot`](rules/fn-no-return-type-slot.md) - Parameters are a bare name or `(name Type)`; there is no return-type annotation and no annotation on `let`.
 - [`fn-no-toplevel-def`](rules/fn-no-toplevel-def.md) - Use a top-level `(def name expr)` for constants: an immutable global, evaluated once in source order before `main` or the tests.
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and evaluates to 0; build one-line output with `str-concat`.
@@ -147,12 +147,12 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 - [`data-adt-declaration`](rules/data-adt-declaration.md) - Declare sum types with `(deftype Name (Variant FieldType...) ...)`; an unknown uppercase field type is a type parameter.
 - [`data-collections-persistent`](rules/data-collections-persistent.md) - `Vec` is generic (`(Vec T)`), `core/map` is `(Map String V)`, and `collections/map`/`collections/set` hold `Int`s; every operation returns an updated value: always rebind to the result and treat the old value as used up.
-- [`data-equality-shallow`](rules/data-equality-shallow.md) - `==`/`!=` on structs/ADTs compare deeply by content; `<`/`>` still compare raw field words, so order nested or String fields yourself.
+- [`data-equality-shallow`](rules/data-equality-shallow.md) - `==`/`!=` on structs/ADTs compare deeply by content; `<`/`>` still compare raw field words, so order nested or String fields with a derived `Ord.compare` or by hand.
 - [`data-field-types`](rules/data-field-types.md) - Declare field types on `deftype` variants and `defstruct` fields: a pattern-bound name or `struct-get` result carries the declared type, so Strings and Floats read back from records print and compute correctly.
 - [`data-no-redeclare-prelude`](rules/data-no-redeclare-prelude.md) - Never redeclare `Option`, `Result`, `List` or any prelude function name; pick another name.
 - [`data-no-tuples-no-generic-structs`](rules/data-no-tuples-no-generic-structs.md) - Use a struct or a single-variant ADT where you want a tuple; use a generic ADT where you want a generic struct; don't rely on `alias`.
 - [`data-reconstruct-field-order`](rules/data-reconstruct-field-order.md) **[CRITICAL]** - When rebuilding a struct or variant, pass every field in declaration order — double-check against the `defstruct`/`deftype`.
-- [`data-struct-basics`](rules/data-struct-basics.md) - Declare with `defstruct`, build with `make-Name`, read with `v.field` (chains: `v.a.b`) or `(struct-get v "field")`.
+- [`data-struct-basics`](rules/data-struct-basics.md) - Declare with `defstruct`, build with `make-Name`, read with `v.field` (chains: `v.a.b`; any expression: `(expr).field`) or `(struct-get v "field")`.
 - [`data-struct-immutable-rebind`](rules/data-struct-immutable-rebind.md) - Struct fields never change: to "update" one, build a new struct and rebind a `let-mut` name to it.
 - [`data-two-map-types`](rules/data-two-map-types.md) - Pick one map per program: `core/map` (string keys, `Option` results, persistent) or `collections/map` (Int keys/values, default value, arena-backed).
 - [`data-unique-variant-names`](rules/data-unique-variant-names.md) **[CRITICAL]** - Give every variant a name unique across all types in the program, and declare each type name exactly once.
@@ -178,7 +178,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 6. Contracts (HIGH)
 
-- [`contract-not-enforced`](rules/contract-not-enforced.md) - Use `requires`/`ensures`/`invariant` for checked contracts (`E_CONTRACT_VIOLATION`, `result` in `ensures`); don't expect profiles, `checkpoint` rollback or typed `recover` arms.
+- [`contract-not-enforced`](rules/contract-not-enforced.md) - Use `requires`/`ensures`/`invariant` for checked contracts (`E_CONTRACT_VIOLATION`, `result` in `ensures`), pick a profile with `--contracts=P` or `(contracts P)`, recover by error code with `recover`, and roll back `let-mut` state with `checkpoint`.
 
 
 ## Tier 2 — The Language Model
@@ -212,7 +212,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 - [`trait-qualified-calls`](rules/trait-qualified-calls.md) - Call trait methods with dot syntax, `(r.method args...)` or `((expr).method args...)`, picked by the receiver's type; use the qualified `(Trait.method r args...)` when several traits share the name and the receiver's type is unknown.
 - [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, write each `(Trait, Type)` impl exactly once, and use `(impl-not Trait Target)` to forbid a pair.
-- [`trait-derive-show`](rules/trait-derive-show.md) - Use `(derive T Show)` (or `(derive T [Show])`) to make `print` show a record; don't expect the other derivable traits to generate anything.
+- [`trait-derive-show`](rules/trait-derive-show.md) - Derive Show, Debug, Eq, Ord, Hash and Clone with `(derive T ...)`; every field type must implement the trait.
 - [`trait-static-dispatch`](rules/trait-static-dispatch.md) - Implement traits for any type — structs, multi-variant ADTs, primitives, generic types — and call them on values whose type inference can determine; avoid trait calls on heterogeneous data except over structs.
 - [`trait-no-dyn-use-adt-wrapper`](rules/trait-no-dyn-use-adt-wrapper.md) - Model open "trait object" designs with an ADT wrapper, a list of structs, or function values; there is no `dyn`.
 
@@ -319,7 +319,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`tool-cli-arguments`](rules/tool-cli-arguments.md) - Put the source file first: `zyl file.zyl [-o out] [--emit-asm]`; everything else is a subcommand, and unknown words become the output path.
 - [`tool-debugging-the-pipeline`](rules/tool-debugging-the-pipeline.md) - Debug with `--emit-asm`, `ZYL_DEBUG_STAGES=1`, `zyl eval` differential runs, and small driver programs that `use` compiler modules.
 - [`tool-eval-differential`](rules/tool-eval-differential.md) - Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on actors, FFI, division by zero and speed.
-- [`tool-lsp-and-editors`](rules/tool-lsp-and-editors.md) - Point any LSP client at `zyl-lsp` for the compiler's own diagnostics; expect one diagnostic at a time, no `W_` warnings, no capability check, and name-based (not scope-based) navigation.
+- [`tool-lsp-and-editors`](rules/tool-lsp-and-editors.md) - Point any LSP client at `zyl-lsp` for the compiler's own diagnostics; expect one error at a time (unused/shadowing warnings all together), no type inference or capability check, and name-based (not scope-based) navigation.
 - [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; each name can be defined once per session.
 
 ### 22. Project Idioms (MEDIUM)

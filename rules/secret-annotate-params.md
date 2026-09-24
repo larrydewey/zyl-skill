@@ -28,9 +28,9 @@
 - **Secret types:** `(impl Secret Key (defn wipe (self) ...))` (prelude trait `(trait Secret (wipe (self) Int))`) makes `Key` key material everywhere: its constructors produce secrets, a parameter or field of type `Key` is secret without an annotation, it prints as `<secret>`, and `(k.wipe)` erases it. A `Show` impl or derive for it is `E_IMPL_FORBIDDEN` (prelude `(impl-not Show Secret)`).
 - Programs with no `Secret` annotation are completely unaffected.
 - Inside a package, calling `stdlib/math/secret` (or using the `Secret` type) requires the `secret` capability. A bare annotation works in any program.
-- Secret diagnostics print as unlocated `PANIC:` lines with the qualified function name, e.g. `in local/main@0::app::leak`.
+- Secret diagnostics are located `error[CODE]` diagnostics (file:line:col, caret) naming the function: `error[E_SECRET_DEBUG]: in `f`: Secret value reaches `print` ...`.
 - Annotations currently stop at `math/secret/secret`: AEAD, KDF, signature and bignum entry points are not yet under the checker.
-- `set!` of a secret into an existing `let-mut` variable is not tracked: the variable stays public.
+- A `let-mut` that is ever `set!` to a secret is secret for its whole scope.
 
 ## See Also
 

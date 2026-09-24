@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The `trait` declaration types calls of its methods (impls are not checked against it), and the **orphan rule** is enforced at the package boundary: an impl is legal only if the package defines the trait or the type. `(impl Describe Int ...)` without a local `(trait Describe ...)` is `E_PKG_ORPHAN_IMPL` (neither `Int` nor an undeclared trait is yours). Coherence C1 (one impl per pair) is not checked by a pass: a duplicate impl fails **in the assembler** ("symbol ... is already defined"), not with `E_DUPLICATE_IMPL`. A call with no impl at all fails at **link time**, not `E_TRAIT_NOT_FOUND`.
+The `trait` declaration types calls of its methods (impls are not checked against it), and the **orphan rule** is enforced at the package boundary: an impl is legal only if the package defines the trait or the type. `(impl Describe Int ...)` without a local `(trait Describe ...)` is `E_PKG_ORPHAN_IMPL` (neither `Int` nor an undeclared trait is yours). Coherence C1 (one impl per pair) is checked: a second impl of one trait for one type, or deriving the same trait twice, is a located `E_DUPLICATE_IMPL`. A call with no impl for a receiver of known type is a located `E_TRAIT_NOT_FOUND` (`= help: add (impl Trait Type ...)`).
 
 `(impl-not Trait Target)` is a top-level declaration checked over the whole program after module resolution. `Target` is a type, or a trait (then every implementor, in any declaration order). Any `impl` or `derive` of the forbidden pair, in any module or package, is `E_IMPL_FORBIDDEN`. Its **flow rule** closes the wrapper loophole: the result of an impl of `Trait` for *any* type may not derive from a protected value (a value of the target type, a field of that type, a `match` binder of one) — also `E_IMPL_FORBIDDEN`. For `Show`, protected types get a compiler-made `Show` printing `<hidden>`, and a derived `Show` prints such fields as `<hidden>`. The prelude declares `(impl-not Show Secret)`, so a `Show` impl/derive for a Secret type is forbidden (it prints `<secret>`). `declassify` is the explicit escape from the flow rule.
 
@@ -38,8 +38,9 @@ The `trait` declaration types calls of its methods (impls are not checked agains
 ## Notes
 
 - Within one package, any module may implement any of the package's traits for any of its types.
-- The direct `E_IMPL_FORBIDDEN` is a located `error[...]`; the flow-rule violation is an unlocated `PANIC:` line naming the impl.
-- An impl for a generic type names the bare type (`(impl Show Vec ...)`) and covers every instantiation, so C3 overlap cannot arise except as a C1 duplicate.
+- Both `E_IMPL_FORBIDDEN` forms are located `error[...]` diagnostics: the direct one at the impl/derive, the flow-rule one at the expression that exposes the protected value, naming the impl.
+- The prelude declares `(impl-not Show Secret)`, `(impl-not Debug Secret)`, `(impl-not Eq Secret)`, `(impl-not Ord Secret)` and `(impl-not Hash Secret)`.
+- An impl for a generic type names the bare type (`(impl Show Vec ...)`) and covers every instantiation, so C3 overlap cannot arise except as a C1 duplicate (`E_DUPLICATE_IMPL`).
 
 ## See Also
 

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Trait.method ...)` is resolved to one of them from the receiver's inferred type ([trait-static-dispatch](trait-static-dispatch.md)). A dot call `(r.m args)` is rewritten to `(zyl-method "m" r args)` before qualification; the type pass picks the only trait declaring `m`, or, among several, the one with an impl for the receiver's known type, then resolves it exactly like `(Trait.m r args)`. `E_TRAIT_NOT_FOUND` for an undeclared method, a type without the impl, or an ambiguous call on a receiver of unknown type (an unannotated parameter): write the qualified name there. A bare `(method r)` finds nothing. In `Trait.method` (uppercase first) the `.` is part of the identifier.
+Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Trait.method ...)` is resolved to one of them from the receiver's inferred type ([trait-static-dispatch](trait-static-dispatch.md)). A dot call `(r.m args)` is rewritten to `(zyl-method "m" r args)` before qualification; the type pass picks the only trait declaring `m`, or, among several, the one with an impl for the receiver's known type, then resolves it exactly like `(Trait.m r args)`. `E_TRAIT_NOT_FOUND` (located) for an undeclared method, a type without the impl, or an ambiguous call on a receiver of unknown type (an unannotated parameter): write the qualified name there. A qualified `(Trait.m r)` on a receiver of known type with no impl is the same located `E_TRAIT_NOT_FOUND` (`no impl of `Show.show` for type `P``; `= help: add (impl Show P ...)`); before 2026-09-24 it fell back to runtime dispatch and computed garbage. A bare `(method r)` finds nothing. In `Trait.method` (uppercase first) the `.` is part of the identifier.
 
 ## Good
 
@@ -29,8 +29,9 @@ Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Tr
 - Further parameters follow the receiver: `(defn scale (self k) ...)` called `(Scale.scale r 3)`.
 - The method's parameters are whatever the `defn` in the impl says; they are not checked against the `trait` declaration, and a missing method is not reported. The declaration's return type does type every call and may be compound, `(trait Dec (dec (self v) (Result Int String)))`, so `print` of the call uses `Show`. Extra `(p Type)` forms between the parameter list and the return type are also parameters: `(dec (self) (v Int) (Result Int String))`. A method declared without a return type takes its impl's return type at resolved calls.
 - No default method bodies, no supertraits, no `where` clauses, no associated types.
-- Stdlib traits: `Show` (prelude, `core/show`; `show` returns a String) and `OutputStream` in `io/io` (`write`, `flush`) for `Stdout` (`make-stdout`) and `StringBuffer` (`make-string-buffer`).
-- A trait call may be written anywhere, including as `struct-get`'s first argument.
+- Stdlib traits: `Show`, `Debug`, `Eq`, `Ord`, `Hash`, `Clone`, `Secret` (prelude, `core/show`; see [trait-derive-show](trait-derive-show.md)) and `OutputStream` in `io/io` (`write`, `flush`) for `Stdout` (`make-stdout`) and `StringBuffer` (`make-string-buffer`).
+- A trait call may be written anywhere, including as `struct-get`'s first argument or before a field: `(Nm.nm p).x`.
+- Head position chains fields then a method: `((seg).b.norm 100)` reads field `b` of `(seg)` and calls `norm` on it with `100`.
 
 ## See Also
 

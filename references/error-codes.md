@@ -34,7 +34,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 
 | Code | Status | Trigger → fix |
 |---|---|---|
-| `E_UNTERMINATED_STRING` | R | missing closing `"` |
+| `E_INVALID_CHAR` | R | byte that cannot start a token outside strings/comments (`'` `` ` `` `,` `@` `#` `$` `&` `\|` `^` `\`, non-ASCII, a BOM); located, with a hint that there is no quote/quasiquote/comma syntax |
+| `E_UNTERMINATED_STRING` | R | missing closing `"`; from the balance check it says "reached end of input" with no location |
 | `E_BYTE_VALUE_OOB` | R | `(byte n)` outside 0..255 or non-integer |
 | `E_UNBALANCED_UNCLOSED` | R | opener never closed (line/col + fix-it) |
 | `E_UNBALANCED_UNEXPECTED_CLOSE` | R | stray closer |
@@ -43,7 +44,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_MALFORMED_PARAMETER` | R | param not a name or `(name Type)`; `((T) x)`; body swallowed by param list; non-identifier macro param/name-position arg |
 | `E_UNEXPECTED_TOKEN_IN_EXPR` | R | token illegal in expression position |
 | `E_RESERVED_KEYWORD` | C | catalogued, not raised |
-| `E_INVALID_CHAR`, `E_UNEXPECTED_EOF`, `E_INTEGER_OVERFLOW`, `E_FLOAT_OVERFLOW`, `E_UNBALANCED_PARENS`, `E_EXPECTED_RPAREN/RBRACKET/RCURLY`, `E_EXPECTED_EXPRESSION`, `E_EMPTY_LIST`, `E_ATOM_AS_OPERATOR` | C | stray chars **truncate silently**; oversized ints become **0** |
+| `E_UNEXPECTED_EOF`, `E_INTEGER_OVERFLOW`, `E_FLOAT_OVERFLOW`, `E_UNBALANCED_PARENS`, `E_EXPECTED_RPAREN/RBRACKET/RCURLY`, `E_EXPECTED_EXPRESSION`, `E_EMPTY_LIST`, `E_ATOM_AS_OPERATOR` | C | oversized ints become **0** |
 
 ## Macros
 
@@ -86,6 +87,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_SECRET_ESCAPE` | R | Secret to `spawn`/`send`/`file-write` |
 | `E_FFI_PIN_REQUIRED` | R | Secret raw `ffi-call` arg |
 | `E_ZEROIZE_MISSING` | W | Secret param consumed into public result without zeroize |
+
+Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:line:col); a `let-mut` ever `set!` to a secret is secret for its whole scope.
 | `E_PKG_CAPABILITY_VIOLATION` | R | undeclared capability in a package (not `main`/tests) |
 | `E_PKG_CAPABILITY_GROWTH` | R | closure grew under `--locked` |
 
@@ -104,7 +107,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_ASSERT_FAIL` | C | never raised: a failing `assert` panics with its string-literal message, or `assert failed` |
 | `E_NULL_POINTER`, `E_BYTE_OOB`, `E_BYTEBUF_CAP_EXCEEDED`, `E_BYTEBUF_OVERLAP`, `E_BYTEBUF_INVALID`, `E_ALIGNMENT_FAILED`, `E_ALIGN_CHECK_FAILED` | C | byte ops fail closed returning 0 |
 | `E_OVERFLOW` | C | ints wrap |
-| `E_CONTRACT_VIOLATION` | R | failed `requires`/`ensures`/`invariant`: `precondition of f failed: C` (also `postcondition`, `invariant`) |
+| `E_CONTRACT_VIOLATION` | R | failed `requires`/`ensures`/`invariant`: `precondition of f failed: C` (also `postcondition`, `invariant`); under the `warn` profile a stderr `warning: E_CONTRACT_VIOLATION: ...` and execution continues; `off`/`production` compile the checks out; `recover` arms match it by prefix |
 | `E_FFI_TIMEOUT`, `E_FFI_TYPE_NOT_PINNABLE` | C | timeouts dropped; pinnability → `E_INVALID_CAPABILITY` |
 | `E_TEST_FAILURE`, `E_TEST_RUNNER_ERROR` | C | tests print `FAIL` |
 | `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_UNSUPPORTED_INTERPRETED`, `E_FFI_SYMBOL_NOT_FOUND`, `E_NO_MAIN`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |
@@ -114,16 +117,17 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | Code | Status | Actual behavior |
 |---|---|---|
 | `E_PKG_ORPHAN_IMPL` | R | impl where neither trait nor type is local |
-| `E_TRAIT_NOT_FOUND` | R | dot method call: no trait declares the method, no impl for the receiver type, or ambiguous on an unknown-type receiver |
-| `E_IMPL_FORBIDDEN` | R | impl or derive of a pair forbidden by `(impl-not Trait Target)` (located), or an impl of `Trait` whose result derives from a protected value (flow rule, unlocated `PANIC:`); prelude `(impl-not Show Secret)` makes a `Show` for a Secret type this error |
-| `E_DUPLICATE_IMPL` | C | assembler "symbol already defined" |
-| `E_TRAIT_BOUND_NOT_SATISFIED`, `E_TRAIT_NOT_DERIVABLE` | C | bounds unwritable; derive does not check fields |
+| `E_TRAIT_NOT_FOUND` | R | located: a trait call (qualified `(Show.show x)` or dot) on a receiver of known type with no impl (`= help: add (impl Show P ...)`); dot call whose method no trait declares, or ambiguous on an unknown-type receiver. |
+| `E_IMPL_FORBIDDEN` | R | impl or derive of a pair forbidden by `(impl-not Trait Target)` (located), or an impl of `Trait` whose result derives from a protected value (flow rule, also located, at the exposing expression); prelude `(impl-not Show/Debug/Eq/Ord/Hash Secret)` makes such an impl for a Secret type this error |
+| `E_DUPLICATE_IMPL` | R | located: two impls of one trait for one type, or the same trait derived twice (`` `Show` is implemented for `Q` more than once ``) |
+| `E_TRAIT_NOT_DERIVABLE` | R | located: `derive` of a trait other than Show/Debug/Eq/Ord/Hash/Clone, a field type that does not implement the trait, or a `Secret` field under `Eq`/`Ord`/`Hash` |
+| `E_TRAIT_BOUND_NOT_SATISFIED` | C | bounds unwritable |
 
 ## Modules and packages (all R)
 
-`E_MODULE_NOT_FOUND` (lone file), `E_MODULE_CYCLE`, `E_PKG_CYCLE`, `E_PKG_UNKNOWN_MODULE`, `E_PKG_UNDECLARED_DEP` (also a missing module of the current package), `E_PKG_PRIVATE_SYMBOL`, `E_PKG_UNKNOWN_SYMBOL`, `E_PKG_RESERVED_MODULE`, `E_MANIFEST_INVALID`, `E_MANIFEST_NOT_FOUND`, `E_PKG_BAD_NAME`, `E_PKG_BAD_VERSION`, `E_PKG_BAD_REQUIREMENT` (range operator), `E_PKG_DUPLICATE_DEP`, `E_PKG_VERSION_CONFLICT`, `E_PKG_NOT_FOUND`, `E_PKG_VERSION_NOT_FOUND`, `E_PKG_NOT_IN_STORE`, `E_PKG_HASH_MISMATCH`, `E_PKG_SIGNATURE_INVALID`, `E_PKG_KEY_CHANGED`, `E_PKG_UNSIGNED`, `E_PKG_YANKED`, `E_PKG_LOCK_STALE`, `E_PKG_LOCK_INVALID`, `E_PKG_COMPILER_TOO_OLD`, `E_PKG_UNKNOWN_EDITION`, `E_PKG_FETCH_FAILED`, `E_PKG_ARCHIVE_INVALID`, `E_PKG_NATIVE_PATH_ESCAPE`, `E_PKG_NATIVE_FLAG_DENIED`, `E_PKG_NATIVE_BUILD_FAILED`, `E_PKG_FEATURE_UNKNOWN`, `E_PKG_FEATURE_COLLISION`. Catalogued synonyms never raised: `E_CIRCULAR_MODULE`, `E_SYMBOL_NOT_EXPORTED`. Format: `PANIC: CODE: area: message`.
+`E_MODULE_NOT_FOUND` (lone file), `E_MODULE_CYCLE`, `E_PKG_CYCLE`, `E_PKG_UNKNOWN_MODULE`, `E_PKG_UNDECLARED_DEP` (also a missing module of the current package), `E_PKG_PRIVATE_SYMBOL`, `E_PKG_UNKNOWN_SYMBOL`, `E_PKG_RESERVED_MODULE`, `E_MANIFEST_INVALID`, `E_MANIFEST_NOT_FOUND`, `E_PKG_BAD_NAME`, `E_PKG_BAD_VERSION`, `E_PKG_BAD_REQUIREMENT` (range operator), `E_PKG_DUPLICATE_DEP`, `E_PKG_VERSION_CONFLICT`, `E_PKG_NOT_FOUND`, `E_PKG_VERSION_NOT_FOUND`, `E_PKG_VERSION_EXISTS` (`zyl publish --index`: that version is already in the index; versions are immutable), `E_PKG_NOT_IN_STORE`, `E_PKG_HASH_MISMATCH`, `E_PKG_SIGNATURE_INVALID`, `E_PKG_KEY_CHANGED`, `E_PKG_UNSIGNED`, `E_PKG_YANKED`, `E_PKG_LOCK_STALE`, `E_PKG_LOCK_INVALID`, `E_PKG_COMPILER_TOO_OLD`, `E_PKG_UNKNOWN_EDITION`, `E_PKG_FETCH_FAILED`, `E_PKG_ARCHIVE_INVALID`, `E_PKG_NATIVE_PATH_ESCAPE`, `E_PKG_NATIVE_FLAG_DENIED`, `E_PKG_NATIVE_BUILD_FAILED`, `E_PKG_FEATURE_UNKNOWN`, `E_PKG_FEATURE_COLLISION`, `E_PKG_FEATURE_NESTED` (located: `feature-gate` inside another form; valid at top level only). Catalogued synonyms never raised: `E_CIRCULAR_MODULE`, `E_SYMBOL_NOT_EXPORTED`. Format: `PANIC: CODE: area: message`.
 
-## Warnings (stderr, never fatal, not shown by the LSP)
+## Warnings (stderr, never fatal; the LSP publishes them as Warning diagnostics)
 
 `W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`, `E_ZEROIZE_MISSING`. `W_UNUSED_FUNCTION` is implemented but not wired in (it would flag every unused auto-injected `core` function). `_`/`_`-prefixed names are exempt. Printed as located `warning[CODE]` diagnostics through the runtime's warning sink (`zyl_warn_emit`), which a caller can capture instead of printing.
 

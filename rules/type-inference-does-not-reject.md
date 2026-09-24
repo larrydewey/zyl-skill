@@ -33,6 +33,7 @@ The Hindley–Milner pass (`compiler/type_annotate.zyl`) computes types, but a f
 
 ## Notes
 
+- The type pass also reports a trait call on a receiver of known type with no impl (`E_TRAIT_NOT_FOUND`, located) and derives whose field types lack the trait (`E_TRAIT_NOT_DERIVABLE`, in `derive.zyl`); neither is a general type check.
 - Inference results **are used**: they choose print formats, String comparison and Float arithmetic, resolve trait calls, generate ADT equality and drive per-type instances. A conflict silently degrades those to word semantics for the values involved.
 - `ZYL_DEBUG_TYPES=1` prints each function's inferred type; REPL `:type expr` shows one expression's (`a` = unconstrained, `?` = conflicting).
 

@@ -26,7 +26,7 @@ Module identity comes from the file path relative to its package root (without `
 - Missing file: lone file `E_MODULE_NOT_FOUND`; in a dependency `E_PKG_UNKNOWN_MODULE`; in the current package (currently) `E_PKG_UNDECLARED_DEP`.
 - `unsafe` is a reserved module name (`E_PKG_RESERVED_MODULE`); `:unsafe` imports are parsed and ignored.
 - The stdlib is one fully visible surface: `use`ing any stdlib module exposes every loaded stdlib definition. `core/core` is implicit.
-- No commas in import lists (a comma truncates the file).
+- No commas in import lists (a comma is `E_INVALID_CHAR`).
 
 ## See Also
 

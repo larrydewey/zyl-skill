@@ -31,7 +31,7 @@ long long fast_triple(long long n) { return n * TRIPLE; }
 ## Notes
 
 - Flag allowlist and errors: see [ffi-linking](ffi-linking.md).
-- `cc` runs with a canonical sorted argument vector; objects in `build/native/`. Object hashes are not yet recorded (`(native-objects)` is empty in buildinfo).
+- `cc` runs with a canonical sorted argument vector; objects in `build/native/`. Each object is recorded in `<name>.buildinfo` `(native-objects ("build/native/x.c.o" "blake3:..."))` (package-relative path, so builds are directory-independent) and its hash feeds the final build hash ([pkg-mvs-lock-store](pkg-mvs-lock-store.md)).
 
 ## See Also
 

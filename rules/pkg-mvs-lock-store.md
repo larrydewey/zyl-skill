@@ -10,6 +10,8 @@
 
 **Store**: `~/.zyl/store/blake3/<hash>/` (or `$ZYL_HOME`). `zyl build` is offline; a missing package is `E_PKG_NOT_IN_STORE`.
 
+**Buildinfo** (§31.12): `zyl build`/`zyl test` write `<name>.buildinfo` beside the binary with `compiler-hash`, `graph-hash` (from the lock), `graph` (the resolved graph from the lock, sorted by name), `native-objects`, `icnf-hash` (BLAKE3 of the canonical ICNF text, `compiler/icnf_print.zyl`), `asm-hash` (informational) and `final-hash` over the compiler, graph, native and ICNF hashes. The binary carries the final hash as `zyl_build_hash` (section `.zyl_build`; `objdump -s -j .zyl_build app`), so a binary names its inputs. A plain `zyl file.zyl` writes none.
+
 ## `--locked` failures
 
 | Condition | Error |
@@ -18,18 +20,33 @@
 | capability closure grew | `E_PKG_CAPABILITY_GROWTH` |
 | malformed / unknown lock version | `E_PKG_LOCK_INVALID` |
 
+## Running an index
+
+Any git repository (or directory) with the sharded entry layout is an index:
+
+```bash
+zyl key && zyl publish --index ~/my-index             # in the package
+ZYL_INDEX=~/my-index zyl fetch                         # in a consumer
+```
+
+`zyl publish --index DIR [--url-base URL]` copies the signed archive to `DIR/archives/`, merges the version into the package's sharded entry and commits when `DIR` is a git repository. Archive URLs are `file://...`, or `--url-base URL` + the archive name when served over HTTPS. Publishing a version already in the index is `E_PKG_VERSION_EXISTS` (versions are immutable). `file://` archives are copied, all others fetched over HTTPS only; hash and signature are verified either way.
+
+## Build cache
+
+`zyl build`/`zyl test` key a cache at `~/.zyl/cache/<key>` by BLAKE3 over the compiler hash, contract profile, lock graph hash, and every `.zyl`/`.c`/`.h`/`zyl.pkg` file of the package, of each graph node and of the stdlib. A hit copies the binary and `.buildinfo` without compiling (same bytes, since compilation is deterministic); `ZYL_NO_BUILD_CACHE=1` bypasses it.
+
 ## Trust
 
 Publisher signs the archive's BLAKE3 hash with Ed25519; verification is mandatory. First resolution pins the key (lock + `~/.zyl/keys/`). Key change `E_PKG_KEY_CHANGED`, hash change `E_PKG_HASH_MISMATCH`, unsigned `E_PKG_UNSIGNED`, bad sig `E_PKG_SIGNATURE_INVALID`, yanked (new resolutions only) `E_PKG_YANKED`.
 
 ## Current status
 
-- The default index URL is a placeholder; `zyl fetch`/`update` need a local git clone at `~/.zyl/index` even for path-only graphs, else `E_PKG_FETCH_FAILED`.
-- `git` deps are recognized but not cloned by `zyl fetch`.
+- `zyl fetch`/`update` (and `zyl add` without a version) clone or pull the index into `~/.zyl/index` first, even for path-only graphs: set `ZYL_INDEX` to a git URL or a local repository path (cloned as `file://`). The default, `https://github.com/zyl-lang/index`, is not hosted yet, so without `ZYL_INDEX` or an existing clone they fail with `E_PKG_FETCH_FAILED`.
+- `git` deps are cloned at their pinned revision and archived into the store by `zyl fetch`.
 - MVS does not check a path dep's requirement against its manifest version outside a workspace.
 - Path deps record no hash/key/signature.
-- `zyl vendor` copies the graph but nothing reads `./vendor`; no build cache.
-- `zyl publish` leaves the archive in `~/.zyl/tmp/` with `(url "https://REPLACE-ME")`.
+- `zyl vendor` copies the graph but nothing reads `./vendor`.
+- `zyl publish` alone leaves the archive in `~/.zyl/tmp/` and prints the entry with `(url "https://REPLACE-ME")`.
 
 ## See Also
 

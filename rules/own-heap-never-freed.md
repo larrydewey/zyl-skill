@@ -25,7 +25,10 @@ Every struct, ADT value and capturing closure not proven local comes from `zyl_h
 
 ## Notes
 
-- Collections take an arena argument; `0` creates a private one. `vec-free`/`map-free` release them.
+- `(arena-create block-size)`: `block-size` below 16 means the 64 KiB default; returns 0 if memory is exhausted. `arena-reset` frees all blocks (arena stays usable); `arena-destroy` frees everything (handle dead).
+- Collections (`vec-create`/`map-create`/`set-create arena cap`) take a handle from `arena-create`, or any value <= 0 for a new private arena that is never freed (leaks one arena per call inside a loop). Any other positive `Int` is not an arena: unchecked, crashes. Resetting/destroying an arena frees every collection in it at once; don't use them afterwards.
+- Release collections with `arena-reset`/`arena-destroy`, not `vec-free`/`map-free`: those pass the arena-owned buffer to C `free()` (`zyl_mem_free`), which is undefined for arena memory.
+- Only functions taking an arena argument allocate from one: ADT and struct values (`(Some 1)`, `(make-Point 1 2)`) always use the runtime heap above.
 - Arena memory is raw: values you build there are `Int` addresses to Zyl, not typed values.
 - The compiler itself allocates everything from one 1 GiB arena per compile.
 - Stack promotion happens for exactly one shape (see [own-stack-promotion](own-stack-promotion.md)); a missed case costs an allocation, never a dangling pointer.

@@ -27,7 +27,7 @@ The spec's five regions and rules R1–R8 describe a complete static system; the
 
 ## Notes
 
-- Direct tail calls (≤6 args) are jumps; other deep recursion relies on the big `main` stack (spec §14).
+- Tail calls, direct or through a function value, are jumps when their stack arguments fit the caller's incoming area (not inside `try`/`while` or frame-wiping secret functions); other deep recursion relies on the big `main` stack (spec §14). See [fn-no-named-let-or-early-return](fn-no-named-let-or-early-return.md).
 - Capability kinds: see [own-capability-kinds](own-capability-kinds.md).
 
 ## See Also
