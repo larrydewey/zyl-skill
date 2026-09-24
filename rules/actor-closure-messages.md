@@ -1,0 +1,47 @@
+# actor-closure-messages
+
+> Deliver work to a running actor with `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
+
+## Why It Matters
+
+This runtime primitive is the only working message protocol. The actor's thread runs queued calls `handler(word)` one at a time in queue order. `word` is an Int or a heap value passed **by pointer** (shared between threads, not copied — keep messages immutable). Request/response works by putting the requester's actor id in the message.
+
+## Good
+
+```lisp
+(deftype Msg (Request Int Int) (Reply Int))
+(defn idle () 0)
+(defn on-client (m)
+  (match m
+    ((Reply v) (print v))
+    ((Request _ _) 0)))
+(defn on-server (m)
+  (match m
+    ((Request from n)
+      (ffi-call "zyl_actor_send_closure" from on-client (Reply (* n n)) 1000))
+    ((Reply _) 0)))
+
+(defn main ()
+  (let server (spawn idle)          ; spawn the server FIRST (lower id)
+    (let client (spawn idle)
+      (begin
+        (ffi-call "zyl_actor_send_closure" server on-server (Request client 7) 1000)
+        (ffi-call "zyl_actor_wait_all" 1000)
+        0))))
+;; 49
+```
+
+## Ordering caveat
+
+`zyl_actor_wait_all` stops actors in id order. If the client had the lower id, a reply could arrive after the client was stopped and be lost. Spawn repliers before requesters.
+
+## Notes
+
+- A closure message to a stopped actor is dropped silently.
+- `stdlib/actor/actor.zyl`: `actor-spawn`, `actor-send`, `actor-send-with-timeout` (timeout ignored), `actor-wait`, `actor-terminate`, `actor-is-alive`.
+- Needs both `actor` and `ffi` capabilities in a package.
+
+## See Also
+
+- [actor-send-is-discarded](actor-send-is-discarded.md)
+- [actor-always-wait](actor-always-wait.md)
