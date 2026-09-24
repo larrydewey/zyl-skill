@@ -32,11 +32,11 @@
 ## Notes
 
 - Different struct types are never equal (tag differs), but mixing them raises no type error.
-- `derive Eq/Ord` is a no-op: you get exactly this behavior with or without it.
+- `derive Eq/Ord` is a no-op: you get exactly this behavior with or without it (only `derive Show` generates code).
 - Appendix C of the book says structs compare "by identity"; the chapters (2, 15, 18, 20) and the runtime describe the shallow structural comparison above. When correctness matters, compare fields explicitly.
 - `print` of a struct/ADT prints its address (compiled); the REPL prints structurally.
 
 ## See Also
 
-- [trait-derive-noop](trait-derive-noop.md)
+- [trait-derive-show](trait-derive-show.md)
 - [test-assert-equal-semantics](test-assert-equal-semantics.md)

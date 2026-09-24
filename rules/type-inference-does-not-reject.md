@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The Hindley–Milner inferer computes types, but on a failed unification it substitutes a fresh type variable and **continues**. `E_TYPE_MISMATCH`, `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_TYPE`, `E_CANNOT_INFER`, `E_TRAIT_BOUND_NOT_SATISFIED` are catalogued and never raised. Annotations are not enforced. These all compile:
+The Hindley–Milner pass (`compiler/type_annotate.zyl`) computes types, but a failed unification only marks the variables involved as unknown and **continues**. `E_TYPE_MISMATCH`, `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_TYPE`, `E_CANNOT_INFER`, `E_TRAIT_BOUND_NOT_SATISFIED` are catalogued and never raised. Annotations are not enforced. These all compile:
 
 ```lisp
 (defn add ((a Int) (b Int)) (+ a b))
@@ -12,13 +12,13 @@ The Hindley–Milner inferer computes types, but on a failed unification it subs
   (begin
     (print (+ 1 "a"))       ; adds a string's address to 1
     (print (add 1 "x"))     ; annotation not enforced
-    (print (+ 1.5 2))       ; prints 1.500000
+    (print (+ 1.5 2))       ; wrong: Int and Float mixed
     0))
 ```
 
 ## What IS checked (before inference)
 
-`E_UNBOUND_VARIABLE`, `E_ARITY_MISMATCH`, `E_DUPLICATE_DEFINITION`/`_VARIANT`/`_PARAMETER`, `E_MALFORMED_PARAMETER`, `E_MUT_CONFLICT`, `E_CAPABILITY_LEAK`, match exhaustiveness/reachability, Secret rules, package capabilities. Inference itself raises only `E_INVALID_CAPABILITY` (non-pinnable FFI value) and the parser `E_BYTE_VALUE_OOB`.
+`E_UNBOUND_VARIABLE`, `E_ARITY_MISMATCH`, `E_DUPLICATE_DEFINITION`/`_VARIANT`/`_PARAMETER`, `E_MALFORMED_PARAMETER`, `E_MUT_CONFLICT`, `E_CAPABILITY_LEAK`, match exhaustiveness/reachability, Secret rules, package capabilities. Type inference itself raises nothing; `E_INVALID_CAPABILITY` (a lambda passed to `ffi-call`) comes from `mutability_check`, `E_BYTE_VALUE_OOB` from the parser.
 
 ## How to compensate
 
@@ -29,10 +29,10 @@ The Hindley–Milner inferer computes types, but on a failed unification it subs
 
 ## Notes
 
-- Inference results **are used**: they choose print formats, feed the FFI pinnability check and record generic ADT instantiations.
-- The REPL `:type` reports many applications as *unresolved*: some internal name lookups compare dynamically built strings with `=` (pointer compare).
+- Inference results **are used**: they choose print formats, String comparison and Float arithmetic, resolve trait calls and drive per-type instances. A conflict silently degrades those to word semantics for the values involved.
+- `ZYL_DEBUG_TYPES=1` prints each function's inferred type; REPL `:type expr` shows one expression's (`a` = unconstrained, `?` = conflicting).
 
 ## See Also
 
-- [type-polymorphic-results-typed-printers](type-polymorphic-results-typed-printers.md)
+- [gen-per-type-instances](gen-per-type-instances.md)
 - [fn-int-float-separation](fn-int-float-separation.md)

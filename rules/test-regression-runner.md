@@ -27,7 +27,7 @@ smoke, regression (the `test` harness), interpreter (differential: ICNF interpre
 
 ## Notes
 
-- Before touching struct-related compiler code (`ast`, `codegen`, `icnf`, `type_inference`, `parser`, `region_inference`) run `--full --no-boot --filter structs`.
+- Before touching struct-related compiler code (`ast`, `codegen`, `icnf`, `type_annotate`, `parser`, `region_inference`) run `--full --no-boot --filter structs`.
 
 ## See Also
 

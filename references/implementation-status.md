@@ -4,16 +4,17 @@ The spec (`zyl_specification.txt` v5.0) is normative for the language; the sourc
 
 | Area | Spec | Today |
 |---|---|---|
-| Type checking | HM with capability/trait constraints, errors rejected | inferred, **not enforced**; drives print formats, float ops, pinnability |
-| Generic functions | `((T : Bound) x)` groups, monomorphized | groups do not parse; unannotated params are polymorphic, one shared body |
+| Type checking | HM with capability/trait constraints, errors rejected | HM with let-polymorphism (`type_annotate.zyl`), **not enforced** (conflicts → unknown); drives print formats, String/Float ops, trait resolution, per-type instances |
+| Generic functions | `((T : Bound) x)` groups, monomorphized | groups do not parse; unannotated params are polymorphic; shared body, plus `f~T` instances where the body depends on the type (≤32 each) |
 | Generic ADTs | yes | yes (same-type constraint not enforced); no generic structs |
-| Traits | static resolution, bounds, coherence | qualified calls, runtime tag dispatch (correct for structs / single impl); orphan rule enforced; C1 fails in assembler; no bounds, defaults, dyn, assoc types |
-| derive / alias | generate impls / transparent alias | no-ops |
+| Traits | static resolution, bounds, coherence | static resolution from inferred receiver types (runtime tag match only when unknown); `trait` signatures type calls; prelude `Show`; orphan rule enforced; C1 fails in assembler; no bounds, defaults, dyn, assoc types |
+| derive / alias | generate impls / transparent alias | `derive Show` generates an impl; other derives and `alias` no-ops; `defstruct+ (:derive ...)` not parsed |
+| Collections | `Vec<T>`, `Map<K,V>` | `(Vec T)` generic (`collections/vec`); `(Map String V)` (`core/map`, str-eq keys); `collections/map`/`set` Int-only |
 | Tuples, quoted data, `defun`, named let, `let*` | yes | no |
 | Top-level `def` / Global region | constants | unreadable in compiled code; REPL only |
 | Regions | Stack/Heap/Global/Circular/Pin, R1–R8 | one stack-promotion shape; heap bump arena never freed; pin arena; no Global/Circular; `E_REGION_ESCAPE` never raised |
 | Capabilities | TCap/TMut/TAtomic/TBox/TPin inferred | TCap/TMut by name (`let`/`let-mut`); TPin from `ffi-pin`; no TAtomic/TBox constructs |
-| Closures | capture inference, region-assigned | capture by value; set! of captures rejected; recursive lambdas unsupported; spawn captures crash |
+| Closures | capture inference, region-assigned | capture by value, captures keep their types; set! of captures rejected; recursive lambdas unsupported; spawn captures crash |
 | Match | exhaustive constructor patterns | exhaustive (constructor-name based); literal/OR/range/guard extension; no nested patterns; duplicate arms unreported |
 | Numerics | checked overflow, `E_DIVISION_BY_ZERO` | wrapping; SIGFPE (interpreter reports it); oversized literals → 0 |
 | Errors | `error` returns `(Err msg)`; `assert`, `unwrap` | `error` panics/unwinds to `try`; `assert`/`unwrap` panic without their message; try hang bug on 2/4-arg fns |

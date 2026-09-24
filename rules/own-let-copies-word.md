@@ -35,5 +35,5 @@ Binding a second name to a `let-mut` Int gives an independent copy, so later `se
 
 ## See Also
 
-- [data-collections-int-persistent](data-collections-int-persistent.md)
+- [data-collections-persistent](data-collections-persistent.md)
 - [type-value-representation](type-value-representation.md)

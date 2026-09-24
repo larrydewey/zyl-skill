@@ -30,7 +30,7 @@ The arm is positional: the last element is the body, everything between the cons
 - `match` is an expression; it works in value position (let values, call args, if branches, nested arm bodies).
 - The scrutinee is evaluated once.
 - Every arm should produce the same type. This is **not checked**; mismatched arm types compile.
-- A Float or String bound by a pattern loses its kind for printing/arithmetic ([data-field-kinds](data-field-kinds.md)).
+- A Float or String bound by a pattern has its field's declared type ([data-field-types](data-field-types.md)).
 
 ## See Also
 

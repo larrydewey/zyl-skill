@@ -18,8 +18,8 @@ Generic ADTs are the supported, tested form of generics (`tests/regression/gener
 
 (defn main ()
   (begin
-    (print-int (maybe-or (Just 4) 0))              ; 4
-    (print-string (maybe-or (Just "hi") "none"))   ; hi
+    (print (maybe-or (Just 4) 0))                  ; 4
+    (print (maybe-or (Just "hi") "none"))          ; hi
     0))
 ```
 

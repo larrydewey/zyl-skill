@@ -15,7 +15,7 @@ Errors are values in Zyl. There is no null, no exceptions for control flow, and 
 (defn show (r)
   (match r
     (Ok v (print v))
-    (Err msg (print-string msg))))   ; pattern-bound string: print-string
+    (Err msg (print msg))))          ; msg has the field's type, String
 
 (deftype ParseErr (Empty) (BadDigit Int) (TooBig))
 (defn parse (s) ...)                 ; (Err (BadDigit 3)) -- your own error ADT

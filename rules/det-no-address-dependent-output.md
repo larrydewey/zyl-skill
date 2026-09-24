@@ -9,16 +9,15 @@ Heap addresses vary per run (ASLR on arena memory) and between compiler stages (
 ## Bad
 
 ```lisp
-(print some-struct)                  ; prints an address
-(print (ident "s"))                  ; address, via a polymorphic call
-(if (= name1 name2) ...)             ; unannotated strings: address compare
+(print some-struct)                  ; no Show impl: prints an address
+(if (= a b) ...)                     ; a, b of conflicting/unknown type: address compare
 ```
 
 ## Good
 
 ```lisp
-(print-string (ident "s"))
-(if (> (str-eq name1 name2) 0) ...)
+(derive SomeStruct Show) (print some-struct)
+(if (> (str-eq a b) 0) ...)
 ```
 
 ## See Also

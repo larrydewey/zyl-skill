@@ -31,5 +31,5 @@
 
 ## See Also
 
-- [fn-annotate-string-float-params](fn-annotate-string-float-params.md) - Float params need annotations
+- [fn-types-drive-codegen](fn-types-drive-codegen.md) - how Float operands are recognized
 - [type-inference-does-not-reject](type-inference-does-not-reject.md) - no type errors

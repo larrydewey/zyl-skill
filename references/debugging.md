@@ -6,9 +6,9 @@
 |---|---|---|
 | Function missing from output / `E_UNBOUND_VARIABLE` for a visible function | paren imbalance nesting it in an earlier form; stray character truncating the file | check balance of preceding forms; remove `' ` , @ #` etc. |
 | `undefined reference to _ZYL_main` | file truncated before `main` (stray char, backquote macro) or BOM | [syn-no-stray-characters](../rules/syn-no-stray-characters.md) |
-| Large integer printed instead of text | string of unknown kind printed | annotate `(s String)` or `print-string` |
-| Huge integer instead of a float | float of unknown kind printed / multiplied | `(x Float)` params, `print-float` |
-| String comparison always false | `=` on unannotated strings (address compare) | `str-eq` |
+| Large integer printed instead of text | string whose type inference could not settle (mixed-type data, untyped FFI result, conflicting uses); or a record with no `Show` impl | `ZYL_DEBUG_TYPES=1` to see the inferred types; `print-string`; `(derive T Show)` |
+| Huge integer instead of a float | float of conflicting/unknown type; Int and Float mixed | `ZYL_DEBUG_TYPES=1`; `print-float`; keep Int and Float apart |
+| String comparison always false | `=` on strings of unknown type (address compare) | `str-eq` |
 | Value is 0 unexpectedly | `make-variant`, `read-line`, `exit`, unary `(+ x)`, one-armed `if`, `cond` without else, unmatched match, oversized literal, out-of-range byte load, `print`'s return value | see [pitfalls](pitfalls.md) |
 | Match arm never taken / always taken | misspelled constructor (last arm catch-all); nested pattern; shared variant name; missing `use` of the defining module | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
 | `E_UNREACHABLE_MATCH_ARM` right after `Nil`/`None` in a module | constructor unknown there | add `(use core/list)` etc. |

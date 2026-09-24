@@ -38,4 +38,4 @@
 ## See Also
 
 - [fn-no-named-let-or-early-return](fn-no-named-let-or-early-return.md) - recursion idioms
-- [data-collections-int-persistent](data-collections-int-persistent.md) - Vec indexing
+- [data-collections-persistent](data-collections-persistent.md) - Vec indexing

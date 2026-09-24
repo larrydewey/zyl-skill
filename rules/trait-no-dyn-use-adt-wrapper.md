@@ -28,4 +28,4 @@ No trait objects, vtables, default methods, supertraits or associated types. Cap
 
 ## See Also
 
-- [trait-dispatch-structs-only](trait-dispatch-structs-only.md)
+- [trait-static-dispatch](trait-static-dispatch.md)

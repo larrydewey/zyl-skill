@@ -17,7 +17,7 @@ There is no shared mutable compiler state; passes communicate only through ADT v
 
 - Reconstruct records with fields in declaration order ([data-reconstruct-field-order](data-reconstruct-field-order.md)).
 - Other records: `TypeInferer` (20 fields, accessors `ti-env`, `ti-subst`...), `MonoCtx`, `CGE`, `CGP`.
-- Naming: lowering `ic-`, codegen `cg-`, module resolver `mr-`, balance `sb-`, macros `me-`, trait dispatch `td-`, closure inline `ci-`, assert lowering `al-`, optimizer `opt-`, regions `ri-`, checks `cc-` `dc-` `ac-` `mc-` `ec-` `uc-` `sc-`; env chain `EnvBind`/`EnvNil`; tokens `Tk*`; AST `A*`.
+- Naming: lowering `ic-`, codegen `cg-`, module resolver `mr-`, balance `sb-`, macros `me-`, type annotation `ta-`, derive `dv-`, closure inline `ci-`, assert lowering `al-`, optimizer `opt-`, regions `ri-`, checks `cc-` `dc-` `ac-` `mc-` `ec-` `uc-` `sc-`; env chain `EnvBind`/`EnvNil`; tokens `Tk*`; AST `A*`.
 
 ## See Also
 

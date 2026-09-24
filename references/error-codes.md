@@ -115,7 +115,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_PKG_ORPHAN_IMPL` | R | impl where neither trait nor type is local |
 | `E_TRAIT_NOT_FOUND` | C | link-time undefined reference |
 | `E_DUPLICATE_IMPL` | C | assembler "symbol already defined" |
-| `E_TRAIT_BOUND_NOT_SATISFIED`, `E_TRAIT_NOT_DERIVABLE` | C | bounds unwritable; derive no-op |
+| `E_TRAIT_BOUND_NOT_SATISFIED`, `E_TRAIT_NOT_DERIVABLE` | C | bounds unwritable; derive does not check fields |
 
 ## Modules and packages (all R)
 

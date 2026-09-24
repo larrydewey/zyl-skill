@@ -1,10 +1,10 @@
 # type-annotations-guide-codegen
 
-> Use parameter annotations to tell code generation what a value is, not as a safety net; they are optional and unchecked.
+> Treat parameter annotations as documentation that also constrains inference; they are optional (inference usually finds the same type) and unchecked.
 
 ## Why It Matters
 
-`(name Type)` annotations change how a parameter is printed, compared (`=` on strings), and used in arithmetic (SSE for Float), and they feed Secret tracking. They are **not** checked against call sites or even against known type names. There is no annotation for return types, `let` bindings or function types.
+`(name Type)` unifies the parameter with `Type` during inference, and `Secret` feeds Secret tracking. Without it, inference usually infers the same type from use. Annotations are **not** checked: passing a Float to an `(a Int)` parameter compiles and computes on the bits (the conflict just makes those types unknown). There is no annotation for return types, `let` bindings or function types.
 
 ## Accepted annotation names
 
@@ -20,11 +20,11 @@
 
 ## Notes
 
-- `Vec<T>` / `Map<K,V>` are notation only: `<` and `>` are identifier characters, so `Vec<Int>` lexes as one identifier.
+- Applied types are written as lists: `(v (Vec String))`, `(m (Map String Val))`. `Vec<T>` is notation only: `<` and `>` are identifier characters.
 - Function types (`TFun`) exist only inside the inferer.
 - `(alias Name Type)` has no effect.
 
 ## See Also
 
-- [fn-annotate-string-float-params](fn-annotate-string-float-params.md)
+- [fn-types-drive-codegen](fn-types-drive-codegen.md)
 - [type-inference-does-not-reject](type-inference-does-not-reject.md)

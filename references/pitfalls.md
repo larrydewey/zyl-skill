@@ -14,8 +14,8 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 6 | Guard on a constructor arm compiles then crashes; guard on `_` ignored | [match-guards-literal-arms-only](../rules/match-guards-literal-arms-only.md) |
 | 7 | Mixed literal + constructor arms: undiagnosed | [match-literal-requires-underscore](../rules/match-literal-requires-underscore.md) |
 | 8 | Shared variant name across types disables exhaustiveness | [data-unique-variant-names](../rules/data-unique-variant-names.md) |
-| 9 | `print`/`=` on unannotated String/Float params, fields, captures, polymorphic results → addresses/bit patterns | [fn-annotate-string-float-params](../rules/fn-annotate-string-float-params.md) |
-| 10 | `==` on strings of unknown kind compares addresses | [fn-string-equality](../rules/fn-string-equality.md) |
+| 9 | `print`/`=` on a String/Float whose type inference could not settle (mixed-type data, untyped FFI result) → addresses/bit patterns | [fn-types-drive-codegen](../rules/fn-types-drive-codegen.md) |
+| 10 | `==` on strings of unknown/conflicting type compares addresses | [fn-string-equality](../rules/fn-string-equality.md) |
 | 11 | Int/Float mixing computes garbage | [fn-int-float-separation](../rules/fn-int-float-separation.md) |
 | 12 | `(+ x)`, `(* x)`, `(/ x)` evaluate to 0 | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 13 | Overflow wraps; `/` by zero → SIGFPE (REPL reports it instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
@@ -28,12 +28,12 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 20 | `try` does not catch `Err` values | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 21 | `error` in a 2/4-arg function under `try` can hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
 | 22 | Rebuilt record with swapped fields | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
-| 23 | Collection result discarded, or old version reused after update | [data-collections-int-persistent](../rules/data-collections-int-persistent.md) |
+| 23 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
 | 24 | Shallow `==`/`assert-equal` on nested data | [data-equality-shallow](../rules/data-equality-shallow.md) |
 | 25 | Type errors (`(+ 1 "a")`, wrong annotation) accepted | [type-inference-does-not-reject](../rules/type-inference-does-not-reject.md) |
 | 26 | `((T : Ord) a b)` adds a value parameter | [gen-no-type-parameter-syntax](../rules/gen-no-type-parameter-syntax.md) |
-| 27 | Multiple trait impls on ADTs/primitives dispatch to the wrong impl | [trait-dispatch-structs-only](../rules/trait-dispatch-structs-only.md) |
-| 28 | `derive`, `alias`, `defstruct+ :derive`, `(module …)`, `(export …)` do nothing | [trait-derive-noop](../rules/trait-derive-noop.md) |
+| 27 | Trait call on mixed-type data (runtime fallback) with ADT/primitive impls picks the wrong impl | [trait-static-dispatch](../rules/trait-static-dispatch.md) |
+| 28 | `derive` (except `Show`), `alias`, `defstruct+ :derive`, `(module …)`, `(export …)` do nothing | [trait-derive-show](../rules/trait-derive-show.md) |
 | 29 | Macro argument used twice is evaluated twice; macro body keeps only its last form | [macro-args-spliced](../rules/macro-args-spliced.md) |
 | 30 | `ffi-call` without timeout drops the last real argument | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
 | 31 | Float passed to C `double` | [ffi-int64-only-no-floats](../rules/ffi-int64-only-no-floats.md) |

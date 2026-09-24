@@ -17,7 +17,7 @@
 | `panic!` / `catch_unwind` | `(error "msg")` / `(try e (catch m h))` |
 | `fn f<T: Ord>(a: T)` | `(defn f (a) …)` — no type-parameter syntax |
 | traits, `x.m()` | `(trait …)`, `(impl T Type …)`, `(T.m x)`; no dyn, defaults, assoc types |
-| `#[derive]` | `(derive …)` accepted, no effect |
+| `#[derive]` | `(derive T Show)`; other traits accepted, no effect |
 | closures `\|x\| x+n` | `(fn (x) (+ x n))`, capture by value, no mutation of captures |
 | `macro_rules!` | `defmacro` templates, hygienic, no quasiquote, plain params |
 | threads + channels | `spawn` + closure messages via `zyl_actor_send_closure`; `send` is discarded |

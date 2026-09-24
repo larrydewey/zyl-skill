@@ -13,11 +13,11 @@
 | 3 | Module resolution, qualification, orphan rule, Ast→ExprInner | `mr-resolve-program-full` / `module_resolver.zyl`, `qualify.zyl`, `expr_inner.zyl` (`convert-ast`), package modules | `E_MODULE_*`, `E_PKG_*` |
 | 4 | Macro expansion | `me-expand-program` / `macro_expand.zyl` (`me-collect`, `me-strip`, `me-rewrite`) | `E_MACRO_*`, arity, duplicate, unbound |
 | 5 | Checks | `compile-run-checks`: `cc-` capability, `dc-` duplicate, `ac-` arity, `mc-` mutability, `ec-` exhaustiveness, `uc-` unused (W_ to stderr), `sc-` secret | respective codes |
-| 6 | Type inference | `collect-definitions` / `type_system.zyl`, `type_inference.zyl` | `E_INVALID_CAPABILITY` only |
-| 7 | Monomorphization | `monomorphize` / `monomorphization.zyl` | |
-| 8 | Trait dispatch | `td-expand-program` / `trait_dispatch.zyl` | |
-| 9 | Closure inlining | `ci-expand-program` / `closure_inline.zyl` (identity pass) | |
-| 10 | Assert lowering | `al-expand-program` / `assert_lowering.zyl` | |
+| 6 | Derive expansion | `dv-expand-program` / `derive.zyl` (`derive Show` → impl) | |
+| 7 | Monomorphization (impl lifting; empty inferer) | `monomorphize` / `monomorphization.zyl` | |
+| 8 | Closure inlining | `ci-expand-program` / `closure_inline.zyl` (identity pass) | |
+| 9 | Assert lowering | `al-expand-program` / `assert_lowering.zyl` | |
+| 10 | Type annotation: HM, trait resolution, per-type instances (appended to the program) | `ta-annotate` / `type_annotate.zyl`; side tables `zyl_attr_*` 0 types, 1 kinds, 2 renames, 3 print-Show | |
 | 11 | ICNF lowering | `ic-program` / `icnf.zyl` (`ic-expr-node`, `ic-lambda`, `ic-hoist`, `ic-ffi`) | `E_MATCH_ARM_COMPLEX`, `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` |
 | 12 | Optimization | `opt-optimize-fns` / `optimization.zyl` | |
 | 13 | Region inference | `ri-transform-fns` / `region_inference.zyl` | |
@@ -27,11 +27,11 @@
 
 `compile-to-exprs` = stages 1–5; `compile-to-fns` = through 13 (used by REPL and `zyl eval` → `stdlib/repl/interp.zyl`); `compile-to-asm` adds 14. Not wired: `contract_injection.zyl`.
 
-Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference is definition collection feeding monomorphization; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
+Differences from the spec: module resolution and checks are extra phases before inference; region inference runs last on ICNF; type inference runs late (`type_annotate`, after lowering to the final Expr program) and is not enforced; phase 10 missing; phase 11 only for package builds (`.buildinfo`: compiler hash, graph hash, empty native-objects, asm hash instead of ICNF hash). Phase isolation holds.
 
-## Compiler module map (37 modules)
+## Compiler module map (38 modules)
 
-Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_system type_inference` · middle `monomorphization trait_dispatch closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report` · unwired `contract_injection`.
+Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_annotate` (active), `type_system type_inference` (older inferer; data types and an empty context for monomorphization) · middle `derive monomorphization closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report` · unwired `contract_injection`.
 
 ## Driver and build
 

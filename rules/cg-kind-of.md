@@ -1,23 +1,23 @@
 # cg-kind-of
 
-> Remember codegen decides print format, float arithmetic and string/variant equality from a static `kind-of` (0 word, 1 String, 2 Float, 3 variant) with no return-type inference.
+> Remember codegen decides print format, float arithmetic and string/variant comparison from `kind-of` (0 word, 1 String, 2 Float, 3 variant): the legacy literal/annotation kind first, else the type-annotation kind stored per ICNF node (attr table 1).
 
 ## Why It Matters
 
-This single mechanism explains a whole family of user-visible bugs: printing addresses for strings, float bits as integers, address comparison of strings. `kind-of` knows literals, annotated parameters and a few fixed-shape bodies; everything else defaults to 0 (word). Function result kinds are read off the body only when it has a fixed shape. `print` recognizes a few runtime string functions by name.
+`kind-of-base` knows literals, annotated parameters, a few fixed-shape bodies and string-returning FFI symbols. When it answers 0, `kind-of` reads the node's kind from attr table 1, which ICNF lowering filled from `ta-kind` (the inferred type: String 1, Float 2). Only 1 and 2 come from inference; kind 3 is still only for constructor expressions. A conflicting or unknown type gives 0, the old word behavior.
 
 | Kind known | Effect |
 |---|---|
-| String | `print` uses `%s`; `=`/`!=` call `zyl_cstr_eq` |
+| String | `print` uses `%s`; `=`/`!=` call `zyl_cstr_eq`; `<`/`>`/`<=`/`>=` call `zyl_cstr_cmp` |
 | Float | `print` `%f`; SSE arithmetic; `comisd` |
 | variant | `=`/`!=` → `zyl_variant_eq`; `<` etc. → `zyl_variant_cmp` |
 | word (default) | integer ops, `%lld`, pointer equality |
 
-## Improving it
+## Keeping kinds
 
-Better kind propagation (e.g. from type inference results or function return shapes) would fix many user-level traps, but changes compiler output: reseed and run the interpreter differential category.
+A pass that rebuilds ICNF nodes must carry the kind across (`ic-keep-kind`, as `ic-hoist`, the optimizer and region inference do): see [pass-keep-kinds](pass-keep-kinds.md). `print` of a value with a `Show` impl is lowered to a `Show.show` call (attr table 3) before codegen sees it.
 
 ## See Also
 
-- [fn-annotate-string-float-params](fn-annotate-string-float-params.md)
-- [type-polymorphic-results-typed-printers](type-polymorphic-results-typed-printers.md)
+- [fn-types-drive-codegen](fn-types-drive-codegen.md)
+- [gen-per-type-instances](gen-per-type-instances.md)

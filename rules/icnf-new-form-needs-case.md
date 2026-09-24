@@ -9,7 +9,7 @@ The fail-soft default compiles wrong programs quietly. `for`, `spawn`, `with-res
 ## Checklist for a new form
 
 1. Recognize it in `convert-ast` / `dispatch-special` (`expr_inner.zyl`) — the single recognition point (no-dispatch parsing).
-2. Walk it in **every** pass that rewrites `ExprInner` (macro expansion, checks, monomorphization, trait dispatch, closure inline, assert lowering) — rewriters list every constructor.
+2. Walk it in **every** pass that rewrites `ExprInner` (macro expansion, checks, monomorphization, closure inline, assert lowering, and `type_annotate`'s `ta-expr-node`/`ta-copy-node`) — rewriters list every constructor.
 3. Lower it in `ic-expr-node` (`icnf.zyl`).
 4. Handle it in the optimizer, region inference (`ri-name-safe-in`), codegen and the interpreter if it introduces a new `Icnf` node.
 5. Add it to `stdlib/lsp/builtins.zyl` for hover/completion.

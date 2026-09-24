@@ -40,5 +40,5 @@ Chapter 6 and 7 of the book still say a capturing `fn` cannot be passed as an ar
 ## See Also
 
 - [own-no-closure-captured-mutation](own-no-closure-captured-mutation.md)
-- [closure-captured-kinds-lost](closure-captured-kinds-lost.md)
+- [fn-types-drive-codegen](fn-types-drive-codegen.md)
 - [actor-spawn-captures-nothing](actor-spawn-captures-nothing.md)

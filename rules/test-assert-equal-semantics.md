@@ -6,7 +6,7 @@
 
 `assert-equal` compares:
 
-- Ints, Bools: by value. Floats: by value with tolerance `1e-5` (approximate when either side contains a float literal).
+- Ints, Bools: by value. Floats: by value with tolerance `1e-5` (chosen when either side's inferred type is Float, or, when neither side is a String, contains a float literal).
 - Strings: by content — `(assert-equal "ab" (str-concat "a" "b"))` passes.
 - Structs/ADTs: **shallow** — tag plus each field as a raw word. Nested structs/lists/ADTs compare by address, so `(assert-equal (Cons 1 Nil) (Cons 1 Nil))` and `(assert-equal (Some (Some 1)) (Some (Some 1)))` **fail**.
 
@@ -30,7 +30,7 @@
 | `(assert-equal actual expected)` | as above |
 | `(assert-true e)` / `(assert-true e "msg")` | message accepted, not printed |
 | `(assert-false e)` / with message | |
-| `(assert e "msg")` | **does nothing** |
+| `(assert e "msg")` | fails with `assert failed` (message not printed) |
 | `(assert-fail e)` | evaluates `e`, **always passes** |
 
 Outside a test, a failed assertion prints `PANIC: assert-equal failed` and exits 1.

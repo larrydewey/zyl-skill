@@ -10,13 +10,14 @@ The stdlib is the implicit package `zyl/std`: no manifest entry, every definitio
 | `core/option` | `(deftype Option (Some T) None)`; `option-some`, `option-none`, `option-is-some`, `option-is-none`, `option-unwrap opt default`, `option-unwrap-or`, `option-expect opt msg`, `option-map opt f`, `option-flatmap opt f`, `option-and`, `option-or`, `option-inspect` |
 | `core/result` | `(deftype Result (Ok T) (Err E))`; `result-ok`, `result-err`, `result-is-ok`, `result-is-err`, `result-unwrap res default`, `result-unwrap-or`, `result-expect res msg`, `result-map res f`, `result-flatmap`, `result-and-then res f`, `result-or-else`, `result-and`, `result-or`, `result-inspect` |
 | `core/list` | `(deftype List (Cons T (List T)) Nil)`; `is-nil`, `list-car`, `list-cdr`, `list-rest`, `car`, `cdr`, `cadr`, `caddr`, `cddr` (functions; `car`/`cdr` return `Option`), `list-length`, `list-append`, `list-reverse`, `list-sum` |
-| `core/map` | string-keyed persistent assoc map: `(deftype MapEntry (ME K V))`, `map-new`, `map-insert m k v`, `map-remove`, `map-get m k` → Option, `map-get-or m k d`, `map-has`, `map-entries`, `map-size`, `map-is-empty`, `map-map-values f m`, `map-from-list` |
+| `core/show` | prelude: `(trait Show (show (self) String))`, impls for Int, Float, Bool, String; List/Option/Result impls in their modules, Vec in `collections/vec`, Map in `core/map`; `print` of a Show type prints its text |
+| `core/map` | `(Map String V)`, string-keyed persistent assoc map: `(deftype MapEntry (ME K V))`, `map-new`, `map-insert m k v`, `map-remove`, `map-get m k` → Option, `map-get-or m k d`, `map-has`, `map-entries`, `map-size`, `map-is-empty`, `map-map-values f m`, `map-from-list` |
 
-## collections (Int-only, arena-backed, rebind results)
+## collections (arena-backed, rebind results; Vec generic, map/set Int-only)
 
 | Module | Definitions |
 |---|---|
-| `collections/vec` | `(defstruct Vec (ptr Int) (len Int) (cap Int) (arena Int))`; `vec-create arena cap` (0 = private arena), `vec-create-default cap`, `vec-len`, `vec-cap`, `vec-get v i` (-1 OOB), `vec-set v i x`, `vec-push v x`, `vec-pop`, `vec-last` (-1 empty), `vec-free` |
+| `collections/vec` | `(deftype Vec (VecC Int Int Int Int T))` (phantom `T`); `vec-create arena cap` (0 = private arena), `vec-create-default cap`, `vec-len`, `vec-cap`, `vec-get v i` → T (word -1 OOB), `vec-set v i x`, `vec-push v x`, `vec-pop`, `vec-last` (word -1 empty), `vec-free`; prints `[a, b]` |
 | `collections/map` | `map-create arena cap`, `map-create-default`, `map-len`, `map-cap`, `map-put m k v`, `map-get m k default`, `map-has`, `map-remove`, `map-find m k i len`, `map-free` |
 | `collections/set` | `set-create arena cap`, `set-len`, `set-cap`, `set-contains`, `set-add`, `set-remove`, `set-find s k i` |
 | `collections/collections` | `(deftype Assoc (Empty) (AssocNode K V (Assoc K V)))`; `assoc-empty`, `assoc-put k v m`, `assoc-get k default m`, `assoc-has k m`, `assoc-remove`, `assoc-size`, `assoc-keys`, `assoc-values`, `assoc-map f m`, `assoc-fold f acc m`; `list-map f xs`, `list-filter pred xs`, `list-fold f acc xs`, `list-take n xs`, `list-drop n xs`, `list-nth n xs`, `list-set idx val xs`, `list-contains x xs`, `list-range lo hi`, `list-count pred xs` — **collection last** |

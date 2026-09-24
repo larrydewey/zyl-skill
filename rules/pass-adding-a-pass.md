@@ -19,15 +19,16 @@
 (me-expand-program ...)                            ; macros
 (compile-run-checks exprs resolved)                ; cc- dc- ac- mc- ec- uc- sc-
 ;; lower-exprs
-(collect-definitions (inferer-new) exprs)          ; type inference
-(monomorphize mono-ctx exprs)
-(td-expand-program ...)                            ; trait dispatch
-;; lower-after-mono: ci- (identity) -> al- (asserts) -> ic-program -> opt-optimize-fns -> ri-transform-fns
+(dv-expand-program exprs0)                         ; derive Show -> impl blocks
+(monomorphize mono-ctx exprs)                      ; lift impl bodies (empty inferer)
+;; lower-after-mono: ci- (identity) -> al- (asserts) -> ta-annotate (HM, trait
+;;   resolution, per-type instances) -> ic-program -> opt-optimize-fns -> ri-transform-fns
 ;; compile-to-fns stops at ICNF; compile-to-asm adds cg-program
 ```
 
 ## See Also
 
 - [pass-copy-spans](pass-copy-spans.md)
+- [pass-keep-kinds](pass-keep-kinds.md) - an Expr pass after `ta-annotate` must not rebuild nodes
 - [pass-total-structural-match](pass-total-structural-match.md)
 - [boot-module-build](boot-module-build.md)

@@ -22,7 +22,7 @@ what the compiler **actually does today**, so the agent writes code that works.
 
 ## What's Inside
 
-- **173 rules** in 26 categories, grouped into five tiers and prioritized by
+- **172 rules** in 26 categories, grouped into five tiers and prioritized by
   impact (CRITICAL = silent miscompile, wrong result or crash).
 - **8 reference tables** for fast lookup: silent-failure pitfalls, error
   codes, built-ins, the standard library, the compiler pipeline,

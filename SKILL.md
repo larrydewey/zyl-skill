@@ -2,7 +2,7 @@
 name: zyl
 description: >
   Expert Zyl knowledge for writing, reviewing and debugging Zyl code and the
-  self-hosted Zyl compiler. 173 rules in 26 categories across five tiers
+  self-hosted Zyl compiler. 172 rules in 26 categories across five tiers
   (foundations, language model, systems, engineering, compiler internals),
   prioritized by impact, plus reference tables for error codes, built-ins,
   the standard library, the pipeline and spec-vs-implementation status.
@@ -46,16 +46,16 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 
 ## The Ten Facts
 
-1. **The type checker rejects nothing.** Inference drives codegen but ill-typed programs compile. `(+ 1 "a")` and `(+ 1.5 2)` compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
-2. **Codegen only knows a value is a String or Float from literals and annotations.** Unannotated params, fields, pattern binders, captures and polymorphic results print as integers and compare by address. Annotate `(s String)`/`(x Float)`, use `print-string`/`print-float`/`print-int`, compare strings with `str-eq`. → [fn-annotate-string-float-params](rules/fn-annotate-string-float-params.md)
+1. **The type checker rejects nothing.** Hindley–Milner inference drives codegen, trait dispatch and per-type instances, but ill-typed programs compile: a conflict just makes the types involved unknown. `(+ 1 "a")`, `(+ 1.5 2)` and a Float passed to an `(a Int)` parameter compute garbage. You are the type checker. → [type-inference-does-not-reject](rules/type-inference-does-not-reject.md)
+2. **Inferred types drive `print`, `=`/`<` and Float arithmetic** — for fields, pattern binders, captures, `Vec`/`Map` elements and generic results alike; a generic body that depends on its type is compiled per concrete type. Only values of conflicting/unknown type (mixed-type data, untyped FFI results) fall back to words: use `print-string`/`str-eq` there. `print` of a value with a `Show` impl prints its text. → [fn-types-drive-codegen](rules/fn-types-drive-codegen.md)
 3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), contracts, `derive`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` and `unwrap` work now, but panic without your message.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
+5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), contracts, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` and `unwrap` work now, but panic without your message.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
 9. **Actors: `send` is discarded, there is no `receive`, and a spawned `fn`'s parameter is always 0.** Deliver work with closure messages; the process drains every actor at exit, and `actor-wait` drops queued messages. A reply produced during the final drain can still be lost. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
-10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, commit the seed. The compiler is built from `selfhost/driver.zyl` through module resolution, so a compiler module is reached only through a `use`; introduce syntax in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md)
+10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, commit the seed (a verified `./boot.sh` also refreshes `~/.zyl`). The compiler is built from `selfhost/driver.zyl` through module resolution, so a compiler module is reached only through a `use`; introduce syntax in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md)
 
 ## Minimal Correct Program
 
@@ -68,9 +68,9 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
     (Circle r (* 3 (* r r)))
     (Rect w h (* w h))))
 
-(defn label ((name String) n)                ; String annotation: prints as text
+(defn label (name n)                         ; types inferred: name is a String
   (begin
-    (print-string (str-concat name ":"))
+    (print (str-concat name ":"))
     (print n)))
 
 (defn main ()
@@ -95,10 +95,10 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 1 | 5 | Error Handling | CRITICAL | `err-` | 5 |
 | 1 | 6 | Contracts | HIGH | `contract-` | 1 |
 | 2 | 7 | Ownership, Capabilities & Regions | HIGH | `own-` | 7 |
-| 2 | 8 | Type System | CRITICAL | `type-` | 4 |
-| 2 | 9 | Generics | HIGH | `gen-` | 5 |
-| 2 | 10 | Traits | HIGH | `trait-` | 6 |
-| 2 | 11 | Closures | HIGH | `closure-` | 4 |
+| 2 | 8 | Type System | CRITICAL | `type-` | 3 |
+| 2 | 9 | Generics | HIGH | `gen-` | 6 |
+| 2 | 10 | Traits | HIGH | `trait-` | 5 |
+| 2 | 11 | Closures | HIGH | `closure-` | 3 |
 | 2 | 12 | Macros | HIGH | `macro-` | 8 |
 | 3 | 13 | FFI | CRITICAL | `ffi-` | 6 |
 | 3 | 14 | Actors | CRITICAL | `actor-` | 7 |
@@ -113,7 +113,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 5 | 23 | Bootstrap & Fixed Point | CRITICAL | `boot-` | 10 |
 | 5 | 24 | ICNF | MEDIUM | `icnf-` | 5 |
 | 5 | 25 | x86_64 Codegen | HIGH | `cg-` | 8 |
-| 5 | 26 | Writing Compiler Passes | HIGH | `pass-` | 11 |
+| 5 | 26 | Writing Compiler Passes | HIGH | `pass-` | 12 |
 ## Tier 1 — Foundations (every program)
 
 ### 1. Syntax & Lexical Structure (CRITICAL)
@@ -127,7 +127,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 2. Functions, Bindings & Control Flow (CRITICAL)
 
-- [`fn-annotate-string-float-params`](rules/fn-annotate-string-float-params.md) **[CRITICAL]** - Annotate parameters that hold a `String` or `Float` — `(s String)`, `(x Float)` — whenever the function prints, compares or does arithmetic on them.
+- [`fn-types-drive-codegen`](rules/fn-types-drive-codegen.md) **[CRITICAL]** - Let inference type your values: `print`, `=`/`<` and arithmetic follow inferred types everywhere; fall back to typed printers and `str-eq` only for data with no single type.
 - [`fn-begin-multi-form-bodies`](rules/fn-begin-multi-form-bodies.md) **[CRITICAL]** - Wrap every body that has more than one form in `begin`.
 - [`fn-conditionals`](rules/fn-conditionals.md) - Always give `if` an else branch and `cond` an `else` clause in value position; conditions must be real Bools.
 - [`fn-for-has-no-step`](rules/fn-for-has-no-step.md) - `for` has no step clause: the body must `set!` the loop variable, or the loop never ends.
@@ -139,16 +139,16 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-no-return-type-slot`](rules/fn-no-return-type-slot.md) - Parameters are a bare name or `(name Type)`; there is no return-type annotation and no annotation on `let`.
 - [`fn-no-toplevel-def`](rules/fn-no-toplevel-def.md) - Use a zero-argument `defn` for constants; a top-level `def` is not readable in compiled code.
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and evaluates to 0; build one-line output with `str-concat`.
-- [`fn-string-equality`](rules/fn-string-equality.md) **[CRITICAL]** - Compare strings with `str-eq` (or `str-equal`) unless both operands are literals, string built-in results, or `String`-annotated parameters.
+- [`fn-string-equality`](rules/fn-string-equality.md) - `=`/`!=` on two Strings compare contents and `<`/`>` order them by bytes wherever their type is known (literals, fields, parameters, container elements, generic instances); use `str-eq` for values whose type may be conflicting or unknown.
 - [`fn-underscore-discard`](rules/fn-underscore-discard.md) - Use `_` (or a `_`-prefixed name) for anything deliberately unused; never invent dummy names.
 - [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, `invariant`, and `with-resource` cleanup.
 
 ### 3. Structs, ADTs & Collections (CRITICAL)
 
 - [`data-adt-declaration`](rules/data-adt-declaration.md) - Declare sum types with `(deftype Name (Variant FieldType...) ...)`; an unknown uppercase field type is a type parameter.
-- [`data-collections-int-persistent`](rules/data-collections-int-persistent.md) **[CRITICAL]** - `Vec`, `Map` and `Set` hold `Int`s only and return an updated value: always rebind to the result and treat the old value as used up.
+- [`data-collections-persistent`](rules/data-collections-persistent.md) - `Vec` is generic (`(Vec T)`), `core/map` is `(Map String V)`, and `collections/map`/`collections/set` hold `Int`s; every operation returns an updated value: always rebind to the result and treat the old value as used up.
 - [`data-equality-shallow`](rules/data-equality-shallow.md) - `==` and `<` on structs/ADTs compare one level deep; compare nested values and strings field by field yourself.
-- [`data-field-kinds`](rules/data-field-kinds.md) **[CRITICAL]** - Treat every struct field and pattern-bound name as an untyped word: route `String` and `Float` values through typed functions before printing, comparing or doing arithmetic.
+- [`data-field-types`](rules/data-field-types.md) - Declare field types on `deftype` variants and `defstruct` fields: a pattern-bound name or `struct-get` result carries the declared type, so Strings and Floats read back from records print and compute correctly.
 - [`data-no-redeclare-prelude`](rules/data-no-redeclare-prelude.md) - Never redeclare `Option`, `Result`, `List` or any prelude function name; pick another name.
 - [`data-no-tuples-no-generic-structs`](rules/data-no-tuples-no-generic-structs.md) - Use a struct or a single-variant ADT where you want a tuple; use a generic ADT where you want a generic struct; don't rely on `alias`.
 - [`data-reconstruct-field-order`](rules/data-reconstruct-field-order.md) **[CRITICAL]** - When rebuilding a struct or variant, pass every field in declaration order — double-check against the `defstruct`/`deftype`.
@@ -195,32 +195,30 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 8. Type System (CRITICAL)
 
-- [`type-annotations-guide-codegen`](rules/type-annotations-guide-codegen.md) - Use parameter annotations to tell code generation what a value is, not as a safety net; they are optional and unchecked.
+- [`type-annotations-guide-codegen`](rules/type-annotations-guide-codegen.md) - Treat parameter annotations as documentation that also constrains inference; they are optional (inference usually finds the same type) and unchecked.
 - [`type-inference-does-not-reject`](rules/type-inference-does-not-reject.md) **[CRITICAL]** - Be your own type checker: the compiler infers types but does not reject ill-typed programs.
-- [`type-polymorphic-results-typed-printers`](rules/type-polymorphic-results-typed-printers.md) **[CRITICAL]** - Print or compare the result of a polymorphic (unannotated) function through a typed function: `print-int`, `print-string`, `print-float`, or a `(x Type)` parameter.
 - [`type-value-representation`](rules/type-value-representation.md) - Reason about values as single 64-bit words with a fixed, documented layout.
 
 ### 9. Generics (HIGH)
 
 - [`gen-generic-adts`](rules/gen-generic-adts.md) - Make data generic with ADTs whose field types are unknown uppercase names; don't expect the same-type constraint or generic structs.
-- [`gen-monomorphization-naming`](rules/gen-monomorphization-naming.md) - Know that specialization names are canonical (sorted type names) and that the only per-type copies are impl methods named `Trait.method_Type`.
+- [`gen-monomorphization-naming`](rules/gen-monomorphization-naming.md) - Know the per-type function names: impl methods are `Trait.method_Type`, and a trait-generic function's instances are `<key>~T1,T2` (argument types in order, fully spelled), at most 32 per function.
 - [`gen-no-type-parameter-syntax`](rules/gen-no-type-parameter-syntax.md) **[CRITICAL]** - Never write the spec's type-parameter groups `((T) x)` or `((T : Ord) a b)`; leave parameters unannotated instead.
-- [`gen-operators-not-overloaded`](rules/gen-operators-not-overloaded.md) - Pass comparison and combination functions explicitly in generic code; operators compare machine words.
-- [`gen-unannotated-is-polymorphic`](rules/gen-unannotated-is-polymorphic.md) - Write generic functions by leaving parameters unannotated; each call site is inferred separately and all sites share one compiled body.
+- [`gen-operators-follow-types`](rules/gen-operators-follow-types.md) - Use `=`, `<` and arithmetic directly in generic code: operators follow the instance's types (Strings compare by content, `<` on Strings is byte order, Floats use SSE); pass comparators only for orderings the operators don't provide.
+- [`gen-unannotated-is-polymorphic`](rules/gen-unannotated-is-polymorphic.md) - Write generic functions by leaving parameters unannotated; top-level functions get polymorphic types (let-polymorphism) and each call instantiates them.
+- [`gen-per-type-instances`](rules/gen-per-type-instances.md) - Write generic code freely: a function whose body prints, compares, does arithmetic on, or calls a trait method on a type parameter is compiled once per concrete argument-type tuple, so each instance behaves correctly for its types.
 
 ### 10. Traits (HIGH)
 
-- [`trait-bind-before-struct-get`](rules/trait-bind-before-struct-get.md) - Bind a trait call's result with `let` before passing it to `struct-get`.
-- [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, and write each `(Trait, Type)` impl exactly once.
-- [`trait-derive-noop`](rules/trait-derive-noop.md) - Don't rely on `derive` or `defstruct+ (:derive ...)`: both are accepted and generate nothing.
-- [`trait-dispatch-structs-only`](rules/trait-dispatch-structs-only.md) **[CRITICAL]** - Implement multi-impl traits for **structs**; give a trait over an ADT or primitive type a single impl.
-- [`trait-no-dyn-use-adt-wrapper`](rules/trait-no-dyn-use-adt-wrapper.md) - Model open "trait object" designs with an ADT wrapper, a list of structs, or function values; there is no `dyn`.
 - [`trait-qualified-calls`](rules/trait-qualified-calls.md) - Call trait methods by qualified name, `(Trait.method receiver args...)`, with the receiver first.
+- [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, and write each `(Trait, Type)` impl exactly once.
+- [`trait-derive-show`](rules/trait-derive-show.md) - Use `(derive T Show)` (or `(derive T [Show])`) to make `print` show a record; don't expect the other derivable traits to generate anything.
+- [`trait-static-dispatch`](rules/trait-static-dispatch.md) - Implement traits for any type — structs, multi-variant ADTs, primitives, generic types — and call them on values whose type inference can determine; avoid trait calls on heterogeneous data except over structs.
+- [`trait-no-dyn-use-adt-wrapper`](rules/trait-no-dyn-use-adt-wrapper.md) - Model open "trait object" designs with an ADT wrapper, a list of structs, or function values; there is no `dyn`.
 
 ### 11. Closures (HIGH)
 
 - [`closure-capture-by-value`](rules/closure-capture-by-value.md) - Expect a closure to see each captured variable's value at the moment the closure was created.
-- [`closure-captured-kinds-lost`](rules/closure-captured-kinds-lost.md) **[CRITICAL]** - Don't `print`, `=`-compare or do float arithmetic directly on captured variables or on results of calls through function values; pass them to typed functions.
 - [`closure-explicit-fn-syntax`](rules/closure-explicit-fn-syntax.md) - Write anonymous functions as `(fn (params) body)` or `(lambda (params) body)`; there is no shorthand.
 - [`closure-no-recursive-lambda`](rules/closure-no-recursive-lambda.md) - Write recursive helpers as top-level `defn`s; a lambda cannot refer to itself.
 
@@ -361,7 +359,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`cg-callee-saved-rbx-r12`](rules/cg-callee-saved-rbx-r12.md) **[CRITICAL]** - Use only `rbx` and `r12` among callee-saved registers in new codegen sequences, or extend `cg-save-callee-saved`/`cg-restore-callee-saved` first.
 - [`cg-closure-call-protocol`](rules/cg-closure-call-protocol.md) - Calls through a local holding a function value go through `cg-call-indirect`, which passes one extra trailing argument: the closure env, or 0 for a plain code address.
 - [`cg-emission-appends`](rules/cg-emission-appends.md) - Emit assembly by appending to the text buffer (`zyl_str_append` via `cg-emit*`), never by copying.
-- [`cg-kind-of`](rules/cg-kind-of.md) - Remember codegen decides print format, float arithmetic and string/variant equality from a static `kind-of` (0 word, 1 String, 2 Float, 3 variant) with no return-type inference.
+- [`cg-kind-of`](rules/cg-kind-of.md) - Remember codegen decides print format, float arithmetic and string/variant comparison from `kind-of` (0 word, 1 String, 2 Float, 3 variant): the legacy literal/annotation kind first, else the type-annotation kind stored per ICNF node (attr table 1).
 - [`cg-stack-machine`](rules/cg-stack-machine.md) - Model codegen as a stack machine over `rax` with `rbp`-relative slots and no register allocator.
 - [`cg-symbols-and-entry`](rules/cg-symbols-and-entry.md) - User functions are labelled by mangled canonical keys (`zy_...`), the user entry is `_ZYL_main`, and every program shares one C `main` stub that runs it on a huge stack.
 
@@ -371,6 +369,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`pass-avoid-repeated-subtree-work`](rules/pass-avoid-repeated-subtree-work.md) - Visit each subtree once per pass; a pass that re-walks a subtree per visit goes exponential in nesting depth.
 - [`pass-conservative-failure-direction`](rules/pass-conservative-failure-direction.md) - Make checks fail open (miss a diagnostic rather than reject valid code) and transformations fail safe (fall back to the always-correct path).
 - [`pass-copy-spans`](rules/pass-copy-spans.md) - When a pass rebuilds an `Expr` node, copy the original's source span onto the replacement: `(ffi-call "zyl_span_copy" new-node old-node 1000)`.
+- [`pass-keep-kinds`](rules/pass-keep-kinds.md) - When a pass rebuilds an ICNF node, carry its codegen kind across with `ic-keep-kind` (and never read the type-annotation side tables of a node the type pass did not see).
 - [`pass-diagnostics`](rules/pass-diagnostics.md) - Report new errors through `err-at` (or `err-at-labels`) with a node and a catalogued code from `error_codes.zyl`, and warnings through `err-warn-at`, so they print located with a help line and work in JSON mode.
 - [`pass-monomorphization-tables`](rules/pass-monomorphization-tables.md) - Treat `type-to-string` output as part of the fixed point: specialized symbol names are built from it.
 - [`pass-no-allocation-in-lookups`](rules/pass-no-allocation-in-lookups.md) **[CRITICAL]** - Never allocate inside a comparison or lookup that runs per element of a table: the arena never frees, so every temporary string is kept for the whole compile.
@@ -395,7 +394,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 |---|---|
 | New function | `fn-`, `type-`, `match-`, `err-` |
 | New data type | `data-`, `match-`, `gen-`, `trait-` |
-| Printing / strings / floats | `fn-annotate-*`, `fn-string-equality`, `data-field-kinds`, `type-polymorphic-*` |
+| Printing / strings / floats | `fn-types-drive-codegen`, `fn-string-equality`, `data-field-types`, `gen-per-type-instances`, `trait-derive-show` |
 | Error handling | `err-`, `contract-`, `fn-unlowered-forms` |
 | Mutation / state | `own-`, `data-struct-immutable-rebind`, `data-collections-*` |
 | Generic / reusable code | `gen-`, `trait-`, `closure-` |

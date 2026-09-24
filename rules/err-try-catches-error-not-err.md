@@ -29,7 +29,7 @@
 ## Notes
 
 - Syntax: `(try expr (catch name handler))`. One handler expression; use `begin` or a function for more.
-- `name` is bound to the message **String**; print it with `print-string` or a `String`-annotated function.
+- `name` is bound to the message **String**, and prints as one.
 - `try` also catches the failed test assertions (`assert-equal` etc.) and `result-expect`/`option-expect` failures.
 - Without an active `try`, `error` prints `PANIC: msg` to stderr and exits 1 (the PANIC line may appear before earlier buffered stdout).
 - The spec describes `error` as returning `(Err msg)`; the implementation panics.

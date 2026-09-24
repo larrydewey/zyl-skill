@@ -11,10 +11,10 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `(def name v)` | top level: **not readable** in compiled code; REPL only |
 | `(deftype Name (Variant FieldType...) ...)` | nullary `(V)` or `V`; unknown uppercase field types are type params |
 | `(defstruct Name f (f) (f Type)...)` | constructor `make-Name`; also `(Name ...)`; field types dropped |
-| `defstruct+` | same as `defstruct`; `(:derive [...])` no-op |
+| `defstruct+` | same as `defstruct`; `(:derive [...])` not parsed |
 | `(trait Name (method params...) ...)` | documentation + orphan-rule locality only |
 | `(impl Trait Type (defn m (self ...) ...) ...)` | call `(Trait.m recv ...)` |
-| `(derive Type Trait...)` | no-op |
+| `(derive Type Trait...)` / `(derive Type [Trait...])` | `Show` generates an impl; other traits no-op |
 | `(alias Name Type)` | no-op |
 | `(defmacro name (params) template)`, `macro` | top level only; one body form |
 | `(use path ...)`, `(pub <def>)`, `(feature-gate f <def>)`, `(module n)` (ignored), `(export n)` (dropped) | |
@@ -45,7 +45,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 |---|---|
 | `+ - *` | n-ary fold left; only `(- x)` unary; `(+ x)` `(* x)` → 0 |
 | `/` `%` | trunc toward zero; `%` sign of dividend; /0 → SIGFPE; Secret operand rejected |
-| `= == != < > <= >=` | `=`≡`==`; strings by content only if kinds known; structs/ADTs shallow structural |
+| `= == != < > <= >=` | `=`≡`==`; Strings by content (`<` byte order) when their type is known; structs/ADTs shallow structural |
 | `bit-and bit-or bit-xor` | n-ary |
 | `bit-not` | exactly 1 arg |
 | `shl shr ashr` | `shr` logical, `ashr` arithmetic; counts ≥ 64 defined (0 / sign fill) |
@@ -70,7 +70,7 @@ No overflow checks; bitwise ops not constant-folded.
 
 | Form | Notes |
 |---|---|
-| `(print e...)` | each arg on its own line; returns 0; format by static kind |
+| `(print e...)` | each arg on its own line; returns 0; format by inferred type; a type with a `Show` impl prints `(Show.show e)` |
 | `print-int`, `print-float`, `print-string`, `print-bool` | lib (`core/core`), typed params |
 | `(file-open path mode)` | fd; negative on failure; modes `"r"`, `"a"`, else write |
 | `(file-read fd n)`, `(file-write fd text)`, `(file-close fd)` | |

@@ -34,4 +34,4 @@ An unknown escape such as `\q` is not reported: the whole literal decodes to a n
 ## See Also
 
 - [fn-string-equality](fn-string-equality.md) - `==` vs `str-eq`
-- [fn-annotate-string-float-params](fn-annotate-string-float-params.md) - printing strings
+- [fn-types-drive-codegen](fn-types-drive-codegen.md) - printing strings

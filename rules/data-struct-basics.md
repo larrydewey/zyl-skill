@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`struct-get` takes a **string literal** field key, not a symbol. A struct is a single-variant ADT named after itself, so `(Point 1 2)` builds the same value as `(make-Point 1 2)` and a struct can be `match`ed with one arm. Each struct gets a program-unique tag (from 100000 upward), which is what `struct-get` and trait dispatch rely on.
+`struct-get` takes a **string literal** field key, not a symbol. A struct is a single-variant ADT named after itself, so `(Point 1 2)` builds the same value as `(make-Point 1 2)` and a struct can be `match`ed with one arm. Each struct gets a program-unique tag (from 100000 upward), which is what `struct-get`'s lowering and the runtime fallback of trait dispatch rely on.
 
 ## Bad
 
@@ -26,7 +26,7 @@ p.x                       ; one identifier named "p.x"
     (let alice (make-Person "Alice" 30)
       (begin
         (print (struct-get p "x"))                 ; 3
-        (print-string (struct-get alice "name"))   ; Alice
+        (print (struct-get alice "name"))          ; Alice (declared String field)
         (print (match p (Point x y (+ x y))))      ; 7
         0))))
 ```
@@ -35,7 +35,7 @@ p.x                       ; one identifier named "p.x"
 
 - Constructor arguments are evaluated left to right and matched to fields in declaration order.
 - `struct-get` lowers to a `match` with one arm per struct type that has that field.
-- A trait call written directly as the first argument of `struct-get` is not rewritten and fails to link; bind it first (see [trait-bind-before-struct-get](trait-bind-before-struct-get.md)).
+- A trait call written directly as the first argument of `struct-get` is not rewritten and fails to link; bind it first (see [trait-qualified-calls](trait-qualified-calls.md)).
 - `defstruct+` defines exactly the same struct (its `:derive` clause is a no-op).
 - Field type annotations are dropped in lowering; they are not checked.
 - Generic structs are not supported; use a generic ADT.
@@ -43,4 +43,4 @@ p.x                       ; one identifier named "p.x"
 ## See Also
 
 - [data-struct-immutable-rebind](data-struct-immutable-rebind.md)
-- [data-field-kinds](data-field-kinds.md) - printing string/float fields
+- [data-field-types](data-field-types.md) - printing string/float fields

@@ -16,7 +16,7 @@
 ## Good
 
 ```lisp
-(defn label ((s String)) (print-string (str-concat "result: " s)))
+(defn label (s) (print (str-concat "result: " s)))
 (label "disk full")                 ; one line: result: disk full
 
 (print "Total:")                    ; numbers: label and value on separate lines
@@ -25,12 +25,12 @@
 
 ## Notes
 
-- Formats: Int `%lld`, Float `%f` (six decimals), String `%s`, Bool as `1`/`0`. A struct/ADT prints its **address** (no derived `Show`). At the REPL, values print structurally.
-- There is no number-to-string built-in in the core list of forms; compiler code uses `(ffi-call "zyl_cstr_from_int" arena n 1000)`.
+- Formats follow the inferred type: Int `%lld`, Float `%f` (six decimals), String `%s`, Bool as `1`/`0`. A value whose type has a `Show` impl prints `(Show.show v)`: `[1, 2]`, `Some(x)`, `{k: v}`, derived `Name(a, b)` ([trait-derive-show](trait-derive-show.md)). A record without a `Show` impl prints its **address**. At the REPL, `=>` results print structurally.
+- Number to text: `(Show.show n)`; compiler code uses `(ffi-call "zyl_cstr_from_int" arena n 1000)`.
 - `read-line` is parsed but not lowered (evaluates to 0). `exit` and `close` are not lowered either. File I/O: `file-open`/`file-read`/`file-write`/`file-close`.
 - `print` is not capability-gated in packages; `print` of a `Secret` is `E_SECRET_DEBUG`.
 
 ## See Also
 
-- [fn-annotate-string-float-params](fn-annotate-string-float-params.md) - print picks format by kind
+- [fn-types-drive-codegen](fn-types-drive-codegen.md) - print picks format by kind
 - [proj-file-io](proj-file-io.md) - file forms
