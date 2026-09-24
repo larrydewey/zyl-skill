@@ -1,10 +1,10 @@
 # tool-repl
 
-> Use the REPL (`zyl repl`) to explore expressions and definitions; remember `def` works there but not in compiled files, and each name can be defined once per session.
+> Use the REPL (`zyl repl`) to explore expressions and definitions; each name can be defined once per session.
 
 ## Why It Matters
 
-REPL entries go through the real compiler phases and are evaluated by the ICNF interpreter, so values persist across entries and print structurally. That makes it easy to write code that works at the prompt and fails compiled (top-level `def`, actors, division by zero).
+REPL entries go through the real compiler phases and are evaluated by the ICNF interpreter, so values persist across entries and print structurally. That makes it easy to write code that works at the prompt and fails compiled (actors, division by zero).
 
 ## Meta commands
 

@@ -1,10 +1,10 @@
 # trait-qualified-calls
 
-> Call trait methods by qualified name, `(Trait.method receiver args...)`, with the receiver first.
+> Call trait methods with dot syntax, `(r.method args...)` or `((expr).method args...)`, picked by the receiver's type; use the qualified `(Trait.method r args...)` when several traits share the name and the receiver's type is unknown.
 
 ## Why It Matters
 
-Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Trait.method ...)` is resolved to one of them from the receiver's inferred type ([trait-static-dispatch](trait-static-dispatch.md)). A bare `(method r)` finds nothing and fails **at link time** with an undefined reference. The `.` is part of the identifier.
+Each impl method is lifted to a top-level function `Trait.method_Type`, and `(Trait.method ...)` is resolved to one of them from the receiver's inferred type ([trait-static-dispatch](trait-static-dispatch.md)). A dot call `(r.m args)` is rewritten to `(zyl-method "m" r args)` before qualification; the type pass picks the only trait declaring `m`, or, among several, the one with an impl for the receiver's known type, then resolves it exactly like `(Trait.m r args)`. `E_TRAIT_NOT_FOUND` for an undeclared method, a type without the impl, or an ambiguous call on a receiver of unknown type (an unannotated parameter): write the qualified name there. A bare `(method r)` finds nothing. In `Trait.method` (uppercase first) the `.` is part of the identifier.
 
 ## Good
 

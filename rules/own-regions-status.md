@@ -10,7 +10,7 @@ The spec's five regions and rules R1–R8 describe a complete static system; the
 |---|---|---|
 | Stack | non-escaping values | params and `let` locals; one proven ADT shape |
 | Heap | escaped values, captures | every other struct/ADT/closure; bump arena, freed at exit |
-| Global | immutable constants | **not implemented**: top-level `def` unreadable |
+| Global | immutable constants | top-level `def`: immutable, initialized once before `main` (runtime cells, not a separate region) |
 | Circular | cyclic structures | **not implemented** (immutability makes cycles impossible to build anyway) |
 | Pin | non-moving FFI memory | `ffi-pin` copies one word into the pin arena |
 

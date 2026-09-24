@@ -1,36 +1,40 @@
 # fn-no-toplevel-def
 
-> Use a zero-argument `defn` for constants; a top-level `def` is not readable in compiled code.
+> Use a top-level `(def name expr)` for constants: an immutable global, evaluated once in source order before `main` or the tests.
 
 ## Why It Matters
 
-`(def name value)` at top level is accepted, but any reference to `name` from a function is `E_UNBOUND_VARIABLE`. The Global region is not implemented. At the REPL `def` does bind a value, which makes the difference easy to miss when prototyping there.
+Until 2026-09-24 a top-level `def` was unreadable in compiled code (`E_UNBOUND_VARIABLE`), so older code uses zero-argument `defn`s for constants. Both work now. A `def` is computed once (its side effects run once, before `main`), while a zero-argument `defn` recomputes its body on every call.
 
 ## Bad
 
 ```lisp
-(def max-size 1000)
-(defn main () (print max-size))   ; E_UNBOUND_VARIABLE
+(def limit 10)
+(defn main () (begin (set! limit 20) 0))   ; E_MUT_CONFLICT: defs are immutable
 ```
 
 ## Good
 
 ```lisp
-(defn max-size () 1000)
-(defn app-name () "MyApp")
+(def max-size 1000)
+(def app-name "MyApp")
+(pub def version "1.0")                     ; exported from its module
 (defn main ()
   (begin
-    (print (max-size))
-    (print (app-name))
+    (print max-size)
+    (print app-name)
     0))
 ```
 
 ## Notes
 
-- Costs one call per use; reads almost the same.
-- There is no global mutable state at all: every binding is local.
+- Types are inferred as for any expression: String, Float and ADT defs print correctly.
+- A def may use functions and earlier or later defs; each is computed on first need, and every def is forced in source order before `main`'s body.
+- A local `let` of the same name shadows the def.
+- Implementation: `convert-program` in `expr_inner.zyl` turns each def into a caching getter (`zyl_global_*` runtime cells) and each use into a call.
+- There is still no global *mutable* state.
 
 ## See Also
 
-- [own-regions-status](own-regions-status.md) - Global region not implemented
-- [tool-repl](tool-repl.md) - REPL `def` semantics differ
+- [own-regions-status](own-regions-status.md) - the Global region
+- [tool-repl](tool-repl.md) - REPL `def` semantics

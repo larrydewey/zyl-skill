@@ -50,7 +50,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 2. **Inferred types drive `print`, `=`/`<` and Float arithmetic** — for fields, pattern binders, captures, `Vec`/`Map` elements and generic results alike; a generic body that depends on its type is compiled per concrete type. Only values of conflicting/unknown type (mixed-type data, untyped FFI results) fall back to words: use `print-string`/`str-eq` there. `print` of a value with a `Show` impl prints its text. → [fn-types-drive-codegen](rules/fn-types-drive-codegen.md)
 3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), `checkpoint` rollback and contract profiles, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` shows a string-literal message; `unwrap` panics with `unwrap on None`.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
+5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), `checkpoint` rollback and contract profiles, `derive` of anything but `Show`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup. (`assert` shows a string-literal message; `unwrap` panics with `unwrap on None`.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
@@ -137,7 +137,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-main-and-exit-status`](rules/fn-main-and-exit-status.md) - Every executable needs `(defn main () ...)` with no parameters; its value is the exit status, so end it with an explicit `0`.
 - [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (direct tail calls with at most six arguments are jumps), or `while` loops.
 - [`fn-no-return-type-slot`](rules/fn-no-return-type-slot.md) - Parameters are a bare name or `(name Type)`; there is no return-type annotation and no annotation on `let`.
-- [`fn-no-toplevel-def`](rules/fn-no-toplevel-def.md) - Use a zero-argument `defn` for constants; a top-level `def` is not readable in compiled code.
+- [`fn-no-toplevel-def`](rules/fn-no-toplevel-def.md) - Use a top-level `(def name expr)` for constants: an immutable global, evaluated once in source order before `main` or the tests.
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and evaluates to 0; build one-line output with `str-concat`.
 - [`fn-string-equality`](rules/fn-string-equality.md) - `=`/`!=` on two Strings compare contents and `<`/`>` order them by bytes wherever their type is known (literals, fields, parameters, container elements, generic instances); use `str-eq` for values whose type may be conflicting or unknown.
 - [`fn-underscore-discard`](rules/fn-underscore-discard.md) - Use `_` (or a `_`-prefixed name) for anything deliberately unused; never invent dummy names.
@@ -152,7 +152,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`data-no-redeclare-prelude`](rules/data-no-redeclare-prelude.md) - Never redeclare `Option`, `Result`, `List` or any prelude function name; pick another name.
 - [`data-no-tuples-no-generic-structs`](rules/data-no-tuples-no-generic-structs.md) - Use a struct or a single-variant ADT where you want a tuple; use a generic ADT where you want a generic struct; don't rely on `alias`.
 - [`data-reconstruct-field-order`](rules/data-reconstruct-field-order.md) **[CRITICAL]** - When rebuilding a struct or variant, pass every field in declaration order — double-check against the `defstruct`/`deftype`.
-- [`data-struct-basics`](rules/data-struct-basics.md) - Declare with `defstruct`, build with `make-Name`, read with `(struct-get v "field")` — the field name is a string.
+- [`data-struct-basics`](rules/data-struct-basics.md) - Declare with `defstruct`, build with `make-Name`, read with `v.field` (chains: `v.a.b`) or `(struct-get v "field")`.
 - [`data-struct-immutable-rebind`](rules/data-struct-immutable-rebind.md) - Struct fields never change: to "update" one, build a new struct and rebind a `let-mut` name to it.
 - [`data-two-map-types`](rules/data-two-map-types.md) - Pick one map per program: `core/map` (string keys, `Option` results, persistent) or `collections/map` (Int keys/values, default value, arena-backed).
 - [`data-unique-variant-names`](rules/data-unique-variant-names.md) **[CRITICAL]** - Give every variant a name unique across all types in the program, and declare each type name exactly once.
@@ -210,7 +210,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 10. Traits (HIGH)
 
-- [`trait-qualified-calls`](rules/trait-qualified-calls.md) - Call trait methods by qualified name, `(Trait.method receiver args...)`, with the receiver first.
+- [`trait-qualified-calls`](rules/trait-qualified-calls.md) - Call trait methods with dot syntax, `(r.method args...)` or `((expr).method args...)`, picked by the receiver's type; use the qualified `(Trait.method r args...)` when several traits share the name and the receiver's type is unknown.
 - [`trait-coherence-and-orphans`](rules/trait-coherence-and-orphans.md) - Declare the trait (`(trait Name ...)`) in your package before implementing it for a type you don't own, and write each `(Trait, Type)` impl exactly once.
 - [`trait-derive-show`](rules/trait-derive-show.md) - Use `(derive T Show)` (or `(derive T [Show])`) to make `print` show a record; don't expect the other derivable traits to generate anything.
 - [`trait-static-dispatch`](rules/trait-static-dispatch.md) - Implement traits for any type — structs, multi-variant ADTs, primitives, generic types — and call them on values whose type inference can determine; avoid trait calls on heterogeneous data except over structs.
@@ -320,7 +320,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`tool-debugging-the-pipeline`](rules/tool-debugging-the-pipeline.md) - Debug with `--emit-asm`, `ZYL_DEBUG_STAGES=1`, `zyl eval` differential runs, and small driver programs that `use` compiler modules.
 - [`tool-eval-differential`](rules/tool-eval-differential.md) - Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on actors, FFI, division by zero and speed.
 - [`tool-lsp-and-editors`](rules/tool-lsp-and-editors.md) - Point any LSP client at `zyl-lsp` for the compiler's own diagnostics; expect one diagnostic at a time, no `W_` warnings, no capability check, and name-based (not scope-based) navigation.
-- [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; remember `def` works there but not in compiled files, and each name can be defined once per session.
+- [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; each name can be defined once per session.
 
 ### 22. Project Idioms (MEDIUM)
 

@@ -55,7 +55,7 @@
 | `'x`, `` `(… ,x) `` | none — and the characters truncate the file |
 | `#| … |#` | none; `;` only |
 | `(lambda (x) …)` | `fn` or `lambda` |
-| `define` at top level | `defn`; top-level `def` unreadable in compiled code |
+| `define` at top level | `defn` for functions, `def` for constants |
 | `let*`, named `let`, `letrec` | nested `let`; top-level helper `defn`s |
 | `(let ((x 1) (y 2)) …)` | **compiles wrong** — nest lets |
 | truthiness of non-nil | Bool only; one-armed `if` → 0 |

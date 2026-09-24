@@ -57,7 +57,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 
 | Code | Status | Trigger |
 |---|---|---|
-| `E_UNBOUND_VARIABLE` | R | unbound name; top-level `def` reference; bare `:keyword`; return-type slot; `((x) ...)` pseudo-lambda |
+| `E_UNBOUND_VARIABLE` | R | unbound name; bare `:keyword`; return-type slot; `((x) ...)` pseudo-lambda |
 | `E_ARITY_MISMATCH` | R | wrong arg count; `bit-not` ≠ 1 arg; `(T : Ord)` params; guard after `range` |
 | `E_DUPLICATE_DEFINITION` | R | top-level name twice; redefining prelude names/types; macro+fn same file |
 | `E_DUPLICATE_VARIANT` | R | variant repeated in one `deftype` |
@@ -114,7 +114,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | Code | Status | Actual behavior |
 |---|---|---|
 | `E_PKG_ORPHAN_IMPL` | R | impl where neither trait nor type is local |
-| `E_TRAIT_NOT_FOUND` | C | link-time undefined reference |
+| `E_TRAIT_NOT_FOUND` | R | dot method call: no trait declares the method, no impl for the receiver type, or ambiguous on an unknown-type receiver |
 | `E_DUPLICATE_IMPL` | C | assembler "symbol already defined" |
 | `E_TRAIT_BOUND_NOT_SATISFIED`, `E_TRAIT_NOT_DERIVABLE` | C | bounds unwritable; derive does not check fields |
 

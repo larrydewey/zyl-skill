@@ -29,7 +29,7 @@
 - `fn` and `lambda` are the same form; neither takes a name.
 - Any number of parameters; bodies may contain `match`, `try`, nested lambdas.
 - Leave function-typed parameters unannotated: there is no function-type syntax.
-- Top-level closure values need `defn` (top-level `def` is unreadable).
+- A top-level closure value can be a `(def name (fn ...))`; `defn` is the usual form.
 
 ## See Also
 

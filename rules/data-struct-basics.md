@@ -1,10 +1,10 @@
 # data-struct-basics
 
-> Declare with `defstruct`, build with `make-Name`, read with `(struct-get v "field")` — the field name is a string.
+> Declare with `defstruct`, build with `make-Name`, read with `v.field` (chains: `v.a.b`) or `(struct-get v "field")`.
 
 ## Why It Matters
 
-`struct-get` takes a **string literal** field key, not a symbol. A struct is a single-variant ADT named after itself, so `(Point 1 2)` builds the same value as `(make-Point 1 2)` and a struct can be `match`ed with one arm. Each struct gets a program-unique tag (from 100000 upward), which is what `struct-get`'s lowering and the runtime fallback of trait dispatch rely on.
+`v.field` is rewritten to `(struct-get v "field")` before qualification (first segment lowercase, after any leading `_`); `struct-get` itself takes a **string literal** field key, not a symbol. A field a known struct lacks is `E_TYPE_MISMATCH: no field ...` in either spelling. A struct is a single-variant ADT named after itself, so `(Point 1 2)` builds the same value as `(make-Point 1 2)` and a struct can be `match`ed with one arm. Each struct gets a program-unique tag (from 100000 upward), which is what `struct-get`'s lowering and the runtime fallback of trait dispatch rely on.
 
 ## Bad
 

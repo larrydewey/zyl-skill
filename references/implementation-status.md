@@ -11,7 +11,7 @@ The spec (`zyl_specification.txt` v5.0) is normative for the language; the sourc
 | derive / alias | generate impls / transparent alias | `derive Show` generates an impl; other derives and `alias` no-ops; `defstruct+ (:derive ...)` not parsed |
 | Collections | `Vec<T>`, `Map<K,V>` | `(Vec T)` generic (`collections/vec`); `(Map String V)` (`core/map`, str-eq keys); `collections/map`/`set` Int-only |
 | Tuples, quoted data, `defun`, named let, `let*` | yes | no |
-| Top-level `def` / Global region | constants | unreadable in compiled code; REPL only |
+| Top-level `def` / Global region | constants | immutable globals, initialized once in source order before `main` |
 | Regions | Stack/Heap/Global/Circular/Pin, R1–R8 | one stack-promotion shape; heap bump arena never freed; pin arena; no Global/Circular; `E_REGION_ESCAPE` never raised |
 | Capabilities | TCap/TMut/TAtomic/TBox/TPin inferred | TCap/TMut by name (`let`/`let-mut`); TPin from `ffi-pin`; no TAtomic/TBox constructs |
 | Closures | capture inference, region-assigned | capture by value, captures keep their types; set! of captures rejected; recursive lambdas unsupported; spawn captures crash |
