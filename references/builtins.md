@@ -37,7 +37,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `and`, `or`, `not` | desugared to `if`; short-circuit; `(or 5 6)` → true |
 | `(error "msg")` | lib (`allocator/allocator`); panics / unwinds to `try` |
 | `when`, `unless` | lib (`core/core`); **eager** functions |
-| `assert`, `unwrap` | **NL** |
+| `assert`, `unwrap` | lowered; panic on failure without the message ([err-no-assert-unwrap](../rules/err-no-assert-unwrap.md)) |
 
 ## Arithmetic, comparison, bits
 

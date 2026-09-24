@@ -2,7 +2,7 @@
 name: zyl
 description: >
   Expert Zyl knowledge for writing, reviewing and debugging Zyl code and the
-  self-hosted Zyl compiler. 172 rules in 26 categories across five tiers
+  self-hosted Zyl compiler. 173 rules in 26 categories across five tiers
   (foundations, language model, systems, engineering, compiler internals),
   prioritized by impact, plus reference tables for error codes, built-ins,
   the standard library, the pipeline and spec-vs-implementation status.
@@ -15,7 +15,7 @@ triggers:
   - selfhost, stage1, stage2, stage3, boot.sh, fixed point, reseed
   - stdlib/compiler, icnf, codegen, ic-, cg-, mr-, sb-
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   sources:
     - book/src (The Zyl Programming Language, Parts I-V and Appendices A-F)
     - zyl_specification.txt v5.0
@@ -50,12 +50,12 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 2. **Codegen only knows a value is a String or Float from literals and annotations.** Unannotated params, fields, pattern binders, captures and polymorphic results print as integers and compare by address. Annotate `(s String)`/`(x Float)`, use `print-string`/`print-float`/`print-int`, compare strings with `str-eq`. → [fn-annotate-string-float-params](rules/fn-annotate-string-float-params.md)
 3. **Stray characters end the file silently.** No `'` `` ` `` `,` `@` `#` outside strings/comments — no quote, quasiquote, block comments or commas in import lists. → [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 4. **Matches: spell constructors exactly, one level at a time, `_` last.** An unknown arm head is a catch-all; nested patterns are not tested; guards only on literal arms. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-5. **Several forms that parse do nothing:** `assert`, `unwrap` (→ 0), `read-line`, `exit`, contracts, `derive`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
+5. **Several forms that parse do nothing:** `read-line`, `exit`, `close`, `make-variant` (→ 0), contracts, `derive`, `alias`, `test-suite`, `assert-fail`, `with-resource` cleanup, top-level `def`. (`assert` and `unwrap` work now, but panic without your message.) → [fn-unlowered-forms](rules/fn-unlowered-forms.md)
 6. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 7. **`let` binds one name; wrap multi-form bodies in `begin`.** Otherwise scopes leak and the parenthesized form drops forms. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 8. **`ffi-call` always drops its last argument as the timeout;** pass ints/pointers only (no floats); `ffi-pin` passes a pointer to a slot. → [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
-9. **Actors: `send` is discarded, there is no `receive`, spawned closures must capture nothing, and `main` does not wait.** Use closure messages and `zyl_actor_wait_all`. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
-10. **Compiler changes must reach a new fixed point:** `python3 selfhost/assemble.py && ./boot.sh --bootstrap-from-self && ./boot.sh`, commit the seed; keep every compiler file balanced on its own; introduce syntax in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md)
+9. **Actors: `send` is discarded, there is no `receive`, and a spawned `fn`'s parameter is always 0.** Deliver work with closure messages; the process drains every actor at exit, and `actor-wait` drops queued messages. A reply produced during the final drain can still be lost. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
+10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, commit the seed. The compiler is built from `selfhost/driver.zyl` through module resolution, so a compiler module is reached only through a `use`; introduce syntax in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md)
 
 ## Minimal Correct Program
 
@@ -113,7 +113,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 5 | 23 | Bootstrap & Fixed Point | CRITICAL | `boot-` | 10 |
 | 5 | 24 | ICNF | MEDIUM | `icnf-` | 5 |
 | 5 | 25 | x86_64 Codegen | HIGH | `cg-` | 8 |
-| 5 | 26 | Writing Compiler Passes | HIGH | `pass-` | 10 |
+| 5 | 26 | Writing Compiler Passes | HIGH | `pass-` | 11 |
 ## Tier 1 — Foundations (every program)
 
 ### 1. Syntax & Lexical Structure (CRITICAL)
@@ -141,7 +141,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and evaluates to 0; build one-line output with `str-concat`.
 - [`fn-string-equality`](rules/fn-string-equality.md) **[CRITICAL]** - Compare strings with `str-eq` (or `str-equal`) unless both operands are literals, string built-in results, or `String`-annotated parameters.
 - [`fn-underscore-discard`](rules/fn-underscore-discard.md) - Use `_` (or a `_`-prefixed name) for anything deliberately unused; never invent dummy names.
-- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not use forms that parse but are not lowered: `assert`, `unwrap`, `read-line`, `exit`, `close`, `make-struct`, `make-variant`, `invariant`, and `with-resource` cleanup.
+- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not use forms that parse but are not lowered: `read-line`, `exit`, `close`, `make-struct`, `make-variant`, `invariant`, and `with-resource` cleanup.
 
 ### 3. Structs, ADTs & Collections (CRITICAL)
 
@@ -171,7 +171,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 ### 5. Error Handling (CRITICAL)
 
 - [`err-helper-argument-order`](rules/err-helper-argument-order.md) - Option/Result helpers take the value first and the function second; `collections/collections` list helpers take the collection **last**; `-unwrap` helpers require a default.
-- [`err-no-assert-unwrap`](rules/err-no-assert-unwrap.md) **[CRITICAL]** - Never use `assert` or `unwrap` in compiled code: `assert` checks nothing and `unwrap` evaluates to 0.
+- [`err-no-assert-unwrap`](rules/err-no-assert-unwrap.md) - `assert` and `unwrap` work but lose information: `assert` panics with a fixed `assert failed`, and `unwrap` panics with `unwrap on None` even for an `Err`. Prefer `error` and the `-expect` helpers where the message matters.
 - [`err-result-for-expected-failures`](rules/err-result-for-expected-failures.md) - Return `Result` (`Ok`/`Err`) for failures a caller can handle, `Option` (`Some`/`None`) for absence; reserve `error` for unrecoverable conditions.
 - [`err-try-catches-error-not-err`](rules/err-try-catches-error-not-err.md) **[CRITICAL]** - `try`/`catch` intercepts `error` panics only; an `(Err ...)` value passes straight through it.
 - [`err-try-even-arity-hang`](rules/err-try-even-arity-hang.md) **[CRITICAL]** - Do not rely on catching an `error` raised inside a function called with an even number of arguments; prefer `Result` for failures you expect to handle.
@@ -249,13 +249,13 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 14. Actors (CRITICAL)
 
-- [`actor-always-wait`](rules/actor-always-wait.md) **[CRITICAL]** - Wait for every actor before `main` returns: `actor-wait` per actor, or end with `(ffi-call "zyl_actor_wait_all" 1000)`.
+- [`actor-always-wait`](rules/actor-always-wait.md) **[CRITICAL]** - Know how actors end: the process drains every actor at exit, but `actor-wait` drops an actor's queued closure messages. Wait explicitly only where you need an ordering point.
 - [`actor-closure-messages`](rules/actor-closure-messages.md) - Deliver work to a running actor with `(ffi-call "zyl_actor_send_closure" actor handler word 1000)`, where `handler` is a named one-parameter function.
 - [`actor-limits`](rules/actor-limits.md) - Design within the runtime's limits: at most 1024 actors per process (ids never reused), ~8 MB actor stacks, unbounded mailboxes, and a panic in any actor kills the whole process.
 - [`actor-no-let-mut-crossing`](rules/actor-no-let-mut-crossing.md) - Never reference a `let-mut` variable in a `send` message or spawned closure; snapshot it with `let` first.
 - [`actor-output-nondeterministic`](rules/actor-output-nondeterministic.md) - Let exactly one actor (usually `main`) produce ordered output, or collect results and print after `zyl_actor_wait_all`.
 - [`actor-send-is-discarded`](rules/actor-send-is-discarded.md) **[CRITICAL]** - Don't design around `send`/`receive`: data messages are queued and discarded, and there is no `receive`. Use closure messages to deliver work.
-- [`actor-spawn-captures-nothing`](rules/actor-spawn-captures-nothing.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a `fn` that captures nothing and takes no parameters.
+- [`actor-spawn-captures-nothing`](rules/actor-spawn-captures-nothing.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a zero-parameter `fn`; read-only captures work, parameters and `let-mut` captures do not.
 
 ### 15. Bits, Bytes & Buffers (HIGH)
 
@@ -335,15 +335,15 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 23. Bootstrap & Fixed Point (CRITICAL)
 
-- [`boot-assemble-bundle`](rules/boot-assemble-bundle.md) - Know what `selfhost/assemble.py` does to the compiler source: it strips `use` lines and non-driver `main`s, drops duplicate `defn`s (first wins), and flattens everything into one namespace.
 - [`boot-bind-calls-before-binop`](rules/boot-bind-calls-before-binop.md) - In compiler source, bind each call result with `let` before combining calls in one arithmetic or `str-concat` expression.
 - [`boot-even-field-parity`](rules/boot-even-field-parity.md) - Give a record type that is passed as a constructor argument to another constructor call an even field count, until the workaround is re-tested.
 - [`boot-failure-modes`](rules/boot-failure-modes.md) - Map a bootstrap failure to its cause before changing anything.
-- [`boot-fixed-point-workflow`](rules/boot-fixed-point-workflow.md) - After editing `stdlib/compiler/*.zyl`, `selfhost/` or `runtime/actor_runtime.c`: re-bundle, reseed, verify, commit the seed.
+- [`boot-fixed-point-workflow`](rules/boot-fixed-point-workflow.md) - After editing `stdlib/compiler/*.zyl`, `selfhost/` or `runtime/actor_runtime.c`: reseed, verify, commit the seed.
 - [`boot-lifted-constraints`](rules/boot-lifted-constraints.md) - Know which historical bootstrap constraints are lifted, so you neither follow dead rules blindly nor reintroduce the patterns they guarded against.
 - [`boot-moderate-bodies`](rules/boot-moderate-bodies.md) - Keep compiler function bodies moderate and flat; prefer short `let` chains and helpers over deep nesting.
-- [`boot-one-deftype-per-name`](rules/boot-one-deftype-per-name.md) **[CRITICAL]** - Define each type name exactly once across the whole bundle, and keep variant names unique.
-- [`boot-parens-per-file`](rules/boot-parens-per-file.md) **[CRITICAL]** - Keep every top-level form, and every compiler-stdlib **file**, independently balanced; verify a hand-edited file by compiling it alone.
+- [`boot-module-build`](rules/boot-module-build.md) - The compiler is built like any program: every boot stage compiles `selfhost/driver.zyl`, and module resolution follows its `(use ...)` tree through `stdlib/`. A compiler module is reached only through a `use`.
+- [`boot-one-deftype-per-name`](rules/boot-one-deftype-per-name.md) **[CRITICAL]** - Define each type name exactly once across everything one program imports, and keep variant names unique.
+- [`boot-parens-per-file`](rules/boot-parens-per-file.md) **[CRITICAL]** - Keep every top-level form independently balanced; a missing closer swallows everything after it in the same file.
 - [`boot-two-step-syntax`](rules/boot-two-step-syntax.md) - Introduce new syntax in two steps: teach the compiler to accept it and reseed, then start using it in the compiler's own source.
 
 ### 24. ICNF (MEDIUM)
@@ -367,12 +367,13 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 26. Writing Compiler Passes (HIGH)
 
-- [`pass-adding-a-pass`](rules/pass-adding-a-pass.md) - Add a compiler pass by writing the module, calling it from `pipeline.zyl`, listing it in `assemble.py` before `pipeline.zyl`, testing it, and reseeding.
+- [`pass-adding-a-pass`](rules/pass-adding-a-pass.md) - Add a compiler pass by writing the module, calling and `use`-ing it from `pipeline.zyl`, testing it, and reseeding.
 - [`pass-avoid-repeated-subtree-work`](rules/pass-avoid-repeated-subtree-work.md) - Visit each subtree once per pass; a pass that re-walks a subtree per visit goes exponential in nesting depth.
 - [`pass-conservative-failure-direction`](rules/pass-conservative-failure-direction.md) - Make checks fail open (miss a diagnostic rather than reject valid code) and transformations fail safe (fall back to the always-correct path).
 - [`pass-copy-spans`](rules/pass-copy-spans.md) - When a pass rebuilds an `Expr` node, copy the original's source span onto the replacement: `(ffi-call "zyl_span_copy" new-node old-node 1000)`.
-- [`pass-diagnostics`](rules/pass-diagnostics.md) - Report new errors through `err-at` with a node and a catalogued code from `error_codes.zyl`, so they print located with a help line.
+- [`pass-diagnostics`](rules/pass-diagnostics.md) - Report new errors through `err-at` (or `err-at-labels`) with a node and a catalogued code from `error_codes.zyl`, and warnings through `err-warn-at`, so they print located with a help line and work in JSON mode.
 - [`pass-monomorphization-tables`](rules/pass-monomorphization-tables.md) - Treat `type-to-string` output as part of the fixed point: specialized symbol names are built from it.
+- [`pass-no-allocation-in-lookups`](rules/pass-no-allocation-in-lookups.md) **[CRITICAL]** - Never allocate inside a comparison or lookup that runs per element of a table: the arena never frees, so every temporary string is kept for the whole compile.
 - [`pass-no-stdout`](rules/pass-no-stdout.md) - Never write to stdout from a compiler pass; emit warnings on stderr.
 - [`pass-state-threading`](rules/pass-state-threading.md) - Thread immutable state records through passes and return small wrapper ADTs when a function yields a value plus new state.
 - [`pass-string-eq-in-compiler`](rules/pass-string-eq-in-compiler.md) **[CRITICAL]** - In compiler source, compare dynamically built strings (names, keys, type strings) with `str-eq`, not `=`.

@@ -29,9 +29,9 @@ Before parsing, `sexp_balance.zyl` rejects unclosed openers (`E_UNBALANCED_UNCLO
 
 - Brackets have no special meaning; the containing form decides: `{ a b }` is an import list, `[Eq Ord]` a trait-name list. There are no vector or map literals.
 - Symptom of a silent re-nest: a function "missing from compiled output", or `E_UNBOUND_VARIABLE` for a function you can see in the file.
-- For compiler source, also check each file on its own: see [boot-parens-per-file](boot-parens-per-file.md).
+- Every file is balance-checked on its own; see [boot-parens-per-file](boot-parens-per-file.md).
 
 ## See Also
 
 - [syn-no-stray-characters](syn-no-stray-characters.md) - the other silent truncation
-- [boot-parens-per-file](boot-parens-per-file.md) - per-file balance in the bundle
+- [boot-parens-per-file](boot-parens-per-file.md) - a missing closer swallows the rest of its file

@@ -1,10 +1,10 @@
 # boot-one-deftype-per-name
 
-> Define each type name exactly once across the whole bundle, and keep variant names unique.
+> Define each type name exactly once across everything one program imports, and keep variant names unique.
 
 ## Why It Matters
 
-In the concatenated bundle everything is one flat namespace. Duplicate `deftype`s create incompatible constructor identities: construction uses the later declaration, pattern matches against the other silently fail, and exhaustiveness checking skips matches using shared variant names. The VTable (`ast.zyl`) lets a later `deftype` reusing a variant name shadow the earlier one.
+Functions are qualified per module, but constructor identity is not safe across modules. Duplicate `deftype`s create incompatible constructor identities: a constructor resolves to the declaration from the later `use`, and a match in the other module reads its tag with the other layout. Verified 2026-09-24: `Shape` declared as `(Circle Int) (Square Int)` in one module and `(Square Int) (Circle Int)` in another; `(Circle 2)` built in `main` was matched as `Square` by the first module (printed 8, not 4). Exhaustiveness checking also skips matches using shared variant names, and the VTable (`ast.zyl`) lets a later `deftype` reusing a variant name shadow the earlier one.
 
 ## Good
 

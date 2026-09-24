@@ -20,7 +20,7 @@ There is no phase dump beyond assembly and no ICNF printer, so you need the righ
 ## Notes
 
 - Every check stops at its first error: one diagnostic per compile.
-- Located diagnostics: `error[CODE]: msg`, `--> file:line:col`, source line, caret, `= help:`. Unlocated ones: `PANIC: CODE: ...`.
+- Located diagnostics: `error[CODE]: msg` (or `warning[CODE]`), `--> file:line:col`, source line, caret, optional labelled secondary spans, `= help:`. Unlocated ones: `PANIC: CODE: ...`. `--error-format=json` prints either as one JSON object per line on stderr.
 - For deeper symptom → cause mapping see [references/debugging.md](../references/debugging.md).
 
 ## See Also

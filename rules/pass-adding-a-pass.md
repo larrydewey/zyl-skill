@@ -1,14 +1,13 @@
 # pass-adding-a-pass
 
-> Add a compiler pass by writing the module, calling it from `pipeline.zyl`, listing it in `assemble.py` before `pipeline.zyl`, testing it, and reseeding.
+> Add a compiler pass by writing the module, calling and `use`-ing it from `pipeline.zyl`, testing it, and reseeding.
 
 ## Steps
 
 1. Write `stdlib/compiler/<name>.zyl` with a `use` for every module whose functions or constructors it touches; no `main`.
-2. Call it at the right point in `stdlib/compiler/pipeline.zyl` and add its `(use compiler/<name>)` there. The pipeline is shared by the CLI, `zyl eval` and the REPL.
-3. Add it to `selfhost/assemble.py`'s file list, before `pipeline.zyl`, or the bundle won't contain it.
-4. Tests: `tests/regression/*.zyl` driving the pass directly; `tests/compile-fail/*.zyl` per error it raises.
-5. `python3 selfhost/assemble.py && ./boot.sh --bootstrap-from-self && ./boot.sh && ./run_regression_tests.sh --full`.
+2. Call it at the right point in `stdlib/compiler/pipeline.zyl` and add its `(use compiler/<name>)` there. That `use` is all it takes for the compiler build to include it. The pipeline is shared by the CLI, `zyl eval` and the REPL.
+3. Tests: `tests/regression/*.zyl` driving the pass directly; `tests/compile-fail/*.zyl` per error it raises.
+4. `./boot.sh --bootstrap-from-self && ./boot.sh && ./run_regression_tests.sh --full`.
 
 ## Pipeline (as implemented)
 
@@ -31,4 +30,4 @@
 
 - [pass-copy-spans](pass-copy-spans.md)
 - [pass-total-structural-match](pass-total-structural-match.md)
-- [boot-assemble-bundle](boot-assemble-bundle.md)
+- [boot-module-build](boot-module-build.md)

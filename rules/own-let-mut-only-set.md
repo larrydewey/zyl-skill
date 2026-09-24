@@ -41,7 +41,7 @@ The TMut/TCap aliasing invariant (spec §10) is enforced by name in `mutability_
 ## Notes
 
 - Use `let-mut` sparingly; prefer immutable `let` and recursion.
-- These diagnostics print as unlocated `PANIC: E_MUT_CONFLICT: ...` lines (except the closure-capture case, which is located).
+- `E_MUT_CONFLICT` is located at the `set!`, with a second label at the plain `let` that bound the name when there is one.
 - Capabilities are never written in source; there is no syntax to annotate a parameter `TMut`.
 
 ## See Also

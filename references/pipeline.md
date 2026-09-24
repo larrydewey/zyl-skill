@@ -33,9 +33,9 @@ Differences from the spec: module resolution and checks are extra phases before 
 
 Front end `lexer parser ast expr_inner sexp_balance` · packages `module_resolver qualify package store workspace lock index mvs cli capability_check resolver` · `macro_expand` · checks `duplicate_check arity_check mutability_check exhaustiveness_check unused_check secret_check` · types `type_system type_inference` · middle `monomorphization trait_dispatch closure_inline assert_lowering` · back `icnf optimization region_inference codegen` · support `pipeline error_codes error_report` · unwired `contract_injection`.
 
-## Driver and bundle
+## Driver and build
 
-`selfhost/driver.zyl` (CLI, `drv-usage`) · `selfhost/lsp_main.zyl` (zyl-lsp) · `selfhost/assemble.py` → `selfhost/zyl_selfhost_compiler.zyl` (bundle) · seed `build/boot/stage2.s` / `stage2.bin` · wrapper `build/boot/zyl-self` · runtime `runtime/actor_runtime.c` (actors, arenas, pin, strings, span table, test harness, mangler `zyl_mangle_key`, big stack `zyl_call_on_big_stack`).
+`selfhost/driver.zyl` (CLI, `drv-usage`) · `selfhost/lsp_main.zyl` (zyl-lsp) · the compiler is built from `selfhost/driver.zyl` through module resolution (no bundle since 2026-09-24) · seed `build/boot/stage2.s` / `stage2.bin` · wrapper `build/boot/zyl-self` · runtime `runtime/actor_runtime.c` (actors, arenas, pin, strings, span table, test harness, mangler `zyl_mangle_key`, big stack `zyl_call_on_big_stack`).
 
 ## Key data types
 

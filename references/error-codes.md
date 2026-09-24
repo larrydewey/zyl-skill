@@ -2,7 +2,7 @@
 
 Catalog of record: `stdlib/compiler/error_codes.zyl` (name, phase, severity, message). Formatting: `stdlib/compiler/error_report.zyl`. Every check stops at its first error; one diagnostic per compile.
 
-Two shapes:
+Two shapes, plus labelled secondary spans on some located errors, and JSON with `--error-format=json`:
 
 ```text
 error[E_MALFORMED_PARAMETER]: `(struct-get ...)` is not a parameter
@@ -14,6 +14,19 @@ error[E_MALFORMED_PARAMETER]: `(struct-get ...)` is not a parameter
 
 PANIC: E_MATCH_ARM_COMPLEX: ...           (unlocated)
 ```
+
+```text
+error[E_MUT_CONFLICT]: set! target `x` is not a let-mut binding in scope
+  --> prog.zyl:3:5
+   |
+ 3 |     (set! x 2)
+   |     ^
+ 1 | (let x 1
+   | - bound here by `let`, which is immutable (TCap)
+   = help: only a let-mut binding is TMut and may be assigned; declare it with `let-mut`
+```
+
+`E_UNBOUND_VARIABLE` adds `= help: did you mean `name`?` when a visible name is within edit distance.
 
 Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but not catalogued · **I** interpreter/REPL only · **W** warning.
 
@@ -87,7 +100,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_REGION_ESCAPE`, `E_UNINITIALIZED_USE`, `E_ATOMIC_ABA`, `E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT` | C | |
 | `E_CODEGEN`, `E_CODEGEN_BUFFER_LIMIT` | C | |
 | `E_USER_ERROR` | C | `error` prints `PANIC: <msg>` instead |
-| `E_ASSERT_FAIL` | C | `assert` is a no-op |
+| `E_ASSERT_FAIL` | C | a failing `assert` panics with `assert failed`, no code |
 | `E_NULL_POINTER`, `E_BYTE_OOB`, `E_BYTEBUF_CAP_EXCEEDED`, `E_BYTEBUF_OVERLAP`, `E_BYTEBUF_INVALID`, `E_ALIGNMENT_FAILED`, `E_ALIGN_CHECK_FAILED` | C | byte ops fail closed returning 0 |
 | `E_OVERFLOW` | C | ints wrap |
 | `E_CONTRACT_VIOLATION` | C | contracts not enforced |
@@ -110,7 +123,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 
 ## Warnings (stderr, never fatal, not shown by the LSP)
 
-`W_UNUSED_FUNCTION` (main exempt), `W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`, `E_ZEROIZE_MISSING`. `_`/`_`-prefixed names are exempt.
+`W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`, `E_ZEROIZE_MISSING`. `W_UNUSED_FUNCTION` is implemented but not wired in (it would flag every unused auto-injected `core` function). `_`/`_`-prefixed names are exempt. Printed as located `warning[CODE]` diagnostics through the runtime's warning sink (`zyl_warn_emit`), which a caller can capture instead of printing.
 
 ## Exit codes
 

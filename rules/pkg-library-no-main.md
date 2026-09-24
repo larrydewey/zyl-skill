@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-A `use`d file's top-level forms are spliced into the importer verbatim; `main` is never qualified or renamed. A library `main` collides with the program's own `main`, and makes every test file that uses the library fail with `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN`. `selfhost/assemble.py` strips non-driver `main`s from the compiler bundle, but that does **not** happen for a normal `use`, so compiler-stdlib files must obey this too.
+`main` is the one name that is never qualified to its module. A library `main` collides with the program's own: the build fails with `E_DUPLICATE_DEFINITION` pointing at the program's `main` (verified 2026-09-24), and a test file that uses the library fails with `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN`. Compiler-stdlib files obey this too: the compiler itself is built by `use`ing them from `selfhost/driver.zyl`.
 
 ## Bad
 
@@ -24,9 +24,9 @@ A `use`d file's top-level forms are spliced into the importer verbatim; `main` i
 
 ## Diagnosis
 
-`E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` in a file with no `main` of its own → check every module in the transitive `use` chain.
+`E_DUPLICATE_DEFINITION` on your `main`, or `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` in a file with no `main` of its own → check every module in the transitive `use` chain.
 
 ## See Also
 
 - [test-program-library-tests-split](test-program-library-tests-split.md)
-- [boot-assemble-bundle](boot-assemble-bundle.md)
+- [boot-module-build](boot-module-build.md)

@@ -14,3 +14,4 @@ Type inference once inferred the last statement of every body twice. With right-
 ## See Also
 
 - [boot-moderate-bodies](boot-moderate-bodies.md)
+- [pass-no-allocation-in-lookups](pass-no-allocation-in-lookups.md)

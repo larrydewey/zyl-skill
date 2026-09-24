@@ -31,9 +31,9 @@ This runtime primitive is the only working message protocol. The actor's thread 
 ;; 49
 ```
 
-## Ordering caveat
+## Reply-loss caveat
 
-`zyl_actor_wait_all` stops actors in id order. If the client had the lower id, a reply could arrive after the client was stopped and be lost. Spawn repliers before requesters.
+`zyl_actor_wait_all` now waits until every actor is parked on an empty mailbox before stopping any, instead of stopping them in id order. A reply can still be lost: running the example above 200 times printed `49` in 199 runs with the server spawned first and 194 with the client first (2026-09-24). Spawn repliers first, and treat a reply produced during the final drain as best-effort until the race is fixed.
 
 ## Notes
 

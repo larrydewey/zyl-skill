@@ -13,7 +13,7 @@ The worst one is `test-suite`: the tests nested inside it are **silently dropped
 | `(test-property "n" gen prop)`, `gen-int`/`gen-bool`/`gen-string`/`gen-float`, `property-int` & friends | compiled, never run |
 | `test-compile` | no effect |
 | `assert-fail` | always passes |
-| `assert` | no-op |
+| `assert` | works: a failing `assert` fails the test (it panics; the message is not shown) |
 | `:parallel`, `:filter`, `:verbose` keywords on `test`/`run-tests` | ignored |
 | `run-tests-filtered`, `run-tests-parallel`, `run-tests-with-timeout`, `test-count` (`testing/testing`) | placeholders that call `error` |
 

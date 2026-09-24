@@ -1,15 +1,15 @@
 # boot-parens-per-file
 
-> Keep every top-level form, and every compiler-stdlib **file**, independently balanced; verify a hand-edited file by compiling it alone.
+> Keep every top-level form independently balanced; a missing closer swallows everything after it in the same file.
 
 ## Why It Matters
 
-A missing closer silently nests every following `defn` inside the broken form; they vanish from compiled output. The balance check (`sexp_balance.zyl`, run first by `compile-check-balance` and by `zyl-parse`) catches net imbalance in a source file, with line/col and a fix-it. It does **not** catch a misplaced paren that leaves the file net-balanced, and `assemble.py`'s whole-bundle depth check does **not** catch a per-file deficit that another file in the bundle cancels out. A real instance shipped in `error_codes.zyl` (a 14-paren deficit in its catalog) until something finally called into it.
+A missing closer silently nests every following `defn` inside the broken form; they vanish from compiled output. The balance check (`sexp_balance.zyl`, run first by `compile-check-balance` and by `zyl-parse`) catches net imbalance in a source file, with line/col and a fix-it. Every compiler module is its own file and is checked on its own by any compile that reaches it, including `./boot.sh`. It does **not** catch a misplaced paren that leaves the file net-balanced. (Until 2026-09-24 the compiler was built from one concatenated bundle whose depth check was whole-bundle only; a 14-paren deficit in `error_codes.zyl` shipped that way.)
 
 ## Good
 
 ```bash
-build/boot/zyl-self stdlib/compiler/icnf.zyl -o /tmp/icnf.s --emit-asm   # balance error reported first
+./boot.sh                                                  # balance error reported first, with file:line:col
 ./run_regression_tests.sh --full --no-boot --filter balanced-parens
 ```
 
@@ -21,4 +21,4 @@ build/boot/zyl-self stdlib/compiler/icnf.zyl -o /tmp/icnf.s --emit-asm   # balan
 ## See Also
 
 - [syn-brackets-and-balance](syn-brackets-and-balance.md)
-- [boot-assemble-bundle](boot-assemble-bundle.md)
+- [boot-module-build](boot-module-build.md)

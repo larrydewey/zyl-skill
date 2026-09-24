@@ -1,16 +1,16 @@
 # actor-spawn-captures-nothing
 
-> Pass `spawn` a named zero-argument function or a `fn` that captures nothing and takes no parameters.
+> Pass `spawn` a named zero-argument function or a zero-parameter `fn`; read-only captures work, parameters and `let-mut` captures do not.
 
 ## Why It Matters
 
-The runtime's `zyl_actor_spawn(entry, state)` always receives state 0: the actor entry gets **no environment**. A spawned closure that reads any variable from the enclosing scope compiles and then **segfaults** (its environment block is used as the code pointer). A parameter on the entry receives 0; it is not a message. Capturing a `let-mut` is rejected at compile time (`E_CAPABILITY_LEAK`), but read-only captures are not.
+`zyl_actor_spawn` unpacks a capturing closure into its code and environment, so a spawned `fn` that reads variables from the enclosing scope works (captured by value, like any closure; verified 2026-09-24, before which it segfaulted). A parameter on the entry receives 0; it is not a message. Capturing a `let-mut` is rejected at compile time (`E_CAPABILITY_LEAK`, located, with a label at the `let-mut`).
 
 ## Bad
 
 ```lisp
-(let x 41 (spawn (fn () (print (+ x 1)))))    ; compiles, crashes
 (spawn (fn (msg) (handle msg)))                ; msg is always 0
+(let-mut c 0 (spawn (fn () (print c))))        ; E_CAPABILITY_LEAK
 ```
 
 ## Good
@@ -21,10 +21,11 @@ The runtime's `zyl_actor_spawn(entry, state)` always receives state 0: the actor
 (defn report-a () (print (crunch 5)))
 
 (defn main ()
-  (let a (spawn (fn () (report-a)))   ; captures nothing
-    (begin
-      (actor-wait a)
-      0)))
+  (let n 5
+    (let a (spawn (fn () (print (crunch n))))   ; read-only capture is fine
+      (begin
+        (actor-wait a)
+        0))))
 ;; or (spawn report-a)
 ```
 

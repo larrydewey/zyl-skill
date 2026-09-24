@@ -7,8 +7,9 @@
 | `reproduced asm differs from committed seed` | compiler source changed its own output | reseed ([boot-fixed-point-workflow](boot-fixed-point-workflow.md)) |
 | `FIXED POINT BROKEN` | non-determinism, or a behavior change needing reseed | diff stage2.s/stage3.s; see below |
 | stage 2 crashes | stage 1 miscompiled the compiler | bisect with small inputs |
-| a later file's definitions vanish | paren imbalance in an earlier file | compile the file alone |
-| undefined `_ZYL_<Ctor>` only when compiled standalone | missing `use` hidden by the bundle | add the `use` |
+| a file's later definitions vanish | a missing closer earlier in that file | read the balance error's opener |
+| `E_UNBOUND_VARIABLE` for a function another module defines | missing `use` | add the `use` |
+| `E_OUT_OF_MEMORY` in a stage | a change allocates far more (e.g. strings built inside a lookup) | [pass-no-allocation-in-lookups](pass-no-allocation-in-lookups.md); don't just raise `ZYL_STAGE_MEMORY` |
 | boot very slow | repeated subtree work in a pass | [pass-avoid-repeated-subtree-work](pass-avoid-repeated-subtree-work.md) |
 
 ## Reading a fixed-point diff

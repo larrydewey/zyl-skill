@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The fail-soft default compiles wrong programs quietly. `for`, `spawn` and `with-resource` all once lowered to 0 this way, and today `assert`, `unwrap`, `read-line`, `exit`, `close`, `make-struct`, `make-variant` still do. A new form that parses and passes every check but lacks a lowering case evaluates to 0 with no diagnostic.
+The fail-soft default compiles wrong programs quietly. `for`, `spawn`, `with-resource`, `assert` and `unwrap` all once lowered to 0 this way, and today `read-line`, `exit`, `close`, `make-struct`, `make-variant` still do. A new form that parses and passes every check but lacks a lowering case evaluates to 0 with no diagnostic.
 
 ## Checklist for a new form
 

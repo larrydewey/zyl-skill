@@ -13,7 +13,7 @@
 | `enum` + `match` | `deftype` + exhaustive `match`; no nested patterns; guards only on literal arms |
 | `4..=9 if v =>` | `((range 4 9) …)`; guard after range is broken — use literals or test in body |
 | `Option`/`Result`, `?` | same types; **no `?`**: nested `match` or `result-and-then` |
-| `unwrap()` | `result-expect r "msg"` or `result-unwrap r default` (**`unwrap` form → 0**) |
+| `unwrap()` | `result-expect r "msg"` or `result-unwrap r default` (the `unwrap` form panics with `unwrap on None`, even for an `Err`) |
 | `panic!` / `catch_unwind` | `(error "msg")` / `(try e (catch m h))` |
 | `fn f<T: Ord>(a: T)` | `(defn f (a) …)` — no type-parameter syntax |
 | traits, `x.m()` | `(trait …)`, `(impl T Type …)`, `(T.m x)`; no dyn, defaults, assoc types |

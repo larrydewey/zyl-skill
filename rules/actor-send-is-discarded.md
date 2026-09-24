@@ -4,14 +4,14 @@
 
 ## Why It Matters
 
-Actors are the least complete part of the language. `send` is asynchronous and FIFO and passes the message as a raw word (not copied), but the runtime **drops data messages** when it dequeues them; nothing in Zyl can observe them. `(receive)` is not implemented (a body using it does nothing). Sending to an actor that was already waited on or terminated tries to free the message as a heap pointer and **aborts the process** (`free(): invalid pointer`).
+Actors are the least complete part of the language. `send` is asynchronous and FIFO and passes the message as a raw word (not copied), but the runtime **drops data messages** when it dequeues them; nothing in Zyl can observe them. `(receive)` is not implemented (a body using it does nothing). Sending to an actor that was already waited on or terminated is a no-op (it used to abort with `free(): invalid pointer`; fixed 2026-09-24).
 
 ## Bad
 
 ```lisp
 (defn counter () (receive ...))     ; not implemented
 (send worker (Inc 1))               ; queued, then discarded
-(actor-wait a) (send a 1)           ; abort: send after stop
+(actor-wait a) (send a 1)           ; silently nothing
 ```
 
 ## Good

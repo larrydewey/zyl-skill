@@ -23,7 +23,7 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 15 | `(let (x 1) a b)` drops `b`; `(let ((x 1) (y 2)) …)` wrong program | [fn-let-single-binding](../rules/fn-let-single-binding.md) |
 | 16 | One-armed `if` / `cond` without `else` → 0 | [fn-conditionals](../rules/fn-conditionals.md) |
 | 17 | Prelude `when`/`unless` evaluate the body even when false | [fn-conditionals](../rules/fn-conditionals.md) |
-| 18 | `assert` no-op, `unwrap` → 0, `read-line`/`exit`/`close` not lowered | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
+| 18 | `read-line`/`exit`/`close`/`make-variant` not lowered (→ 0) | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
 | 19 | Contracts evaluated and ignored | [contract-not-enforced](../rules/contract-not-enforced.md) |
 | 20 | `try` does not catch `Err` values | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 21 | `error` in a 2/4-arg function under `try` can hang | [err-try-even-arity-hang](../rules/err-try-even-arity-hang.md) |
@@ -39,7 +39,7 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 | 31 | Float passed to C `double` | [ffi-int64-only-no-floats](../rules/ffi-int64-only-no-floats.md) |
 | 32 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |
 | 33 | `send` messages discarded; no `receive` | [actor-send-is-discarded](../rules/actor-send-is-discarded.md) |
-| 34 | Spawned closure capturing anything crashes | [actor-spawn-captures-nothing](../rules/actor-spawn-captures-nothing.md) |
+| 34 | Spawned `fn` parameter is always 0; a reply during the final drain can be lost | [actor-spawn-captures-nothing](../rules/actor-spawn-captures-nothing.md), [actor-closure-messages](../rules/actor-closure-messages.md) |
 | 35 | `main` returns without waiting: actor work killed | [actor-always-wait](../rules/actor-always-wait.md) |
 | 36 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 37 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
@@ -56,9 +56,9 @@ Things that compile without complaint and then do the wrong thing. Scan this bef
 
 | # | Pitfall | Rule |
 |---|---|---|
-| 46 | Per-file paren deficit masked in the bundle | [boot-parens-per-file](../rules/boot-parens-per-file.md) |
-| 47 | Duplicate `defn` in the bundle: first wins, second never runs | [boot-assemble-bundle](../rules/boot-assemble-bundle.md) |
-| 48 | Missing `use` invisible in the bundle, link error standalone | [pkg-use-what-you-construct](../rules/pkg-use-what-you-construct.md) |
+| 46 | A missing closer swallows the rest of its file | [boot-parens-per-file](../rules/boot-parens-per-file.md) |
+| 47 | Same type name in two modules: the later `use` wins, the other module misreads tags | [boot-one-deftype-per-name](../rules/boot-one-deftype-per-name.md) |
+| 48 | Allocating inside a per-element lookup: the arena never frees | [pass-no-allocation-in-lookups](../rules/pass-no-allocation-in-lookups.md) |
 | 49 | New special form without an `ic-expr-node` case lowers to 0 | [icnf-new-form-needs-case](../rules/icnf-new-form-needs-case.md) |
 | 50 | New codegen sequence clobbers `r13`–`r15` | [cg-callee-saved-rbx-r12](../rules/cg-callee-saved-rbx-r12.md) |
 | 51 | Rewritten node without `zyl_span_copy` loses locations | [pass-copy-spans](../rules/pass-copy-spans.md) |

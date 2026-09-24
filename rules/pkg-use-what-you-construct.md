@@ -7,7 +7,7 @@
 Without the `use`, the constructor is unknown inside your module:
 
 - In a `match`, the unknown name becomes a catch-all, so the arms after it are reported as `E_UNREACHABLE_MATCH_ARM` — or, in the last arm, it silently catches everything.
-- In compiler code, the file compiles inside the flat `assemble.py` bundle (everything visible) and then fails with an undefined `_ZYL_<Ctor>` link error when resolved standalone.
+- A function from a module you did not `use` is `E_UNBOUND_VARIABLE` at the call. Compiler source is no exception: since 2026-09-24 the compiler is built through module resolution too ([boot-module-build](boot-module-build.md)), so nothing is visible without its `use`.
 
 ## Bad
 
@@ -36,4 +36,4 @@ Without the `use`, the constructor is unknown inside your module:
 ## See Also
 
 - [match-misspelled-last-arm](match-misspelled-last-arm.md)
-- [boot-assemble-bundle](boot-assemble-bundle.md)
+- [boot-module-build](boot-module-build.md)

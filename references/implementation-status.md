@@ -16,7 +16,7 @@ The spec (`zyl_specification.txt` v5.0) is normative for the language; the sourc
 | Closures | capture inference, region-assigned | capture by value; set! of captures rejected; recursive lambdas unsupported; spawn captures crash |
 | Match | exhaustive constructor patterns | exhaustive (constructor-name based); literal/OR/range/guard extension; no nested patterns; duplicate arms unreported |
 | Numerics | checked overflow, `E_DIVISION_BY_ZERO` | wrapping; SIGFPE (interpreter reports it); oversized literals → 0 |
-| Errors | `error` returns `(Err msg)`; `assert`, `unwrap` | `error` panics/unwinds to `try`; `assert`/`unwrap` not lowered; try hang bug on 2/4-arg fns |
+| Errors | `error` returns `(Err msg)`; `assert`, `unwrap` | `error` panics/unwinds to `try`; `assert`/`unwrap` panic without their message; try hang bug on 2/4-arg fns |
 | Contracts | profiles, injection phase 10 | parsed; conditions evaluated and ignored; `invariant` undefined |
 | Actors | receive, deterministic FIFO, Send checks | spawn + closure messages via FFI; `send` discarded; no receive; OS-scheduled (non-deterministic output); `let-mut`/Secret syntactic checks |
 | FFI | Pin + pinnable + enforced timeout | direct SysV call, ints/pointers only, no floats; timeout dropped; pin needed only for Secret; no callbacks |

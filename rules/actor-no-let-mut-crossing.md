@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Values crossing an actor boundary must be Send-capable (`TCap`/`TAtomic`). The check is syntactic (`mutability_check.zyl`): any `let-mut` name of the enclosing scope in a message or spawn body is `E_CAPABILITY_LEAK` (unlocated `PANIC:` line). A `Secret` crossing is `E_SECRET_ESCAPE`. The type-level Send predicate is not called, so `TBox`/`TPin`/non-Send fields are not rejected.
+Values crossing an actor boundary must be Send-capable (`TCap`/`TAtomic`). The check is syntactic (`mutability_check.zyl`): any `let-mut` name of the enclosing scope in a message or spawn body is `E_CAPABILITY_LEAK`, located at the `spawn`/`send` and naming the variable, with a label at its `let-mut`. A `Secret` crossing is `E_SECRET_ESCAPE`. The type-level Send predicate is not called, so `TBox`/`TPin`/non-Send fields are not rejected.
 
 ## Bad
 
