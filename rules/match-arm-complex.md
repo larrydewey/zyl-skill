@@ -10,7 +10,7 @@ An arm body shaped like `(+ 1 (f n m) (g n))` is rejected during ICNF lowering w
 
 ```lisp
 (match t
-  (Node v l r (+ 1 (size l) (size r))))   ; E_MATCH_ARM_COMPLEX (unlocated)
+  (Node v l r (+ 1 (size l) (size r))))   ; E_MATCH_ARM_COMPLEX, located
 ```
 
 ## Good

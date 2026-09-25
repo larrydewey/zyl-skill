@@ -27,7 +27,7 @@
 
 - Formats follow the static type: Int `%lld`, Float `%f` (six decimals), String `%s`, Bool as `1`/`0`, Unit as `0`. A value whose type has a `Show` impl prints `(Show.show v)`: `[1, 2]`, `Some(x)`, `{k: v}`, derived `Name(a, b)` for a variant and `Pt { x: 1, y: 2 }` for a struct ([trait-derive-show](trait-derive-show.md)). Inside a container, elements use `Show`, so Bools print `true`/`false`. A record or ADT without a `Show` impl prints its **address**; so does an Option/Result/List whose payload type has no `Show` impl (the container is printed raw). At the REPL, `=>` results print structurally.
 - Number to text: `(Show.show n)` for Int and Float; compiler code uses `(ffi-call "zyl_int_text" n 1000)`.
-- `read-line` is parsed but not lowered: it returns a null String, which prints as `(null)`. `exit` and `close` do nothing. See [fn-unlowered-forms](fn-unlowered-forms.md). File I/O: `file-open`/`file-read`/`file-write`/`file-close`.
+- `(read-line)` reads one line from stdin and flushes stdout first; `(exit code)` flushes output and ends the process ([fn-unlowered-forms](fn-unlowered-forms.md)). File I/O: `file-open`/`file-read`/`file-write`/`file-close`.
 - `print-int`, `print-float`, `print-string` and `print-bool` in the prelude take one argument of that type.
 - `print` is not capability-gated in packages; `print` of a `Secret` is `E_SECRET_DEBUG`, but a record holding a secret in a `Secret` field prints with that field as `<secret>`.
 

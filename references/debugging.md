@@ -18,8 +18,7 @@
 | `error[E_INVALID_CHAR]` | `@` `#` `$` `\|` `^` `\`, a lone `.`, non-ASCII or a BOM outside strings/comments (an old compiler instead truncated the file silently, giving `undefined reference to _ZYL_main`) | [syn-no-stray-characters](../rules/syn-no-stray-characters.md) |
 | Large integer printed instead of a value | a struct/ADT (or an `Option`/`List` of one) with no `Show` impl | `(derive T Show)` or an `impl Show` |
 | `1`/`0` printed for a Bool | `print` shows `Bool` as 1/0 | print `(if b "true" "false")` |
-| Value is 0 unexpectedly | `read-line`, `close`, oversized literal, out-of-range byte load, `print`'s `Unit` result printed | see [pitfalls](pitfalls.md) |
-| Program keeps running after `(exit n)` | `exit` is not lowered | return from `main` |
+| Value is 0 unexpectedly | oversized literal, out-of-range byte load, `print`'s `Unit` result printed | see [pitfalls](pitfalls.md) |
 | Match arm never taken / always taken | misspelled constructor (last arm catch-all); missing `use` of the defining module | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
 | `E_UNREACHABLE_MATCH_ARM` right after `Nil`/`None` in a module | constructor unknown there | add `(use core/list)` etc. |
 | `E_NESTED_PATTERN` | a constructor field written as a pattern, or a guard on a constructor arm | bind a name, match inside the body |

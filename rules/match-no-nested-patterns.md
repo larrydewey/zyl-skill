@@ -19,9 +19,7 @@ Patterns are flat (spec §4.9). A nested constructor pattern such as `(Some (Con
 (defn f (xs) (match xs (C a (C b _) (+ a b)) (_ 77)))   ; E_NESTED_PATTERN
 
 (deftype T (Node Int T T) (Leaf))
-(defn g (t) (match t (Node v Leaf _ v) (Leaf 0)))
-;; NOT caught: your own nullary constructor as a binder is just a variable
-;; named Leaf; the arm matches every Node
+(defn g (t) (match t (Node v Leaf _ v) (Leaf 0)))   ; E_NESTED_PATTERN (your own constructor too)
 ```
 
 ## Good

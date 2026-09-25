@@ -8,7 +8,7 @@ Since 2026-09-25 bodies that take several forms are real implicit `begin`s, scop
 
 The places that take exactly one expression are where multi-step code still goes wrong:
 
-- `if` takes a condition and at most two branches. **Anything after the else branch is silently dropped**: no diagnostic.
+- `if` takes a condition and at most two branches. A form after the else branch is `E_MALFORMED_FORM` (since 2026-09-25; it used to be dropped silently).
 - A `match` arm is a pattern followed by one body. Extra forms are read as part of the pattern, so `(Some n (print n) n)` is `E_NESTED_PATTERN` (the message talks about a constructor field, not about the missing `begin`).
 - `test` and `defmacro` take exactly one body form; more is `E_MALFORMED_FORM` ("malformed `test` form").
 
@@ -18,7 +18,7 @@ The places that take exactly one expression are where multi-step code still goes
 (if (> x 0)
   (print "positive")
   (print "not positive")
-  (print "done"))                 ; silently dropped, never runs
+  (print "done"))                 ; E_MALFORMED_FORM: a form after the else branch
 
 (match opt
   (Some n (print n) n)            ; E_NESTED_PATTERN

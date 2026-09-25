@@ -29,7 +29,7 @@ The type checker requires `main : () -> Int`. A `main` ending in `print` (which 
 ## Notes
 
 - Command-line arguments: `(ffi-call "zyl_argc" 1000)` and `(ffi-call "zyl_arg_str" i 1000)` (index 0 is the program path).
-- To fail with a non-zero status, return it from `main`, or `error` (a panic exits 1). `exit` is not lowered ([fn-unlowered-forms](fn-unlowered-forms.md)).
+- To fail with a non-zero status, return it from `main`, call `(exit code)` (flushes output and ends the process at once, without draining actors), or `error` (a panic exits 1).
 - A `main` in a module meant to be `use`d collides with the importer's: see [pkg-library-no-main](pkg-library-no-main.md).
 - `main` is never qualified to a canonical key, which also means the package capability check skips its body.
 - `main` is exempt from `W_UNUSED_FUNCTION` and is never inlined.

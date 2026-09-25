@@ -28,11 +28,10 @@ Generic ADTs are the main form of generics (`tests/regression/generics.zyl`, `ge
 ## Bad
 
 ```lisp
-(deftype Box (Bx a))                       ; lowercase: NOT a type parameter
-(+ 1 (match (Bx "s") (Bx v v)))            ; compiles and adds the string's address
+(deftype Box (Bx a))                       ; E_UNKNOWN_TYPE: lowercase is not a type parameter
 ```
 
-A lowercase unknown field type is a fresh type unrelated to the ADT's parameters, so what you read back is never checked (a soundness hole). Always write `T`, `A`, `K`, `V`.
+A lowercase field type is neither a type nor a parameter. It used to be a fresh type per use, so a field read back was never checked; since 2026-09-25 it is `E_UNKNOWN_TYPE`. Always write `T`, `A`, `K`, `V`.
 
 ## Notes
 

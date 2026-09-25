@@ -26,7 +26,7 @@ This is the core modelling tool: every "one of several shapes" value, every resu
 
 - Construction: `(Circle 5)`, `Red` or `(Red)` for nullary, `(Node 1 (Leaf) Leaf)`.
 - A variant name repeated inside one `deftype` is `E_DUPLICATE_VARIANT`; so is a prelude constructor name (`Some`, `None`, `Ok`, `Err`, `Cons`, `Nil`) ([data-no-redeclare-prelude](data-no-redeclare-prelude.md)).
-- Write type parameters uppercase. A lowercase unknown field type (`(Bx a)`) is not a parameter but an unchecked fresh type ([gen-generic-adts](gen-generic-adts.md)).
+- Write type parameters uppercase. A lowercase field type (`(Bx a)`) is `E_UNKNOWN_TYPE` ([gen-generic-adts](gen-generic-adts.md)).
 - Recursive fields are ordinary pointer words: no `Box` needed or available.
 - Tags are 0-based in declaration order per `deftype`. Each variant block is sized to its own fields; nullary variants are still blocks holding just the tag.
 - Want named fields? Use `defstruct` (`(name Type)` fields).

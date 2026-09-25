@@ -88,7 +88,7 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 | `print-int`, `print-float`, `print-string`, `print-bool` | lib (`core/core`), typed wrappers over `print` |
 | `(file-open path mode)` | fd (`Int`); -1 on failure; `mode` a literal `"r"`, `"w"`, `"a"`, optionally `+`/`b` (a variable is `E_TYPE_MISMATCH`) |
 | `(file-read fd n)` → `String`, `(file-write fd text)` → `Int` (`text` a `String`), `(file-close fd)` → `Int` | |
-| `read-line`, `exit`, `close` | **NL**: `read-line` is a null `String` (prints `(null)`), `exit` does not end the process, `close` is 0 |
+| `read-line`, `exit`, `close` | `(read-line)` is one stdin line without its newline (`""` at end of input); `(exit code)` flushes and ends the process; `(close fd)` is `file-close` |
 
 ## Actors and FFI
 

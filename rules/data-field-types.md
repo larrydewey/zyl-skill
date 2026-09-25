@@ -27,7 +27,7 @@ A field is one 8-byte word at run time. Its declared type (recorded at parse tim
 ## Notes
 
 - Uppercase unknown names in fields are type parameters: `(deftype Pair (Mk A B))`, `(defstruct Cell (v T) (w T))` (both fields one type).
-- Lowercase unknown names are not: in a `defstruct` field, `(x a)` is `E_TYPE_MISMATCH: field without a type`; in a `deftype` field, `(Bx a)` is silently unchecked ([gen-generic-adts](gen-generic-adts.md)).
+- Lowercase unknown names are not: in a `defstruct` field, `(x a)` is `E_TYPE_MISMATCH: field without a type`; in a `deftype` field, `(Bx a)` is `E_UNKNOWN_TYPE` ([gen-generic-adts](gen-generic-adts.md)).
 - A field of an applied type works: `(Path (Vec String) Err)`, `(Obj (Map String Val))`.
 - Record the fields' types even when inference would find them: it documents the data, puts the error at the construction instead of at a distant use, and keeps the record from becoming generic by accident.
 

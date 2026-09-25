@@ -16,7 +16,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 6 | `print` of a struct/ADT with no `Show` impl, or of an `Option`/`List` of one, prints an address; `print` of a `Bool` prints `1`/`0` | [trait-derive-show](../rules/trait-derive-show.md) |
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | [fn-conditionals](../rules/fn-conditionals.md) |
-| 9 | `read-line` is a null string, `exit` does not exit, `close` is 0 (not lowered) | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
+| 9 | `with-resource` runs no cleanup; `alias` makes a type variable | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
 | 10 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
 | 11 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 12 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
@@ -60,6 +60,12 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 
 | Was silent | Now |
 |---|---|
+| `read-line`, `exit`, `close` lowered to 0 | lowered: stdin line, process exit, `file-close` ([fn-unlowered-forms](../rules/fn-unlowered-forms.md)) |
+| lowercase `deftype` field type left the field unchecked | `E_UNKNOWN_TYPE` |
+| own nullary constructor in a binder slot bound a variable | `E_NESTED_PATTERN` |
+| a form after an `if`'s else branch was dropped | `E_MALFORMED_FORM` |
+| a comma in an import list (a trailing one swallowed `main`) | `E_MALFORMED_FORM` |
+| an extern'd `zyl_*` C function ran with no timeout | timed like any foreign call |
 | stray `'` `` ` `` `,` `@` `#` truncated the file | `'` `` ` `` `,` `,@` are quote/quasiquote/unquote tokens (a stray `,` is `E_MALFORMED_FORM`); `@ # $ \| ^ \` are `E_INVALID_CHAR` ([syn-no-stray-characters](../rules/syn-no-stray-characters.md)) |
 | unknown string escape → empty string | `E_INVALID_ESCAPE` |
 | nested pattern tested only the outer tag; guard on a constructor arm crashed, on `_` was ignored | `E_NESTED_PATTERN`; `_`/`range` guards `E_ARITY_MISMATCH` ([match-no-nested-patterns](../rules/match-no-nested-patterns.md), [match-guards-literal-arms-only](../rules/match-guards-literal-arms-only.md)) |

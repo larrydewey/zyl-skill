@@ -26,7 +26,7 @@ Module identity comes from the file path relative to its package root (without `
 - Missing file: lone file `E_MODULE_NOT_FOUND`; in a dependency `E_PKG_UNKNOWN_MODULE`; in the current package (currently) `E_PKG_UNDECLARED_DEP`.
 - `unsafe` is a reserved module name (`E_PKG_RESERVED_MODULE`); `:unsafe` imports are parsed and ignored.
 - The stdlib is one fully visible surface: `use`ing any stdlib module exposes every loaded stdlib definition. `core/core` is implicit.
-- No commas in import lists: `,` is the reader's unquote prefix, so `{ greet => hi, greet-twice }` reads `, greet-twice` as an unquote form. In a dependency import that is `E_PKG_UNKNOWN_SYMBOL` with an empty symbol name; in a lone file's import list it is not diagnosed and can silently drop definitions (a trailing comma in `{ aa, }` lost `main`, failing at link time).
+- No commas in import lists: `,` is the reader's unquote prefix, so `{ greet => hi, greet-twice }` reads `, greet-twice` as an unquote form. It is a located `E_MALFORMED_FORM` ("an import list holds names only"; a trailing comma, `{ aa, }`: "`,` needs a form after it"). Before 2026-09-25 a trailing comma swallowed the rest of the file.
 
 ## See Also
 

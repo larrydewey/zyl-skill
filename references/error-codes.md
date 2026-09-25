@@ -12,7 +12,7 @@ error[E_MALFORMED_PARAMETER]: `(struct-get ...)` is not a parameter
    |                   ^
    = help: a missing `)` earlier on the line puts the body in the list
 
-PANIC: E_MATCH_ARM_COMPLEX: ...           (unlocated)
+PANIC: E_INVALID_CAPABILITY: ...          (unlocated)
 ```
 
 ```text
@@ -43,7 +43,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_UNBALANCED_MISMATCHED_BRACKET` | R | `(` closed by `]` etc. |
 | `E_UNBALANCED_OPEN_STRING` | U | LSP balance check: unterminated string |
 | `E_MALFORMED_PARAMETER` | R | param not a name or `(name Type)`; `(a : Int)` ("write (a Int)"); `((T : Ord) x)`; a trait in type position, `(a Ord)` (`Secret` exempt; reported by the type pass); body swallowed by the param list; non-identifier macro param, misplaced `&rest`, non-identifier argument in a macro name position |
-| `E_MALFORMED_FORM` | R | a special form whose arguments have the wrong shape (it used to lower to the constant 0): `(let ((x 1) (y 2)) ...)`, `(let x 1)` with no body, `(if c)`, `(make-variant 1 2)`, a `defmacro` or `test` with more than one body form, a bare-`self` trait signature `(area self)`, `(quote a b)`; a name inside quoted data, `'(1 a)`, or outside an unquote in a quasiquote; a nested quasiquote; a `,` or `,@` outside a quasiquote and a macro template; in a template, `,@` where a fixed number of expressions is taken (an `if`, constructor fields, which include `(list ,@xs)` and `[,@xs]`) or of anything but the `&rest` parameter. Raised by `arity_check`, `expr_inner` (quote/quasiquote) and `macro_expand`; located |
+| `E_MALFORMED_FORM` | R | a special form whose arguments have the wrong shape (it used to lower to the constant 0): `(let ((x 1) (y 2)) ...)`, `(let x 1)` with no body, `(if c)`, `(make-variant 1 2)`, a `defmacro` or `test` with more than one body form, a bare-`self` trait signature `(area self)`, `(quote a b)`; a name inside quoted data, `'(1 a)`, or outside an unquote in a quasiquote; a nested quasiquote; a `,` or `,@` outside a quasiquote and a macro template; in a template, `,@` where a fixed number of expressions is taken (an `if`, constructor fields, which include `(list ,@xs)` and `[,@xs]`) or of anything but the `&rest` parameter; a form after an `if`'s else branch; a quote or unquote with nothing after it, and a non-name in an import list (`{ a, b }`). Raised by `arity_check`, `expr_inner`, `parser`, `module_resolver` and `macro_expand`; located |
 | `E_UNEXPECTED_TOKEN_IN_EXPR` | R | load/store endian not `:le`/`:be`; bytebuf capacity not an integer literal or region not a region name; unlocated |
 | `E_RESERVED_KEYWORD` | C | catalogued (spec §28), not raised |
 | `E_UNEXPECTED_EOF`, `E_INTEGER_OVERFLOW`, `E_FLOAT_OVERFLOW`, `E_UNBALANCED_PARENS`, `E_EXPECTED_RPAREN/RBRACKET/RCURLY`, `E_EXPECTED_EXPRESSION`, `E_EMPTY_LIST`, `E_ATOM_AS_OPERATOR` | C | an integer literal ≥ 2^63 silently becomes **0** |
@@ -69,7 +69,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_DUPLICATE_VARIANT` | R | variant repeated in one `deftype`; a program type reusing a prelude constructor (`Some None Ok Err Cons Nil`) |
 | `E_DUPLICATE_PARAMETER` | U | repeated param (`_`/`_x` exempt), from `unused_check` |
 | `E_INVALID_CAPABILITY` | R | a closure written inline as an `ffi-call` argument (`mutability_check`); unlocated |
-| `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_TYPE`, `E_UNKNOWN_GENERIC_PARAM` | C | an unknown type name in an annotation is **not** an error: it becomes a type parameter (`(a Intt)` accepts any type) |
+| `E_UNKNOWN_TYPE` | R | a lowercase field type in `deftype`, `(Bx a)` (neither a type nor an uppercase parameter); located |
+| `E_RETURN_TYPE_MISMATCH`, `E_UNKNOWN_GENERIC_PARAM` | C | an unknown capitalized type name in an annotation is **not** an error: it becomes a type parameter (`(a Intt)` accepts any type) |
 
 ## Matching
 
@@ -78,8 +79,8 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_NON_EXHAUSTIVE_MATCH` | U | constructor match missing a variant, no `_` (`exhaustiveness_check`) |
 | `E_UNREACHABLE_MATCH_ARM` | U | arm after a catch-all (incl. misspelled/unknown constructor), or a repeated constructor arm |
 | `E_MATCH_NONEXHAUSTIVE` | R | literal match without trailing `_`; from lowering, a variant missed when the subject's ADT is only known there (shared variant names); unlocated |
-| `E_NESTED_PATTERN` | R | a constructor field that is itself a pattern, `(Some (Cons x _) ...)`, including a guard on a constructor arm, `(Some x (when c) ...)`; located |
-| `E_MATCH_ARM_COMPLEX` | R | arm body: one binop with a constant and ≥ 2 calls, `(+ 1 (g x) (g x))`; unlocated |
+| `E_NESTED_PATTERN` | R | a constructor field that is itself a pattern, `(Some (Cons x _) ...)`, including a guard on a constructor arm, `(Some x (when c) ...)`, and a known constructor in a binder slot, `(Node v Leaf v)`; located |
+| `E_MATCH_ARM_COMPLEX` | R | arm body: one binop with a constant and ≥ 2 calls, `(+ 1 (g x) (g x))`; located |
 
 ## Capabilities, aliasing, secrets
 

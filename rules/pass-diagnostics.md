@@ -28,7 +28,7 @@ Located today: `E_MALFORMED_PARAMETER`, balance errors, `E_ARITY_MISMATCH`, `E_N
 ## Notes
 
 - The LSP turns on `zyl_warn_capture`, runs the checks and the type pass, and parses the captured text reports (`diagnostics-from-errors` in `stdlib/lsp/compiler_bridge.zyl`), so anything emitted through `zyl_warn_emit` with a location reaches the editor. A bare `zyl_panic` reaches it only as the one error that stopped the analysis.
-- Still open: colorized output; the LSP reads the text form, not JSON; in JSON mode the type pass's final summary is an object with an empty `code` whose `message` still starts `error[E_...]`.
+- Still open: colorized output; the LSP reads the text form, not JSON. In JSON mode a panic message of the form `E_CODE: text` or `error[E_CODE]: text` becomes an object with that code (`zyl_panic_json`).
 - Never build a snippet by hand: a source line can be hundreds of KB, and padding built one character at a time is quadratic. `space-run` and `zyl_span_snippet` are already safe.
 - Every check except the type pass stops at its first error (a `zyl_panic`). The type pass reports all its errors, then fails; a new type rule should report through `ta-type-error` (or `ta-strict`, which picks the code from the message) and return a poisoned or fresh type so checking continues.
 

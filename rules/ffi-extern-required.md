@@ -39,7 +39,7 @@ An extern is a top-level form; it may appear after its use. Its parameter list m
 ## Notes
 
 - Declare the C signature as it is used: `(extern "strdup" (String) Ptr)` with `(extern "free" (Ptr) Unit)` keeps the returned pointer a `Ptr`, so it cannot be mistaken for a Zyl string; `alloc-cstr` copies it out.
-- A C function you name `zyl_...` is still a foreign symbol for typing (it needs an extern), but ICNF lowering calls every `zyl_`-prefixed symbol directly, bypassing the timed worker. Give your own C functions another prefix.
+- A C function you name `zyl_...` is a foreign symbol: it needs an extern, and a symbol with an extern runs on the timed worker. An extern for a runtime entry (one the runtime exports, or one with a table signature such as `zyl_now_ms`) is `E_FFI_RESTRICTED`.
 - Extern types are restricted to what fits one integer register; see [ffi-extern-word-sized-types](ffi-extern-word-sized-types.md).
 
 ## See Also
