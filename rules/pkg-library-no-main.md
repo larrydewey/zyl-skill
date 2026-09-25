@@ -11,7 +11,7 @@
 ```lisp
 ; mathlib.zyl
 (defn square (x) (* x x))
-(defn main () (print (square 4)))     ; breaks every importer
+(defn main () (begin (print (square 4)) 0))   ; breaks every importer
 ```
 
 ## Good

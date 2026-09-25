@@ -1,4 +1,4 @@
-# err-try-even-arity-hang
+# err-try-any-arity
 
 > Catching `error` from a call of any arity works now (the 2/4-argument hang was fixed 2026-09-24); remove old workarounds that kept erroring functions at odd arity.
 

@@ -1,38 +1,62 @@
 # fn-begin-multi-form-bodies
 
-> Wrap every body that has more than one form in `begin`.
+> Wrap every multi-step `if` branch and `match` arm body in `begin`; other bodies (`defn`, `let`, `fn`, `while`, `for`, `cond` clauses, `catch` handlers) already sequence their forms, while `test` and `defmacro` take exactly one.
 
 ## Why It Matters
 
-`defn`, `let` and `test` accept several forms directly, but then a `let` that is one of those forms **stays in scope for the forms after it**. Shadowing then leaks: the outer name is replaced for the rest of the body. `begin` gives the scoping the language defines. `if` branches and `match` arm bodies take exactly one expression, so a multi-step branch *must* be a `begin`.
+Since 2026-09-25 bodies that take several forms are real implicit `begin`s, scoped as the language defines: a `let` that is one form of a body no longer leaks into the forms after it (it used to replace the outer name for the rest of the body), and `fn`, `catch` handlers and `cond` clauses no longer keep only their last form.
+
+The places that take exactly one expression are where multi-step code still goes wrong:
+
+- `if` takes a condition and at most two branches. **Anything after the else branch is silently dropped**: no diagnostic.
+- A `match` arm is a pattern followed by one body. Extra forms are read as part of the pattern, so `(Some n (print n) n)` is `E_NESTED_PATTERN` (the message talks about a constructor field, not about the missing `begin`).
+- `test` and `defmacro` take exactly one body form; more is `E_MALFORMED_FORM` ("malformed `test` form").
 
 ## Bad
 
 ```lisp
-(defn main ()
-  (let x 10
-    (let x 20 (print x))   ; prints 20
-    (print x)))            ; ALSO prints 20: the inner let leaked
+(if (> x 0)
+  (print "positive")
+  (print "not positive")
+  (print "done"))                 ; silently dropped, never runs
+
+(match opt
+  (Some n (print n) n)            ; E_NESTED_PATTERN
+  (None 0))
+
+(defmacro two (a b) (print a) (print b))   ; E_MALFORMED_FORM
 ```
 
 ## Good
 
 ```lisp
+(begin
+  (if (> x 0)
+    (print "positive")
+    (print "not positive"))
+  (print "done"))
+
+(match opt
+  (Some n (begin (print n) n))
+  (None 0))
+
+(defmacro two (a b) (begin (print a) (print b)))
+
 (defn main ()
   (let x 10
-    (begin
-      (let x 20 (print x)) ; 20
-      (print x)            ; 10
-      0)))
+    (let x 20 (print x))          ; 20 (W_SHADOWED_BINDING)
+    (print x)                     ; 10: the inner let does not leak
+    0))
 ```
 
 ## Notes
 
-- `(begin e1 ... en)` evaluates left to right; its value is `en`. An empty `begin` is 0.
-- A `catch` handler is one expression: use `begin` or call a function.
-- Macro bodies keep only their last form, so macros also need `begin` for several steps.
+- `(begin e1 ... en)` evaluates left to right; its value is `en`. An empty `(begin)` is the Unit value, like `unit`.
+- Every form but the last in a body is a statement; its value is discarded, so a non-Unit value there is fine.
+- A macro with several steps puts them in one `begin`; with a `&rest` body, splice it: `(begin ,@body)` ([macro-quasiquote-and-rest](macro-quasiquote-and-rest.md)).
 
 ## See Also
 
 - [fn-let-single-binding](fn-let-single-binding.md) - the other `let` trap
-- [macro-template-no-quasiquote](macro-template-no-quasiquote.md) - one body form per macro
+- [fn-conditionals](fn-conditionals.md) - `if` shapes and Bool conditions
+- [match-arm-shape](match-arm-shape.md) - one pattern, one body

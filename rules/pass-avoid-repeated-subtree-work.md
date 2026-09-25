@@ -8,8 +8,9 @@ Type inference once inferred the last statement of every body twice. With right-
 
 ## Notes
 
+- Whole-program fixpoints multiply the cost: region summaries and reuse facts are recomputed per round, so a per-node cost that is fine once can dominate. The reuse pass re-walks only functions that call one whose facts changed last round, and searches liveness only at a candidate site; follow that shape.
 - Deep recursion over trees is normal (non-tail recursion; the big stack absorbs it).
-- Allocate from the per-compile arena; it is never freed during the compile (`E_OUT_OF_MEMORY` past the budget).
+- Assume what you allocate is kept: compiler data mostly escapes into results or global tables, so it lands in the heap, which is never freed during the compile (`E_OUT_OF_MEMORY` past the budget). Per-call regions reclaim only temporaries proven to die in their call.
 
 ## See Also
 

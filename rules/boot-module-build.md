@@ -12,6 +12,7 @@ Since 2026-09-24 there is no bundle. `selfhost/assemble.py` and `selfhost/zyl_se
 - Every file is balance-checked on its own before it is parsed ([boot-parens-per-file](boot-parens-per-file.md)).
 - Type and variant names still clash across modules ([boot-one-deftype-per-name](boot-one-deftype-per-name.md)).
 - Contracts are lowered in `expr_inner.zyl` (`contract-defn-body`, `contract-check`); there is no separate contract-injection module.
+- The whole compiler is type-checked as one program by the sound checker: every type error in any module is listed, then the stage fails. Runtime entries it calls are typed by the seed's `ffi_sigs.zyl` ([boot-fixed-point-workflow](boot-fixed-point-workflow.md)), and raw word entries (`ffi-raw-p`) are allowed because the compiler is standard-library code.
 
 ## Where the source comes from
 

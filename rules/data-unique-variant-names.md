@@ -4,13 +4,16 @@
 
 ## Why It Matters
 
-Two `deftype`s may share a variant name without an error, but then: construction builds the variant of the **later** declaration, and the exhaustiveness checker **skips** every `match` whose arms use the shared name (it infers the scrutinee's type from constructor names and refuses to guess). You lose exhaustiveness checking silently. Duplicate type definitions produce incompatible constructor identities and matches against them fail silently; a second `deftype` with an existing name is `E_DUPLICATE_DEFINITION`.
+Two `deftype`s may share a variant name without an error, but the name then means only the variant of the **later** declaration, in construction and in patterns alike. The earlier type's variant becomes unreachable: you cannot build it, a `match` over the earlier type cannot name it (`E_TYPE_MISMATCH: cannot unify Shape with Token`), and the exhaustiveness checker still demands it (`E_NON_EXHAUSTIVE_MATCH: match over `Shape` does not cover variant `Square``), so only a `_` arm can cover it. A second `deftype` with an existing type name is `E_DUPLICATE_DEFINITION`; a prelude constructor name (`Some`, `Cons`, ...) is `E_DUPLICATE_VARIANT`.
 
 ## Bad
 
 ```lisp
 (deftype Shape (Circle Int) (Square Int))
-(deftype Token (Square) (Round))     ; Square shared: matches on it are unchecked
+(deftype Token (Square) (Round))     ; Square now means Token's Square only
+
+(defn side (s) (match s (Circle n n) (Square n n)))
+;; E_TYPE_MISMATCH: cannot unify Shape with Token
 ```
 
 ## Good

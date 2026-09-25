@@ -9,7 +9,7 @@ Module resolution gives a macro the canonical key of a same-named imported funct
 ## Good
 
 ```lisp
-(defmacro unless (c body) (if (not c) body 0))
+(defmacro unless (c body) (if (not c) body unit))
 (defn main ()
   (begin
     (unless true (print "should not print"))   ; not printed
@@ -20,7 +20,8 @@ Module resolution gives a macro the canonical key of a same-named imported funct
 ## Notes
 
 - Without the macro, prelude `unless` is a function: both arguments are evaluated and the body prints.
-- A macro and a `defn` with the same name in the same file is `E_DUPLICATE_DEFINITION`.
+- A macro and a `defn` with the same name in the same file is `E_DUPLICATE_DEFINITION` ("function `unless` has the same name as a macro").
+- The else branch must have the body's type: `(if (not c) body 0)` around a `print` is `E_TYPE_MISMATCH` (Unit against Int).
 
 ## See Also
 

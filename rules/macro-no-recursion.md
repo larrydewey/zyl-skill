@@ -22,4 +22,5 @@ The body is never evaluated at expansion time, so a guarding `if` does not stop 
 
 ## See Also
 
-- [macro-template-no-quasiquote](macro-template-no-quasiquote.md)
+- [macro-template-is-literal-code](macro-template-is-literal-code.md)
+- [macro-quasiquote-and-rest](macro-quasiquote-and-rest.md)

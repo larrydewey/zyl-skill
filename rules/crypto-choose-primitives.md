@@ -9,7 +9,7 @@ The library ships safe defaults and deliberately omits dangerous options. Pickin
 | Need | Use | Notes |
 |---|---|---|
 | AEAD | `math/crypto/symmetric/chacha20poly`: `(aead-encrypt arena key nonce aad aadlen pt ptlen)` → ciphertext‖tag; `(aead-decrypt arena key nonce aad aadlen sealed ctlen)` → `(Some pt)`/`None` | no decrypt-without-verify entry point |
-| AEAD (hardware) | `aesgcm`: `gcm-encrypt`/`gcm-decrypt` (+ key length arg), `gcm-seal`/`gcm-open` | requires AES-NI; `aes-available` 0 → returns `None` |
+| AEAD (hardware) | `aesgcm`: `gcm-encrypt`/`gcm-decrypt` (+ key length arg); `gcm-seal`/`gcm-open` are the lower-level halves | requires AES-NI: when `(aes-available)` is `false`, both return `None` |
 | Key agreement | `x25519-public`, `(x25519 arena priv pub)`, `x25519-checked` | |
 | KDF | `(hkdf arena ikm ikmlen salt saltlen info infolen outlen)`, `hkdf-extract`/`-expand`; `pbkdf2-sha256`; `argon2id-hash` | distinct `info` labels per direction |
 | Signatures | `ed25519-public-key`, `ed25519-sign`, `ed25519-verify`; ECDSA (P-256, secp256k1, P-384) with RFC 6979 nonces; RSA-PSS | |
@@ -23,6 +23,8 @@ The library ships safe defaults and deliberately omits dangerous options. Pickin
 PKCS#1 v1.5 (padding oracles), software AES (cache-timing), RSA key generation (too slow), randomized ECDSA nonces (nonce reuse), DER signature encoding (fixed-width r‖s only).
 
 ## Notes
+
+- Every byte-string argument and result is a `Words` handle and every length an `Int` ([crypto-representations](crypto-representations.md)); a decryption that can fail returns `(Option Words)` (`aead-decrypt`, `gcm-decrypt`).
 
 - `tests/integration/math-protocol.zyl` is the reference protocol: two X25519 key pairs → HKDF into two directional keys → ChaCha20-Poly1305 message → Ed25519-signed transcript.
 - Verification layers: published vectors (`--filter math`), `verify/sha2.py`, `verify/crypto.py` (vs hashlib + pyca), `verify/timing.py`.

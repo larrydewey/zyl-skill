@@ -23,15 +23,22 @@ Binding a second name to a `let-mut` Int gives an independent copy, so later `se
 
 ```lisp
 (use collections/map)
-(let m1 (map-put (map-create 0 4) 1 100)
+(use collections/vec)
+(let m1 (map-put (map-create-default 4) 1 100)
   (let m2 (map-put m1 1 111)      ; overwrites in the shared buffer
     (map-get m1 1 0)))            ; 111, not 100
+
+(let v1 (vec-push (vec-create-default 4) 1)
+  (let v2 (vec-push v1 2)         ; writes slot 1 of the shared storage
+    (let v3 (vec-push v1 3)       ; writes slot 1 again
+      (vec-get v2 1))))           ; 3, not 2
 ```
 
 ## Notes
 
 - Representation: Int untagged; Float as raw IEEE bits; Bool 0/1; String = pointer to NUL-terminated bytes; struct/ADT = pointer to `[hidden size][tag][field0]...`; capturing closure = pointer to `[tag code env]`; Vec/Map = ordinary structs.
 - Capability and region information is compile-time only and erased.
+- The reuse pass (`compiler/reuse.zyl`) writes an update into the old block only when no second name can see it, so it never causes this aliasing; the collections' shared storage does.
 
 ## See Also
 

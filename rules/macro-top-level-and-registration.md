@@ -9,7 +9,7 @@ All top-level `defmacro`s are collected before any expansion (`me-collect`), the
 ## Good
 
 ```lisp
-(defn main () (print (triple 7)))       ; used before definition: 21
+(defn main () (begin (print (triple 7)) 0))   ; used before definition: 21
 (defmacro triple (x) (+ x (+ x x)))
 ```
 

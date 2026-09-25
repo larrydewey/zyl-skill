@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The arm is positional: the last element is the body, everything between the constructor and the body binds fields in declaration order. An arm with the wrong number of binders misassigns fields. A nullary arm is `(None body)`, not `None body`.
+The arm is positional: the last element is the body, everything between the constructor and the body binds fields in declaration order. The number of binders is **not checked**: `(Mk a a)` for a two-field `Mk` binds `a` to the first field and returns it, and extra binders read past the fields. A nullary arm is `(None body)`, not `None body`. A binder must be a plain name: a constructor or a guard there is `E_NESTED_PATTERN` ([match-no-nested-patterns](match-no-nested-patterns.md)).
 
 ## Good
 
@@ -29,8 +29,8 @@ The arm is positional: the last element is the body, everything between the cons
 
 - `match` is an expression; it works in value position (let values, call args, if branches, nested arm bodies).
 - The scrutinee is evaluated once.
-- Every arm should produce the same type. This is **not checked**; mismatched arm types compile.
-- A Float or String bound by a pattern has its field's declared type ([data-field-types](data-field-types.md)).
+- Every arm must produce the same type: `(match l (Red 1) (Green "g"))` is `E_TYPE_MISMATCH`.
+- A binder has its field's declared type, or the instantiated type parameter ([data-field-types](data-field-types.md)).
 
 ## See Also
 

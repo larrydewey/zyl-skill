@@ -21,7 +21,14 @@ Arguments are copied into the body as source. A parameter used twice evaluates i
 (defmacro square (x) (square-fn x))           ; or delegate to a function
 ```
 
+## Notes
+
+- `&rest` arguments follow the same rule: every `,@body` in the template places every argument once more, so splice a rest parameter once.
+- The expansion is type-checked like hand-written code, so a double evaluation is never hidden by a type error; it simply happens.
+
 ## See Also
+
+- [macro-quasiquote-and-rest](macro-quasiquote-and-rest.md)
 
 - [macro-hygiene](macro-hygiene.md)
 - [macro-prefer-functions](macro-prefer-functions.md)

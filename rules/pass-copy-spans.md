@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Nodes carry no span field. The reader records each node's byte offset in a runtime table keyed by node address. That is how a late error such as codegen's `E_UNBOUND_VARIABLE` still prints `--> file:line:col` with a caret. A pass that rewrites nodes and skips the copy loses locations for everything downstream. (The table is only ever probed by key, never iterated, so address keys don't break determinism.)
+Nodes carry no span field. The reader records each node's byte offset in a runtime table keyed by node address. That is how a late error (every type-pass error, reported after macro expansion, derive and impl lifting rebuilt nodes; codegen's backstop `E_UNBOUND_VARIABLE`) still prints `--> file:line:col` with a caret. A pass that rewrites nodes and skips the copy loses locations for everything downstream, and the language server can publish only located diagnostics. Helpers: `ast-span-like` (AST), `ic-keep-span` and `opt-keep` (ICNF); the type pass copies spans onto every node of a specialized instance (`ta-copy`). (The table is only ever probed by key, never iterated, so address keys don't break determinism.)
 
 ## See Also
 

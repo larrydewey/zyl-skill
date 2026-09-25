@@ -10,11 +10,13 @@ knowledge of [Zyl](https://github.com/larrydewey/zyl) — the deterministic,
 self-hosted Lisp systems language — for writing, reviewing and debugging Zyl
 code and the Zyl compiler itself.
 
-Zyl's specification describes much more than the compiler currently
-implements, and many of the gaps fail *silently*: the program compiles and
-computes the wrong answer. An agent working from the spec, or from general
-Lisp knowledge, will write code that looks right and isn't. This skill records
-what the compiler **actually does today**, so the agent writes code that works.
+Zyl's specification describes more than the compiler currently implements.
+The type checker is now sound and rejects every type error, but some gaps
+still fail *silently* (the program compiles and computes the wrong answer),
+and many habits from the spec or from other Lisps are now compile errors. An
+agent working from the spec, or from general Lisp knowledge, will write code
+that looks right and isn't. This skill records what the compiler **actually
+does today**, so the agent writes code that works.
 
 > **The spec is the design; the compiler is the truth.** When a rule and the
 > spec disagree, follow the rule. When a rule and the compiler disagree, the
@@ -22,7 +24,7 @@ what the compiler **actually does today**, so the agent writes code that works.
 
 ## What's Inside
 
-- **172 rules** in 26 categories, grouped into five tiers and prioritized by
+- **180 rules** in 26 categories, grouped into five tiers and prioritized by
   impact (CRITICAL = silent miscompile, wrong result or crash).
 - **8 reference tables** for fast lookup: silent-failure pitfalls, error
   codes, built-ins, the standard library, the compiler pipeline,
@@ -99,14 +101,17 @@ or when you ask about Zyl. You can also invoke it directly with `/zyl`.
 A few examples of what the rules catch:
 
 ```lisp
-(let ((x 1) (y 2)) (+ x y))        ; not rejected -- compiles to the wrong program
-(let x 1 (let y 2 (+ x y)))        ; correct: let binds exactly one name
+(defstruct P (x Int))
+(print (make-P 1))                 ; prints an address: P has no Show impl
+(derive P Show)                    ; correct: now prints P { x: 1 }
 
-(defn greet (name) (print name))   ; prints the string's address as an integer
-(defn greet ((name String))        ; correct: annotate String/Float params
-  (print-string name))
+(print 0xFF51AFD7ED558CCD)         ; a literal >= 2^63 silently becomes 0
+(print -49064778989728563)         ; correct: the same bits as a negative Int
 
-(+ 1.5 2)                          ; Int/Float mix: garbage, no diagnostic
+(defn f ((a Intt)) a)              ; misspelled type: a type parameter, no error
+
+(let ((x 1) (y 2)) (+ x y))        ; E_MALFORMED_FORM: let binds exactly one name
+(+ 1.5 2)                          ; E_TYPE_MISMATCH: Int and Float never mix
 ```
 
 ## Rule Format

@@ -31,6 +31,7 @@
 
 - In pure code, don't use `let-mut` at all: thread the value through function results (`count-entry st e` returns a new `Stats`).
 - Because fields are immutable, aliasing a struct pointer is always safe. Collections (`Vec`/`Map`/`Set`) are the exception: they write into shared buffers.
+- Rebuilding is cheaper than it looks: when the old record is provably unique and dead, the compiler may write the new one into its block (`compiler/reuse.zyl`, `ZYL_REUSE=0` to disable). This never changes what the program observes.
 
 ## See Also
 

@@ -22,11 +22,12 @@ long long fast_triple(long long n) { return n * TRIPLE; }
 
 ```lisp
 ; fast.zyl
-(defn triple (n) (ffi-call "fast_triple" n 1000))
+(extern "fast_triple" (Int) Int)       ; the C signature: without it the call is E_CANNOT_INFER
+(defn triple ((n Int)) (ffi-call "fast_triple" n 1000))
 (defn main () (begin (print (triple 14)) 0))
 ```
 
-`zyl build && ./fast` prints 42.
+`zyl build && ./fast` prints 42 (verified 2026-09-25).
 
 ## Notes
 

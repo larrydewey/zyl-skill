@@ -1,4 +1,4 @@
-# fn-no-toplevel-def
+# fn-toplevel-def
 
 > Use a top-level `(def name expr)` for constants: an immutable global, evaluated once in source order before `main` or the tests.
 
@@ -29,6 +29,7 @@ Until 2026-09-24 a top-level `def` was unreadable in compiled code (`E_UNBOUND_V
 ## Notes
 
 - Types are inferred as for any expression: String, Float and ADT defs print correctly.
+- A def is **not generalized** (the value restriction): `(def empty Nil)` has one element type, so using it as both a `(List Int)` and a `(List String)` is `E_TYPE_MISMATCH`. Use a zero-argument `defn` for a polymorphic constant.
 - A def may use functions and earlier or later defs; each is computed on first need, and every def is forced in source order before `main`'s body.
 - A local `let` of the same name shadows the def.
 - Implementation: `convert-program` in `expr_inner.zyl` turns each def into a caching getter (`zyl_global_*` runtime cells) and each use into a call.

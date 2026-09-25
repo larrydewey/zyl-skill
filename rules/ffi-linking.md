@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`zyl file.zyl` always links with exactly `cc -no-pie prog.s actor_runtime.c -o prog -lpthread`. The CLI accepts only `-o` and `--emit-asm`; any other word after the source becomes the output path. A missing C symbol is an ordinary linker error.
+`zyl file.zyl` always links with `cc -no-pie prog.s <runtime> -o prog -lpthread`, where `<runtime>` is the prebuilt `actor_runtime.o` next to `actor_runtime.c` when it is newer, else `-O2 actor_runtime.c`. The single-file CLI takes `-o`, `--emit-asm`, `--error-format=json` and `--contracts=P`, and no objects or libraries. A missing C symbol is an ordinary linker error. Linking is the last step: the program must already type-check, so every foreign symbol needs its `(extern ...)` declaration (see [ffi-extern-required](ffi-extern-required.md)).
 
 ## Good: by hand
 
@@ -36,5 +36,6 @@ cc -no-pie ffi-demo.s mylib.c ~/.zyl/actor_runtime.c -o ffi-demo -lpthread -lm
 
 ## See Also
 
+- [ffi-extern-required](ffi-extern-required.md)
 - [pkg-native-dependencies](pkg-native-dependencies.md)
 - [tool-cli-arguments](tool-cli-arguments.md)

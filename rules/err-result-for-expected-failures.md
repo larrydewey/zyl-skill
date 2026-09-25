@@ -34,6 +34,7 @@ Errors are values in Zyl. There is no null, no exceptions for control flow, and 
 
 ## Notes
 
+- `Result` is `(Result T E)` and checked: every `Ok` a function returns has one type, and so does every `Err` (`(if c (Err "x") (Err 3))` is `E_TYPE_MISMATCH`). For several error kinds, make `E` your own ADT. An error ADT without a `Show` impl prints as an address inside `Err(...)`: derive `Show`.
 - Chain steps with nested `match`, or `(result-and-then r f)` (Result first, function second).
 - Conversions: `option-to-result opt err`, `result-to-option res`.
 

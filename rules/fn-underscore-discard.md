@@ -10,7 +10,7 @@
 
 ```lisp
 (defn first-of (a d1) a)          ; W_UNUSED_PARAMETER, and noise
-(match xs (Cons h t h) (Nil 0))   ; W_UNUSED_VARIABLE for t
+(match xs (Cons h t h) (Nil 0))   ; no warning, but `t` reads as if it mattered
 ```
 
 ## Good
@@ -25,7 +25,8 @@
 ## Notes
 
 - Warnings (`W_UNUSED_FUNCTION`, `W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`) go to stderr and never stop a build. `main` is exempt from `W_UNUSED_FUNCTION`.
-- The LSP does not show `W_` warnings.
+- Match-arm pattern binders are checked for shadowing but not for being unused, so an unused `t` above is silent; write `_` anyway.
+- The language server publishes these warnings (the unused check's `W_UNUSED_*` and `W_SHADOWED_BINDING`) as Warning diagnostics.
 - Hygiene-renamed macro binders keep their leading underscore.
 
 ## See Also

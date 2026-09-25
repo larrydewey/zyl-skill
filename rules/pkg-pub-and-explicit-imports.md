@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Visibility has two levels: package-private (default, visible to every module of the package) and `pub` (visible to dependents). `pub` prefixes a definition inline; it is not a wrapper list. `(export sym)` is deprecated and **dropped without effect**: exporting a non-`pub` definition still fails with `E_PKG_PRIVATE_SYMBOL`. Explicit import lists are checked at resolution time; with `*` or a bare path, a private symbol is not diagnosed by the resolver and survives to a codegen `E_UNBOUND_VARIABLE` / link error.
+Visibility has two levels: package-private (default, visible to every module of the package) and `pub` (visible to dependents). `pub` prefixes a definition inline; it is not a wrapper list. `(export sym)` is deprecated and **dropped without effect**: exporting a non-`pub` definition still fails with `E_PKG_PRIVATE_SYMBOL`. Explicit import lists are checked at resolution time; with `*` or a bare path, a private symbol is not diagnosed by the resolver; the type checker then reports the call as a located `E_UNBOUND_VARIABLE` (`call to undefined function `helper``), which does not say the function exists but is private.
 
 ## Good
 

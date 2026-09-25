@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The `trait` declaration types calls of its methods (impls are not checked against it), and the **orphan rule** is enforced at the package boundary: an impl is legal only if the package defines the trait or the type. `(impl Describe Int ...)` without a local `(trait Describe ...)` is `E_PKG_ORPHAN_IMPL` (neither `Int` nor an undeclared trait is yours). Coherence C1 (one impl per pair) is checked: a second impl of one trait for one type, or deriving the same trait twice, is a located `E_DUPLICATE_IMPL`. A call with no impl for a receiver of known type is a located `E_TRAIT_NOT_FOUND` (`= help: add (impl Trait Type ...)`).
+The `trait` declaration types calls of its methods and each impl's methods, and the **orphan rule** is enforced at the package boundary: an impl is legal only if the package defines the trait or the type. `(impl Describe Int ...)` without a local `(trait Describe ...)` is `E_PKG_ORPHAN_IMPL` (neither `Int` nor an undeclared trait is yours). Coherence C1 (one impl per pair) is checked: a second impl of one trait for one type, or deriving the same trait twice, is a located `E_DUPLICATE_IMPL`. A call with no impl for a receiver of known type is a located `E_TRAIT_NOT_FOUND` (`= help: add (impl Trait Type ...)`).
 
 `(impl-not Trait Target)` is a top-level declaration checked over the whole program after module resolution. `Target` is a type, or a trait (then every implementor, in any declaration order). Any `impl` or `derive` of the forbidden pair, in any module or package, is `E_IMPL_FORBIDDEN`. Its **flow rule** closes the wrapper loophole: the result of an impl of `Trait` for *any* type may not derive from a protected value (a value of the target type, a field of that type, a `match` binder of one) — also `E_IMPL_FORBIDDEN`. For `Show`, protected types get a compiler-made `Show` printing `<hidden>`, and a derived `Show` prints such fields as `<hidden>`. The prelude declares `(impl-not Show Secret)`, so a `Show` impl/derive for a Secret type is forbidden (it prints `<secret>`). `declassify` is the explicit escape from the flow rule.
 
@@ -23,16 +23,16 @@ The `trait` declaration types calls of its methods (impls are not checked agains
 ;; error[E_IMPL_FORBIDDEN]: `Dump` cannot be implemented for `Handle`
 (defstruct Conn (host String) (h Handle))
 (impl Dump Conn (defn dump (self) self.h.fd))
-;; PANIC: E_IMPL_FORBIDDEN: the result of `Dump.dump for Conn` is derived from a value that an (impl-not Dump ...) declaration protects
+;; error[E_IMPL_FORBIDDEN]: the result of `Dump.dump for Conn` is derived from a value that an (impl-not Dump ...) declaration protects; a wrapper cannot expose it through this trait
 ```
 
 ## Good
 
 ```lisp
-(trait Describe (describe self))
+(trait Describe (describe (self) Int))
 (impl Describe Int (defn describe (self) self))
 
-(impl Dump Conn (defn dump (self) (str-len self.host)))   ; public fields only: allowed
+(impl Dump Conn (defn dump (self) (str-length self.host)))   ; public fields only: allowed
 ```
 
 ## Notes

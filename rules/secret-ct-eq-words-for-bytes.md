@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`=` on two word arrays compares **addresses**, not contents. A hand-written loop that exits early leaks the length of the matching prefix — enough to forge an authentication tag byte by byte. `ct-eq-words` accumulates differences with `bit-or` over the full length and decides at the end.
+`=` on two `Words` arrays compares the **handles** (their addresses), not contents: two equal tags read into separate arrays are not `=`. A hand-written loop that exits early leaks the length of the matching prefix — enough to forge an authentication tag byte by byte. `ct-eq-words` accumulates differences with `bit-or` over the full length and decides at the end.
 
 ## Bad
 
@@ -22,6 +22,11 @@
   (Some plaintext)
   None)
 ```
+
+## Notes
+
+- `ct-eq-words` and `ct-ne-words` return an `Int` 0/1 that stays secret; `ct-eq-words-bool` returns a `Bool` and is declassifying by name.
+- The arrays are `Words` handles (`math/words`), so a tag must be in a word array (one byte per word), not in a `ByteBuf` or a String.
 
 ## See Also
 

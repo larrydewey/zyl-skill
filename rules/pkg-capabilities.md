@@ -29,7 +29,7 @@ Absent `(capabilities ...)` means **none**. Using a gated construct or stdlib mo
 
 - Only `defn`/`def` bodies are walked. `main` is never qualified (no owning package) and top-level `test` forms are not definitions when the pass runs, so a package with `(capabilities)` can call `ffi-call` or `spawn` directly from `main` and still build. Declare it anyway.
 - A lone file without `zyl.pkg` declares nothing and is not checked.
-- Closure messages (`zyl_actor_send_closure`) need `ffi` as well as `actor`.
+- Closure messages (`zyl_actor_send_closure`) cannot be sent from a Zyl program at all ([actor-no-closure-messages](actor-no-closure-messages.md)).
 - `zyl audit` lists each package's capabilities and the locked closure; `zyl update` reports closure growth.
 
 ## See Also

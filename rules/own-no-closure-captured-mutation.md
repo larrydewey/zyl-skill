@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Closures capture **by value**: when the closure is created, each captured variable's current value is copied into a heap environment. A `set!` inside the closure could only change the copy. The current compiler rejects it with a located `E_MUT_CONFLICT` ("closures capture by value (spec 7); return the new value from the closure and set! it at the binding's own scope"). Older builds accepted it and segfaulted at run time (Chapter 17 still describes that), so treat it as forbidden regardless of compiler version.
+Closures capture **by value**: when the closure is created, each captured variable's current value is copied into a heap environment. A `set!` inside the closure could only change the copy. The compiler rejects it with a located `E_MUT_CONFLICT` ("set! target `count` is a let-mut of an enclosing scope, captured by value by this closure", `= help: closures capture by value (spec 7); return the new value from the closure and set! it at the binding's own scope`). Older builds accepted it and segfaulted at run time, so treat it as forbidden regardless of compiler version.
 
 ## Bad
 

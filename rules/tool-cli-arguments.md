@@ -41,7 +41,10 @@ zyl publish [--index DIR [--url-base URL]]
 - Package subcommands search upward for `zyl.pkg` (`E_MANIFEST_NOT_FOUND`).
 - The only compile flags are `-o`, `--emit-asm`, `--error-format=json` and `--contracts=P` (accepted anywhere on the line): no `--emit-ast/-icnf/-expanded/-typed`.
 - `zyl build`/`zyl test` reuse a cached build (`~/.zyl/cache/<key>`) when no input changed; `ZYL_NO_BUILD_CACHE=1` forces a compile.
-- Environment: `ZYL_HOME` (bundle dir), `ZYL_DEBUG_STAGES` (append stage names to `/tmp/dbg`), `ZYL_MAX_MEMORY` (budget bytes; 0 disables), `ZYL_INDEX` (package index: git URL or local path), `ZYL_NO_BUILD_CACHE=1`, `ZYL_STAGE_TIMEOUT` (boot stages, default 2400 s), `ZYL_STAGE_MEMORY` (boot stages' allocation ceiling, default 2 GB).
+- Environment, general: `ZYL_HOME` (bundle dir, [pkg-stdlib-resolution](pkg-stdlib-resolution.md)), `ZYL_MAX_MEMORY` (allocation budget in bytes, read by the compiler and by every compiled program; default 80% of available memory; 0 removes the budget), `ZYL_INDEX` (package index: git URL or local path), `ZYL_NO_BUILD_CACHE=1`.
+- Environment, compile-time switches (read by the compiler, so they change the binary it writes): `ZYL_STRICT_TYPES=report` (report type errors as `W_TYPE_STRICT` warnings and keep going, for counting only; the binary may be wrong), `ZYL_REGIONS=0` (every allocation on the heap), `ZYL_INLINE=0` / `ZYL_INLINE_LIMIT=N` (inlining off / size limit in nodes, default 6), `ZYL_REUSE=0` (in-place reuse off), `ZYL_MIR=0` (every function through the stack-machine backend). See [tool-debugging-the-pipeline](tool-debugging-the-pipeline.md).
+- Environment, diagnostics: `ZYL_DEBUG_STAGES` (append stage names to `/tmp/dbg`), `ZYL_DEBUG_TYPES=1` (each function's inferred scheme on stderr), `ZYL_REUSE_DEBUG=1` (the reuse pass's facts on stderr), `ZYL_INTERP_CHECK=1` (`zyl eval`'s tag-checking mode).
+- Environment, `./boot.sh`: `ZYL_STAGE_TIMEOUT` (default 2400 s), `ZYL_STAGE_MEMORY` (each stage's allocation ceiling, default 4 GB), `ZYL_NO_INSTALL_REFRESH=1`, `ZYL_INSTALL_HOME`.
 
 ## See Also
 

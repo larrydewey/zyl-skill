@@ -4,12 +4,13 @@
 
 ## Why It Matters
 
-An unknown escape such as `\q` is not reported: the whole literal decodes to a null string, which prints as an empty line. `\0` ends the string early because the runtime representation is a NUL-terminated pointer. `str-length` counts **bytes**, not characters.
+An unknown or incomplete escape such as `\q` or `\x4` is a located `E_INVALID_ESCAPE` (the help line lists the valid escapes); before 2026-09-24 the whole literal silently decoded to a null string. `\0` still ends the string early because the runtime representation is a NUL-terminated pointer. `str-length` counts **bytes**, not characters.
 
 ## Bad
 
 ```lisp
-(print "path\qfile")       ; unknown escape: prints an empty line
+(print "path\qfile")       ; E_INVALID_ESCAPE
+(print "\x4")              ; E_INVALID_ESCAPE: \x takes two hex digits
 (print "abc\0def")         ; prints "abc"
 (str-length "你好")         ; 6, not 2
 ```
@@ -28,10 +29,11 @@ An unknown escape such as `\q` is not reported: the whole literal decodes to a n
 - A literal may span lines. No interpolation, no raw strings.
 - An unterminated string is `E_UNTERMINATED_STRING`, reported before parsing.
 - `;` inside a string is safe in the current lexer.
-- String built-ins: `str-concat`, `str-length`, `str-substring s start len` (byte-indexed), `str-equal`/`str-eq` (1 or 0). There is no `+` for strings.
+- String built-ins: `str-concat`, `str-length`, `str-substring s start len` (byte-indexed), `str-equal`/`str-eq` (both return a Bool). There is no `+` for strings: `(+ "a" "b")` is `E_TYPE_MISMATCH` ("arithmetic on String").
+- For zero-copy substrings and hand-written scanners use `text/view` (`StrView`, `Cursor`) instead of repeated `str-substring`.
 - New escapes are new syntax for the self-hosted compiler: see [boot-two-step-syntax](boot-two-step-syntax.md).
 
 ## See Also
 
-- [fn-string-equality](fn-string-equality.md) - `==` vs `str-eq`
-- [fn-types-drive-codegen](fn-types-drive-codegen.md) - printing strings
+- [fn-string-equality](fn-string-equality.md) - `=` compares String contents
+- [fn-print-semantics](fn-print-semantics.md) - printing strings

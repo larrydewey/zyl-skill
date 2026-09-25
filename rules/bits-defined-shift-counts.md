@@ -16,9 +16,9 @@ x86 masks shift counts mod 64 (`shl 1 65` = 2). Zyl does not expose that: a logi
 
 ## Notes
 
-- Cost: three branchless extra instructions per logical shift, compare + cmov per `ashr`.
+- Cost: three branchless extra instructions per logical shift (`cmp`, `sbb`, `and` in the native backend), compare + cmov per `ashr`.
 - `rotl64` built from shifts is correct for n in 1..63; at n = 0 the right shift by 64 gives 0, which happens to produce the right answer.
-- Bitwise operators are **not constant-folded** (historical seed limitation); they are cheap anyway.
+- Bitwise operators and shifts are **not constant-folded** (`optimization.zyl` folds only arithmetic and comparisons, ops 0-10); they are cheap anyway.
 
 ## See Also
 

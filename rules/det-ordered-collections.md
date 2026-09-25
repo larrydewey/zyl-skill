@@ -22,7 +22,7 @@ name generated symbols from heap addresses
 
 ## Notes
 
-- `stdlib/core/map.zyl` iterates most-recently-inserted first.
+- `stdlib/core/map.zyl` (String keys, compared with `str-eq`) iterates most-recently-inserted first; re-inserting a key moves it to the front.
 - Historical fixed-point breakers: generated names from heap pointers, string `=` comparing pointers, iteration of address-keyed tables.
 
 ## See Also

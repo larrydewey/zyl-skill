@@ -9,8 +9,9 @@ A program that stays out of the FFI and out of actors is deterministic in its ou
 | Source | How it enters |
 |---|---|
 | Actor output interleaving | one pthread per actor, OS scheduling |
-| Heap addresses | printing or comparing pointers |
-| Clock, PID, environment | `ffi-call` to `time`, `zyl_now_ms`, `getpid`, `getenv` |
+| Heap addresses | printing a value that has no `Show`, comparing handles ([det-no-address-dependent-output](det-no-address-dependent-output.md)) |
+| Clock, PID, environment | `ffi-call` to the runtime's `zyl_now_ms` or `zyl_getenv_str`, or to C's `time`/`getpid`/`getenv` (each declared with `(extern ...)`) |
+| FFI timeouts | whether a foreign call finishes inside its timeout or raises `E_FFI_TIMEOUT` depends on wall-clock time |
 | Kernel entropy | `math/rand/crypto` (`sysrng-*`) |
 | Stdlib location | stale `~/.zyl` shadows the checkout when `ZYL_HOME` is unset |
 | Floating point | deterministic in practice (no FMA, no `-march`), not a checked rule |

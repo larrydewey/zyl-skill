@@ -4,27 +4,26 @@
 
 ## Why It Matters
 
-An arm body shaped like `(+ 1 (f n m) (g n))` is rejected at compile time with `E_MATCH_ARM_COMPLEX` — a guard against a shape older stage binaries miscompiled (it computed 0). The broader old rule ("any binop over two calls computes 0") no longer reproduces, but the compiler source still follows it, and short `let` chains keep code clear of the checked shape.
+An arm body shaped like `(+ 1 (f n m) (g n))` is rejected during ICNF lowering with `E_MATCH_ARM_COMPLEX: match arm combines a constant with multiple calls - nest sums through helper functions`. The error is a guard against a shape older stage binaries miscompiled (it computed 0), and it carries **no source location**, so search your `match` arms for the shape. The broader old rule ("any binop over two calls computes 0") no longer reproduces: `(+ (size l) (size r))` and `(+ 1 (+ (size l) (size r)))` compile correctly.
 
 ## Bad
 
 ```lisp
 (match t
-  (Node v l r (+ 1 (size l) (size r))))   ; E_MATCH_ARM_COMPLEX
+  (Node v l r (+ 1 (size l) (size r))))   ; E_MATCH_ARM_COMPLEX (unlocated)
 ```
 
 ## Good
 
 ```lisp
 (match t
-  (Node v l r
+  (Node _ l r
     (let a (size l)
       (let b (size r)
         (+ 1 a b)))))
 
-;; or nest through a two-argument helper
-(defn add2 (a b) (+ a b))
-(match t (Node v l r (add2 1 (add2 (size l) (size r)))))
+;; or nest the sum explicitly
+(match t (Node _ l r (+ 1 (+ (size l) (size r)))))
 ```
 
 ## Notes
@@ -34,4 +33,4 @@ An arm body shaped like `(+ 1 (f n m) (g n))` is rejected at compile time with `
 
 ## See Also
 
-- [boot-bind-calls-before-binop](boot-bind-calls-before-binop.md)
+- [boot-match-arm-call-sums](boot-match-arm-call-sums.md)

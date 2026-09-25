@@ -1,37 +1,38 @@
 # gen-no-type-parameter-syntax
 
-> Never write the spec's type-parameter groups `((T) x)` or `((T : Ord) a b)`; leave parameters unannotated instead.
+> Never write the spec's type-parameter groups `((T) x)` or `((T : Ord) a b)`; leave parameters unannotated, or annotate them with an uppercase type variable such as `(a T)`.
 
 ## Why It Matters
 
-Spec §6.1 generic syntax is not implemented, and both spellings fail in different ways:
+Spec §6.1 generic syntax is not implemented, and both spellings are rejected:
 
 | Written | Result |
 |---|---|
-| `((T) x)` | `E_MALFORMED_PARAMETER`: `(T ...)` is not a parameter |
-| `((T : Ord) a b)` | the lexer merges `: Ord` into keyword `:Ord`, making `(T :Ord)` an ordinary **value** parameter named `T`; the function takes one more argument, and `(smallest 3 5)` is `E_ARITY_MISMATCH` |
+| `((T) x)` | `E_MALFORMED_PARAMETER: `(T ...)` is not a parameter - write a name, or (name Type)` |
+| `((T : Ord) a b)` | `E_MALFORMED_PARAMETER: a parameter's type is written (name Type), without a colon` |
+| `((a Ord))` | `E_MALFORMED_PARAMETER: `Ord` is a trait, not a type` |
 
-Bounds therefore cannot be declared or checked at all.
+Trait bounds cannot be declared. They are not needed: a function that compares or calls a trait method on a type parameter is specialized per argument type, and a type with no impl is reported at the call (`E_TRAIT_NOT_FOUND`) ([gen-per-type-instances](gen-per-type-instances.md)).
 
 ## Bad
 
 ```lisp
-(defn identity ((T) x) x)
+(defn ident ((T) x) x)
 (defn smallest ((T : Ord) a b) (if (< a b) a b))
 ```
 
 ## Good
 
 ```lisp
-(defn first-of (a _) a)              ; polymorphic: accepts any types
-(defn smaller (a b) (if (< a b) a b))
+(defn first-of (a _) a)                ; polymorphic: accepts any types
+(defn smaller (a b) (if (< a b) a b))  ; Int, Float or String
+(defn pick ((c Bool) (a T) (b T)) (if c a b))  ; T: a and b have one type
 ```
 
 ## Notes
 
-- `identity`, `min`, `max`, `compose` already exist in the prelude; reusing those names is `E_DUPLICATE_DEFINITION`.
-- Appendix E of the book still shows the spec syntax in a Rust comparison; the chapters are authoritative: it does not compile.
-- The monomorphizer treats a parameter whose name starts with an uppercase letter as a type parameter; avoid uppercase value-parameter names.
+- `identity`, `min`, `max`, `compose` already exist in the prelude; reusing those names is `E_DUPLICATE_DEFINITION` ([data-no-redeclare-prelude](data-no-redeclare-prelude.md)).
+- Book chapter 7 shows the spec syntax only to say it is rejected.
 
 ## See Also
 

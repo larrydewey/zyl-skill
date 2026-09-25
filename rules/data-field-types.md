@@ -1,10 +1,10 @@
 # data-field-types
 
-> Declare field types on `deftype` variants and `defstruct` fields: a pattern-bound name or `struct-get` result carries the declared type, so Strings and Floats read back from records print and compute correctly.
+> Declare field types on `deftype` variants and `defstruct` fields: construction is checked against them, a pattern-bound name or field read carries the declared type, and an untyped field makes the record generic in that field.
 
 ## Why It Matters
 
-A field is one 8-byte word at run time. Its *declared* type (recorded at parse time and used by the type annotation pass) is what tells code generation whether that word is a String pointer or a Float bit pattern. An untyped struct field `(defstruct P (x) (y))` gets a fresh type variable that usage may or may not pin down.
+A field is one 8-byte word at run time. Its declared type (recorded at parse time and used by the type pass) is what tells code generation whether that word is a String pointer or a Float bit pattern, and the checker holds every construction to it: `(make-Flag 1)` for `(on Bool)` is `E_TYPE_MISMATCH` (use `true`/`false`). An untyped struct field, `(defstruct P (x) (y))`, is an implicit type parameter of the struct: `(make-P "a" 2)` has type `(P String Int)`, and each use is checked at that type ([data-no-tuples-implicit-generic-structs](data-no-tuples-implicit-generic-structs.md)).
 
 ## Good
 
@@ -26,9 +26,10 @@ A field is one 8-byte word at run time. Its *declared* type (recorded at parse t
 
 ## Notes
 
-- Uppercase unknown names in fields are type parameters: `(deftype Pair (Mk A B))`.
+- Uppercase unknown names in fields are type parameters: `(deftype Pair (Mk A B))`, `(defstruct Cell (v T) (w T))` (both fields one type).
+- Lowercase unknown names are not: in a `defstruct` field, `(x a)` is `E_TYPE_MISMATCH: field without a type`; in a `deftype` field, `(Bx a)` is silently unchecked ([gen-generic-adts](gen-generic-adts.md)).
 - A field of an applied type works: `(Path (Vec String) Err)`, `(Obj (Map String Val))`.
-- Record the fields' types even when unannotated code would infer them; it documents the data, survives heterogeneous use, and constructor arguments are checked against them (`E_TYPE_MISMATCH` on a definite clash, e.g. `1`/`0` for a `Bool` field: use `true`/`false`).
+- Record the fields' types even when inference would find them: it documents the data, puts the error at the construction instead of at a distant use, and keeps the record from becoming generic by accident.
 
 ## See Also
 

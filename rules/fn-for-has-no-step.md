@@ -32,7 +32,8 @@
 
 - Accepted binding shapes: `((i 0))`, `((i 0) (j 10))`, `(i 0)` (short form), `()` (a plain while).
 - Loop variables are `TMut`: `set!` on them is allowed.
-- `while` and `for` are for effect: the spec says they return `Unit`; the implementation leaves the last body value. Do not use it.
+- `while` and `for` have type `Unit`: `(let r (for ...) (+ r 1))` is `E_TYPE_MISMATCH`. Collect results in a `let-mut` or use a recursive helper.
+- The body may hold several forms (an implicit `begin`); the condition must be a `Bool`.
 - To iterate a `Vec`, index with `vec-get` up to `vec-len`; to iterate a `List`, recurse.
 
 ## See Also

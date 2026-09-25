@@ -37,7 +37,10 @@ Indentation is two spaces; the LSP formatter re-indents by paren depth.
 
 ## Notes
 
-- `E_RESERVED_KEYWORD` is not raised today; the spec's reserved list is not enforced.
+- `E_RESERVED_KEYWORD` is not raised today; the spec's reserved list is not enforced: `(let match 3 ...)` and `(let begin 5 ...)` compile.
+- `unit` is the Unit value and cannot be rebound: `(let unit 3 (print unit))` compiles, warns `W_UNUSED_VARIABLE`, and prints the Unit value (`0`), not 3.
+- `list`, `quote` and `quasiquote` head the reader's list forms: a variable named `list` works, but `(list ...)` is always the list literal.
+- A program type may not reuse a prelude constructor name (`Some`, `None`, `Ok`, `Err`, `Cons`, `Nil`): `E_DUPLICATE_VARIANT`.
 - Names in the core prelude (`identity`, `const`, `flip`, `compose`, `apply`, `abs`, `max`, `min`, `clamp`, `signum`, `square`, `cube`, `xor`, `nand`, `nor`, `implies`, `when`, `unless`, `is-zero`, `is-even`, `is-odd`, `print-int`, `print-float`, `print-string`, `print-bool`, the `option-*`/`result-*`/`list-*` helpers, `car`/`cdr`...) are taken: redefining one is `E_DUPLICATE_DEFINITION`.
 
 ## See Also

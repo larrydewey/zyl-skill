@@ -6,7 +6,7 @@
 
 Hygiene is automatic and two-sided:
 
-1. **Body binders are renamed** per expansion to `name__hygN` (`let`, `let-mut`, `fn`/`defn` params, `for`, `catch` name, `with-resource`, match pattern variables). `N` is a source-order counter, so expansion is deterministic. `_` is never renamed. Arguments keep their names and still refer to the caller's variables.
+1. **Body binders are renamed** per expansion to `name__hygN` (`let`, `let-mut`, `fn`/`defn` params, `for`, `catch` name, `with-resource`, match pattern variables). `N` is a source-order counter, so expansion is deterministic. `_` is never renamed. Arguments, including `&rest` arguments spliced with `,@`, keep their names and still refer to the caller's variables.
 2. **Free names resolve where the macro is defined** (module resolution has already turned top-level references into canonical keys). A body naming a variable that is unbound at the definition but local at the call site is **rejected** with `E_UNBOUND_VARIABLE`, not captured.
 
 ## Bad

@@ -1,6 +1,6 @@
 # boot-two-step-syntax
 
-> Introduce new syntax in two steps: teach the compiler to accept it and reseed, then start using it in the compiler's own source.
+> Introduce new syntax (and any new runtime function the compiler calls) in two steps: teach the compiler to accept it and reseed, then start using it in the compiler's own source.
 
 ## Why It Matters
 
@@ -14,7 +14,9 @@
 
 ## Notes
 
-- The same applies to new built-ins the compiler itself wants to call and to new escapes in string literals (the bitwise operators are still not constant-folded because the seed of the day could not compile a `bit-and` in the optimizer).
+- The seed also type-checks the new source with its own type pass, whose catch-all makes a form it has no case for `E_CANNOT_INFER` (`no type for form not typed`). A new special form therefore needs the seed to know how to type it, not only how to parse it.
+- The same applies to new built-ins the compiler itself wants to call, to new escapes in string literals, and to new runtime functions: the seed types every `ffi-call` in the compiler by its own `ffi_sigs.zyl`, so add the C function, its `X(...)` table entry and its signature first, reseed, then call it (`13a72eb`, then `4577304`, for `zyl_div_magic`; see [boot-fixed-point-workflow](boot-fixed-point-workflow.md)).
+- History: the bitwise operators were once unusable in compiler source because the seed of the day could not compile them, which is why the optimizer does not fold them. That limitation is gone (`mir.zyl` uses `bit-and`); the folding was simply never added.
 
 ## See Also
 

@@ -1,10 +1,10 @@
 # match-exhaustive-or-underscore
 
-> Cover every variant, or end with a single `_` arm; a match that falls through evaluates to 0.
+> Cover every variant, or end with a single `_` arm; a non-exhaustive constructor match is a compile-time error.
 
 ## Why It Matters
 
-Exhaustiveness is a compile-time **error**, not a warning. A constructor match missing a variant with no catch-all is `E_NON_EXHAUSTIVE_MATCH` (located, naming the first missing variant). It matters for safety: the generated code tests tags in order and yields 0 if nothing matches.
+Exhaustiveness is a compile-time **error**, not a warning. A constructor match missing a variant with no catch-all is `E_NON_EXHAUSTIVE_MATCH` (located, naming the first missing variant). A repeated arm is `E_UNREACHABLE_MATCH_ARM`. No constructor match can fall through at run time.
 
 ## Bad
 
@@ -14,6 +14,9 @@ Exhaustiveness is a compile-time **error**, not a warning. A constructor match m
   (match light
     (Red "stop")))
 ;; error[E_NON_EXHAUSTIVE_MATCH]: match over `TrafficLight` does not cover variant `Yellow`
+
+(match c (Red 1) (Red 2) (Green 3) (Yellow 4))
+;; error[E_UNREACHABLE_MATCH_ARM]: arm `Red` is already matched by an earlier arm
 ```
 
 ## Good
@@ -28,9 +31,9 @@ Exhaustiveness is a compile-time **error**, not a warning. A constructor match m
 
 ## Limits of the check
 
-- The scrutinee's type is inferred from the constructor names in the arms, not from type inference. If a name is shared by two types, the match is **skipped** entirely.
-- Repeated arms are not reported: `(match c (Red 1) (Red 2) (Green 3) (Yellow 4))` compiles; the second `Red` is dead.
-- Spelling: the constructor check prints `E_NON_EXHAUSTIVE_MATCH`; the spec's name `E_MATCH_NONEXHAUSTIVE` is what the literal-pattern check prints.
+- The checker infers the scrutinee's type from the constructor names in the arms. If a name is shared by two types, it skips the match, and ICNF lowering reports a gap instead as an **unlocated** `E_MATCH_NONEXHAUSTIVE: match does not cover every variant` ([data-unique-variant-names](data-unique-variant-names.md)).
+- Spelling: the constructor check prints `E_NON_EXHAUSTIVE_MATCH`; the spec's name `E_MATCH_NONEXHAUSTIVE` is what the literal-pattern check and the lowering fallback print.
+- A misspelled constructor in the last arm is a catch-all and satisfies the check ([match-misspelled-last-arm](match-misspelled-last-arm.md)).
 - There is no `default`/`otherwise` keyword.
 
 ## See Also

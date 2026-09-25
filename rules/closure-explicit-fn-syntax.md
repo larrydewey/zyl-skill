@@ -28,7 +28,9 @@
 
 - `fn` and `lambda` are the same form; neither takes a name.
 - Any number of parameters; bodies may contain `match`, `try`, nested lambdas.
-- Leave function-typed parameters unannotated: there is no function-type syntax.
+- A function-typed parameter may be left unannotated (inference finds its type) or annotated `(f (Fn (Int) Int))`: `(Fn (A ...) R)` is the function type, also used for extern callbacks.
+- Operators are not values: `(apply-twice + 1)` is `E_UNBOUND_VARIABLE` for `+`; wrap them, `(fn (a b) (+ a b))`.
+- Bodies are implicit `begin`s: `(fn (x) (print x) x)` runs both forms (older compilers kept only the last).
 - A top-level closure value can be a `(def name (fn ...))`; `defn` is the usual form.
 
 ## See Also

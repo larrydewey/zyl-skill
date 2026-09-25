@@ -31,7 +31,7 @@ The two right shifts differ as soon as the value is negative, which for hash and
 | `shr` | `(shr a n)` | logical right |
 | `ashr` | `(ashr a n)` | arithmetic right |
 
-All operate on signed 64-bit words, are branchless and constant-time. `math/bits` has ready-made 32/64-bit rotations, unsigned compares and byte packing.
+All operate on signed 64-bit `Int` words (a `Bool` or `Float` operand is `E_TYPE_MISMATCH`), are branchless and constant-time. `math/bits` has ready-made 32/64-bit rotations, unsigned compares and byte packing.
 
 ## See Also
 

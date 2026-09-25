@@ -25,9 +25,11 @@ Atomics are sequentially consistent operations on 8-byte words. An unaligned or 
 ## Notes
 
 - Address-based atomics are in `atomic/atomic`: `atomic-load`, `atomic-store`, `atomic-add`, `atomic-sub`, `atomic-max`, `atomic-min`, `atomic-cas addr expected new`, `atomic-fetch-add`, `atomic-incr`, `atomic-decr`.
+- The handle must be a `ByteBuf`: atomics on a `ByteSlice` (or an `Int`) are `E_TYPE_MISMATCH`. Offsets and values are `Int`; so is every result.
+- `align-check` takes a raw address (an `Int`, e.g. from `bytebuf-ptr`), not a handle.
 - There is no `TAtomic` type; atomics are operations.
 - `E_ATOMIC_ABA` (CAS outside Pin) is not enforced.
 
 ## See Also
 
-- [bits-regions-unenforced-use-pin](bits-regions-unenforced-use-pin.md)
+- [bits-bytebuf-regions](bits-bytebuf-regions.md)

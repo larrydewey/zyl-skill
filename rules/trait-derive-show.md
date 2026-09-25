@@ -45,7 +45,7 @@ The prelude implements all six for `Int`, `Float`, `Bool`, `String`, `List`, `Op
     (print (make-Person "Ann" 30))               ; Person { name: Ann, age: 30 }
     (print (Debug.debug (make-Person "Ann" 30))) ; Person { name: "Ann", age: 30 }
     (print (Ord.compare (Circle 9.0) (Rect 1 2))); -1: Circle is declared first
-    (print (Eq.eq (Rect 1 2) (Rect 1 2)))        ; 1
+    (print (Eq.eq (Rect 1 2) (Rect 1 2)))        ; 1 (a Bool; print shows true as 1)
     0))
 ```
 
@@ -56,9 +56,9 @@ The prelude implements all six for `Int`, `Float`, `Bool`, `String`, `List`, `Op
 - A hand-written `show` whose text derives from a secret (field, binder or helper call) is `E_SECRET_DEBUG`; one that reads an `impl-not Show`-protected field is `E_IMPL_FORBIDDEN`. Print the public fields only, or `declassify`.
 - Derive each trait once per type: naming `Show` in two `derive`s (or deriving it beside a hand-written impl) is a located `E_DUPLICATE_IMPL`.
 - Works for generic and recursive ADTs: `(StMk "k" (Some 2))` shows `StMk(k, Some(2))`.
-- `==` on records is already deep structural without `Eq`; `<`/`>` still compare raw field words, so use a derived `Ord.compare` for a real ordering ([data-equality-shallow](data-equality-shallow.md)).
+- `==` on records is already deep structural without `Eq`. `<`/`>` order only Int, Float and String: on an ADT or struct they are `E_TYPE_MISMATCH` ("ordering on P"), so derive `Ord` and use `Ord.compare` ([data-equality-structural](data-equality-structural.md)).
 - `(defstruct+ Name fields... (:derive [Eq Show]))` derives too: it is rewritten into a separate `derive` before qualification, with the same field checks.
-- `print` of an Option/Result/List whose payload type has no `Show` impl prints the raw value (an address). An explicit `(Show.show x)` on a known type with no impl is a located `E_TRAIT_NOT_FOUND` — derive or write the impl.
+- `print` of a struct, or of an Option/Result/List whose payload type has no `Show` impl, prints the raw value (an address). An explicit `(Show.show x)` on a known type with no impl is a located `E_TRAIT_NOT_FOUND` — derive or write the impl; `(Show.show (Some p))` reports it inside `core/option.zyl`, where the payload's `Show.show` is called. There is no run-time fallback ([trait-static-dispatch](trait-static-dispatch.md)).
 - The REPL keeps a `derive` entry as a definition.
 
 ## See Also

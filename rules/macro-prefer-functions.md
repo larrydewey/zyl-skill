@@ -4,19 +4,19 @@
 
 ## Why It Matters
 
-Functions evaluate arguments once, can be passed to higher-order functions, show up in stack traces and hover, and are type-inferred per call site. Macros duplicate or drop argument evaluation, cannot be passed as values, and have no expansion viewer (no `--emit-expanded`, no `:macroexpand`).
+Functions evaluate arguments once, can be passed to higher-order functions, show up in stack traces and hover, and get one checked type; a macro's expansion is type-checked separately at every call site, so a type error lands inside the expanded code. Macros duplicate or drop argument evaluation, cannot be passed as values, and have no expansion viewer (no `--emit-expanded`, no `:macroexpand`).
 
 ## Good uses
 
 ```lisp
-(defmacro my-unless (c body) (if c 0 body))           ; skips body
+(defmacro my-unless (c body) (if c unit body))        ; skips body
 (defmacro swap! (a b) (let tmp a (begin (set! a b) (set! b tmp))))  ; binds names
-(defmacro debug (body) (if (debug-enabled) body 0))   ; single switch point (run-time test)
+(defmacro my-when (c &rest body) (if c (begin ,@body) unit))  ; new syntax: a block of statements
 ```
 
 ## Built-ins that look like macros
 
-`and`, `or`, `cond`, `not`, `begin` are core forms desugared by the parser before macro expansion. There is no `let*` and no `when`/`unless` form (`when` is only a keyword inside literal-match guards; the prelude `when`/`unless` are eager functions).
+`and`, `or`, `cond`, `not`, `begin` are core forms recognized by `convert-ast` before macro expansion. There is no `let*` and no `when`/`unless` form (`when` is only a keyword inside literal-match guards; the prelude `when`/`unless` in `core/core.zyl` are eager functions whose body must be `Unit`).
 
 ## Debugging
 

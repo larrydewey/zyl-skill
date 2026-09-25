@@ -16,11 +16,11 @@ REPL entries go through the real compiler phases and are evaluated by the ICNF i
 - History: `~/.zyl/repl_history` (`$ZYL_REPL_HISTORY`, `$ZYL_STATE_DIR`).
 - Non-tty stdin: script mode (no rc, session, history or banner).
 - `def` bindings made at the prompt are live values, and a later `defn` can use them: `(def k 41)` then `(defn f (x) (+ x k))` then `(f 1)` gives 42 (Strings too). Each prompt def is emitted into the session program as a top-level def that reads a runtime table, so its expression is **not re-run** (side effects happen once); `:reset` clears the table.
-- Redefining a name needs `:reset`.
-- `:type` often answers *unresolved* for applications (a known inference gap).
+- Redefining a name needs `:reset`: a second `(defn f ...)` is `E_DUPLICATE_DEFINITION`.
+- Entries are type-checked like a compiled program: a type error is reported and the entry is not run. The location is in the generated session program (`<repl>:7:27`, with an expression shown wrapped as `(defn __zyl_repl_entry () ...)`), not the line you typed. `:type` prints the inferred type: `(f 2) : Int`, `f : (Int -> Int)`, `(str-concat "a" "b") : String`.
 - Line editor: arrows/word motion, multi-line until the form closes, Ctrl-R, Tab completion, highlighting.
 
 ## See Also
 
 - [tool-eval-differential](tool-eval-differential.md)
-- [fn-no-toplevel-def](fn-no-toplevel-def.md)
+- [fn-toplevel-def](fn-toplevel-def.md)

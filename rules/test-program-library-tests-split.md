@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-A file may not contain both tests and a `main`, and a `use`d module's top-level forms are spliced verbatim into the importer. Keeping logic in a `main`-free library lets both the program and the tests share it. Pure logic in the library is also the only thing you can test deterministically when actors are involved.
+A file may not contain both tests and a `main` (`E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN`, also when the `main` comes from a `use`d module), and a `use`d module's definitions join the importer's program. Keeping logic in a `main`-free library lets both the program and the tests share it. Pure logic in the library is also the only thing you can test deterministically when actors are involved.
 
 ## Layout
 
@@ -28,7 +28,7 @@ log-processor/
     (Parsed e (struct-get e "level"))
     (Unparsed _ "")))
 (test "parse-reads-level"
-  (assert-equal (str-eq (level-of "2024-01-15 [WARN] db slow query") "[WARN]") 1))
+  (assert-equal (level-of "2024-01-15 [WARN] db slow query") "[WARN]"))   ; Strings compare by content
 (run-tests)
 ```
 

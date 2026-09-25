@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Both operands of `ct-select` are always evaluated and read; only the mask decides which bits survive, so timing and memory access are independent of the secret.
+Both operands of `ct-select` are always evaluated and read; only the mask decides which bits survive, so timing and memory access are independent of the secret. The primitives take `(Secret Int)` operands and return an `Int` 0/1 (or a mask), never a `Bool`, so feeding a result to `if` is rejected twice over: the secret checker reports `E_CT_VIOLATION` first, and the condition, an `Int`, is also a type error (conditions are `Bool`).
 
 ## Vocabulary
 
@@ -15,7 +15,8 @@ Both operands of `ct-select` are always evaluated and read; only the mask decide
 (ct-is-nonzero x)
 (ct-select c a b)      ; a if c = 1 else b
 (ct-eq a b)  (ct-ne a b)
-(ct-eq-words a b n)  (ct-ne-words a b n)   ; full-length byte-string compare
+(ct-eq-words a b n)  (ct-ne-words a b n)   ; full-length compare of two Words arrays
+(ct-eq-bool a b)  (ct-eq-words-bool a b n)   ; the declassified verdict, a Bool
 ```
 
 ## Bad

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-This is the core modelling tool: every "one of several shapes" value, every result, every tree. Fields are types only, positional, with no names: `(EC name String phase Int)` declares **four** fields (`name` and `phase` become type parameters). Constructor arguments are checked against concrete field types: `(Circle 1.5)` for `(Circle Int)` is `E_TYPE_MISMATCH`. Arity is not checked.
+This is the core modelling tool: every "one of several shapes" value, every result, every tree. Fields are types only, positional, with no names: `(EC name String phase Int)` declares **four** fields, not two named ones. Constructor calls are checked for arity and against the field types: `(Circle 1.5)` for `(Circle Int)` and `(Circle 1 2)` are both `E_TYPE_MISMATCH`, and a repeated parameter must get one type (`(Make 1 "x")` for `(Make T T)` fails).
 
 ## Good
 
@@ -24,11 +24,11 @@ This is the core modelling tool: every "one of several shapes" value, every resu
 
 ## Notes
 
-- Construction: `(Circle 5)`, `Red` or `(Red)` for nullary, `(Node 1 (Leaf) (Leaf))`.
-- A variant name repeated inside one `deftype` is `E_DUPLICATE_VARIANT`.
+- Construction: `(Circle 5)`, `Red` or `(Red)` for nullary, `(Node 1 (Leaf) Leaf)`.
+- A variant name repeated inside one `deftype` is `E_DUPLICATE_VARIANT`; so is a prelude constructor name (`Some`, `None`, `Ok`, `Err`, `Cons`, `Nil`) ([data-no-redeclare-prelude](data-no-redeclare-prelude.md)).
+- Write type parameters uppercase. A lowercase unknown field type (`(Bx a)`) is not a parameter but an unchecked fresh type ([gen-generic-adts](gen-generic-adts.md)).
 - Recursive fields are ordinary pointer words: no `Box` needed or available.
-- Tags are 0-based in declaration order per `deftype`. Each variant block is sized to its own fields; nullary variants are still heap blocks holding just the tag.
-- Type-parameter fields never clash, so the spec's same-type constraint (`(Make 1 "x")` should fail for `(Make T T)`) is not enforced.
+- Tags are 0-based in declaration order per `deftype`. Each variant block is sized to its own fields; nullary variants are still blocks holding just the tag.
 - Want named fields? Use `defstruct` (`(name Type)` fields).
 - `Option`, `Result`, `List` already exist in the prelude.
 

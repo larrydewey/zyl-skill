@@ -20,7 +20,7 @@ The spec promises deterministic actor output; the implementation does not delive
 ## Notes
 
 - Tests involving actors should assert on lifecycle (`actor-is-alive` after `actor-wait`), not on interleaved output.
-- There is no deterministic scheduler, quantum, pool or stack-size knob.
+- There is no deterministic scheduler, quantum, pool or stack-size knob. A Kahn-network redesign (single-sender channels, blocking receive, a `--sched=deterministic` oracle) is planned in PROGRESS.md but not implemented.
 
 ## See Also
 
