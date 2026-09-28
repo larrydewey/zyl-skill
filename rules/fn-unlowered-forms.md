@@ -1,6 +1,6 @@
 # fn-unlowered-forms
 
-> Do not rely on `alias`: it type-checks but does nothing; `make-struct` and `make-variant` do not compile at all. `with-resource` releases its resource (since 2026-09-28), and `read-line`, `exit` and `close` are lowered.
+> `make-struct` and `make-variant` do not compile: use `(make-Name ...)` and the constructor. `alias` is a transparent alias and `with-resource` releases its resource (both since 2026-09-28), and `read-line`, `exit` and `close` are lowered.
 
 ## Why It Matters
 
@@ -8,7 +8,6 @@ Recognizing a form is not implementing it. A form whose *shape* is wrong is `E_M
 
 | Form | What it actually does | Use instead |
 |---|---|---|
-| `(alias A T)` | nothing; `A` in an annotation is then a fresh type variable, so `(x A)` accepts any type | the original type name |
 | `(make-struct Name ...)` | `E_CANNOT_INFER` ("no type for form not typed") | `(make-Name ...)` |
 | `(make-variant (T) V ...)` | `E_CANNOT_INFER` | `(V ...)` |
 
@@ -16,6 +15,7 @@ These used to be on the list and work now:
 
 | Form | Behavior |
 |---|---|
+| `(alias A T)` | top level; `A` is `T` wherever a type is written (annotations, fields, variant fields, other aliases); an unknown name in `T` is `E_UNKNOWN_TYPE`, and so is an alias defined in terms of itself |
 | `(with-resource (n init) body...)` | binds `n`, runs the body, then `(Drop.drop n)` on the way out, normally or before an error propagates (spec 12.9); an `Int` is a file descriptor (`file-close`); implement `Drop` for your own resource types, else `E_TRAIT_NOT_FOUND` |
 | `test-suite`, `setup`, `teardown`, `test-property`, `test-compile`, `assert-fail` | implemented (2026-09-28): [test-suites-properties-compile](test-suites-properties-compile.md) |
 | `(read-line)` | one line from stdin without its newline (a trailing `\r` is dropped too); `""` at end of input; flushes stdout first (`zyl_read_line`) |
@@ -28,8 +28,8 @@ Contracts (`requires`/`ensures`/`invariant`, profiles, `checkpoint` rollback, ty
 ## Bad
 
 ```lisp
-(alias Meters Int)
-(defn run ((d Meters)) d)          ; Meters is a fresh type variable: (run "x") compiles
+(defstruct Point (x Int) (y Int))
+(defn origin () (make-struct Point 0 0))   ; E_CANNOT_INFER: use (make-Point 0 0)
 ```
 
 ## Good

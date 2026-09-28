@@ -1,10 +1,10 @@
 # data-no-tuples-implicit-generic-structs
 
-> Use a struct or a single-variant ADT where you want a tuple; make a struct generic by leaving fields untyped or typing them with uppercase names; don't rely on `alias`.
+> Use a struct or a single-variant ADT where you want a tuple; make a struct generic by leaving fields untyped or typing them with uppercase names; use `alias` to name a type.
 
 ## Why It Matters
 
-`(tuple 1 2)` is `E_UNBOUND_VARIABLE` (no such function). Generic structs do exist, implicitly: every untyped field and every unknown uppercase field type is a type parameter of the struct, in declaration order, and each construction instantiates it. `(defstruct Cell (v))` gives `(make-Cell "s") : (Cell String)` and `(make-Cell 2) : (Cell Int)` in one program, and an annotation can apply it: `(e (Entry Int))`. `(alias UserId Int)` is accepted but has **no effect**: `UserId` in an annotation is just an unknown uppercase name, a type variable, so `(defn g ((id UserId)) id)` accepts a String.
+`(tuple 1 2)` is `E_UNBOUND_VARIABLE` (no such function). Generic structs do exist, implicitly: every untyped field and every unknown uppercase field type is a type parameter of the struct, in declaration order, and each construction instantiates it. `(defstruct Cell (v))` gives `(make-Cell "s") : (Cell String)` and `(make-Cell 2) : (Cell Int)` in one program, and an annotation can apply it: `(e (Entry Int))`. `(alias UserId Int)` makes `UserId` another name for `Int` (transparent, since 2026-09-28): `(defn g ((id UserId)) id)` accepts an `Int` and rejects a String with `E_TYPE_MISMATCH`.
 
 ## Good
 

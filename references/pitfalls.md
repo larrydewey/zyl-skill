@@ -12,51 +12,49 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 2 | `\0` in a string literal ends the string (`"a\0b"` has length 1) | [syn-string-literals](../rules/syn-string-literals.md) |
 | 3 | Misspelled constructor in the **last** match arm is a catch-all binding | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
 | 4 | Mixed literal + constructor arms: undiagnosed (`(match n (1 ...) (Red ...) (_ ...))` compiles) | [match-literal-requires-underscore](../rules/match-literal-requires-underscore.md) |
-| 5 | Misspelled or unknown type name in an annotation (`(a Intt)`, an `alias` name) is a fresh type parameter: accepted, checks nothing | [type-sound-checking](../rules/type-sound-checking.md) |
+| 5 | Misspelled or unknown type name in an annotation (`(a Intt)`) is a fresh type parameter: accepted, checks nothing | [type-sound-checking](../rules/type-sound-checking.md) |
 | 6 | `print` of a struct/ADT with no `Show` impl, or of an `Option`/`List` of one, prints an address; `print` of a `Bool` prints `1`/`0` | [trait-derive-show](../rules/trait-derive-show.md) |
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | [fn-conditionals](../rules/fn-conditionals.md) |
-| 9 | `alias` makes a type variable | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
-| 10 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
-| 11 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
-| 12 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
-| 13 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
-| 14 | `alias`, `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
-| 15 | Macro argument used twice is evaluated twice | [macro-args-spliced](../rules/macro-args-spliced.md) |
-| 16 | `ffi-call` without a positive literal timeout is `E_FFI_TIMEOUT_REQUIRED`; `(ffi-call "f" 5)` is zero args + 5 ms; a too-tight timeout raises `E_FFI_TIMEOUT` and abandons the C call | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
-| 17 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |
-| 18 | A channel end nested inside a captured struct or variant does not move at `spawn`: the actor's use fails only at run time (`E_CHANNEL_NOT_OWNER`, often followed by `E_DEADLOCK`) | [actor-endpoint-ownership](../rules/actor-endpoint-ownership.md) |
-| 19 | An actor's `print`s appear where it is joined (or at exit), not where it ran | [actor-output-per-actor](../rules/actor-output-per-actor.md) |
-| 20 | An unjoined actor's panic surfaces only at exit, after main's output, as status 1 | [actor-always-wait](../rules/actor-always-wait.md) |
-| 21 | `(exit code)` ends the process without joining actors | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
-| 22 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
-| 23 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
-| 24 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
-| 25 | A `defn` named after a special form (`setup`, `test`) compiles, but calls of it are the special form | [test-suites-properties-compile](../rules/test-suites-properties-compile.md) |
-| 26 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
-| 27 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
-| 28 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
-| 29 | Stale `~/.zyl` shadows checkout stdlib | [pkg-stdlib-resolution](../rules/pkg-stdlib-resolution.md) |
-| 30 | Unknown CLI word after the source becomes the output file name | [tool-cli-arguments](../rules/tool-cli-arguments.md) |
-| 31 | `buf-append` on a non-fresh buffer accumulates | [proj-buf-append-appends](../rules/proj-buf-append-appends.md) |
-| 32 | `with-region` limits (`E_REGION_EXHAUSTED`) are enforced only in compiled code; `zyl eval` and the REPL ignore regions | [own-with-region](../rules/own-with-region.md) |
-| 33 | A slice shares its Vec's storage: a later `vec-set` through a Vec that still uses that storage shows through the slice | [data-collections-persistent](../rules/data-collections-persistent.md) |
+| 9 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
+| 10 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
+| 11 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
+| 12 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
+| 13 | `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
+| 14 | Macro argument used twice is evaluated twice | [macro-args-spliced](../rules/macro-args-spliced.md) |
+| 15 | `ffi-call` without a positive literal timeout is `E_FFI_TIMEOUT_REQUIRED`; `(ffi-call "f" 5)` is zero args + 5 ms; a too-tight timeout raises `E_FFI_TIMEOUT` and abandons the C call | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
+| 16 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |
+| 17 | A channel end nested inside a captured struct or variant does not move at `spawn`: the actor's use fails only at run time (`E_CHANNEL_NOT_OWNER`, often followed by `E_DEADLOCK`) | [actor-endpoint-ownership](../rules/actor-endpoint-ownership.md) |
+| 18 | An actor's `print`s appear where it is joined (or at exit), not where it ran | [actor-output-per-actor](../rules/actor-output-per-actor.md) |
+| 19 | An unjoined actor's panic surfaces only at exit, after main's output, as status 1 | [actor-always-wait](../rules/actor-always-wait.md) |
+| 20 | `(exit code)` ends the process without joining actors | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
+| 21 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
+| 22 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
+| 23 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
+| 24 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
+| 25 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
+| 26 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
+| 27 | Stale `~/.zyl` shadows checkout stdlib | [pkg-stdlib-resolution](../rules/pkg-stdlib-resolution.md) |
+| 28 | Unknown CLI word after the source becomes the output file name | [tool-cli-arguments](../rules/tool-cli-arguments.md) |
+| 29 | `buf-append` on a non-fresh buffer accumulates | [proj-buf-append-appends](../rules/proj-buf-append-appends.md) |
+| 30 | `with-region` limits (`E_REGION_EXHAUSTED`) are enforced only in compiled code; `zyl eval` and the REPL ignore regions | [own-with-region](../rules/own-with-region.md) |
+| 31 | A slice shares its Vec's storage: a later `vec-set` through a Vec that still uses that storage shows through the slice | [data-collections-persistent](../rules/data-collections-persistent.md) |
 
 ## Compiler-contributor extras
 
 | # | Pitfall | Rule |
 |---|---|---|
-| 34 | A misplaced paren that keeps both the count and the column-1 layout intact re-nests code inside one form; `zyl balance` after every edit catches everything else | [tool-balance](../rules/tool-balance.md) |
-| 35 | Same type name in two modules: the later `use` wins, the other module misreads tags | [boot-one-deftype-per-name](../rules/boot-one-deftype-per-name.md) |
-| 36 | Allocating inside a per-element lookup: compiler temporaries mostly land in the heap, which never frees | [pass-no-allocation-in-lookups](../rules/pass-no-allocation-in-lookups.md) |
-| 37 | New special form without an `ic-expr-node` case lowers to 0 (a form whose parser rejects it is `E_MALFORMED_FORM`, but a parsed, unlowered one is still silent) | [icnf-new-form-needs-case](../rules/icnf-new-form-needs-case.md) |
-| 38 | Register clobbering. Stack-machine code may touch only `rbx` and `r12` of the callee-saved set (every prologue saves exactly those); the native backend allocates `rsi rdi r8 r9 r10` and `rbx r12`–`r15` and saves only the callee-saved ones it used, so an emitted MIR sequence may clobber only the scratch registers `rax rcx rdx r11` | [cg-callee-saved-registers](../rules/cg-callee-saved-registers.md) |
-| 39 | Rewritten node without `zyl_span_copy` loses locations | [pass-copy-spans](../rules/pass-copy-spans.md) |
-| 40 | stdout writes corrupt the LSP channel | [pass-no-stdout](../rules/pass-no-stdout.md) |
-| 41 | Listing a runtime function in `rg-ffi-kind` that keeps or aliases an argument (or allocates outside `zyl_result_alloc`): silent use-after-free once its region is released; the reuse pass trusts the same region summaries, so a wrong summary also lets it overwrite a live block | [icnf-regions-are-a-rewrite](../rules/icnf-regions-are-a-rewrite.md) |
-| 42 | A new runtime entry called through `ffi-call` needs a signature in `ffi_sigs.zyl` (else `E_CANNOT_INFER`), and one that reads raw memory or reinterprets a word belongs in `ffi-raw-p` | [pass-diagnostics](../rules/pass-diagnostics.md) |
-| 43 | A new instruction form in codegen or a `%` expansion that `asm_x86.zyl` encodes wrongly miscompiles only freestanding binaries (the compiler stages link with `cc`) | [cg-self-link](../rules/cg-self-link.md) |
-| 44 | Runtime state touched from several actors (a table, a cache) races unless it takes a lock once `threads_started` is set | [boot-runtime-module](../rules/boot-runtime-module.md) |
+| 32 | A misplaced paren that keeps both the count and the column-1 layout intact re-nests code inside one form; `zyl balance` after every edit catches everything else | [tool-balance](../rules/tool-balance.md) |
+| 33 | Same type name in two modules: the later `use` wins, the other module misreads tags | [boot-one-deftype-per-name](../rules/boot-one-deftype-per-name.md) |
+| 34 | Allocating inside a per-element lookup: compiler temporaries mostly land in the heap, which never frees | [pass-no-allocation-in-lookups](../rules/pass-no-allocation-in-lookups.md) |
+| 35 | New special form without an `ic-expr-node` case lowers to 0 (a form whose parser rejects it is `E_MALFORMED_FORM`, but a parsed, unlowered one is still silent) | [icnf-new-form-needs-case](../rules/icnf-new-form-needs-case.md) |
+| 36 | Register clobbering. Stack-machine code may touch only `rbx` and `r12` of the callee-saved set (every prologue saves exactly those); the native backend allocates `rsi rdi r8 r9 r10` and `rbx r12`–`r15` and saves only the callee-saved ones it used, so an emitted MIR sequence may clobber only the scratch registers `rax rcx rdx r11` | [cg-callee-saved-registers](../rules/cg-callee-saved-registers.md) |
+| 37 | Rewritten node without `zyl_span_copy` loses locations | [pass-copy-spans](../rules/pass-copy-spans.md) |
+| 38 | stdout writes corrupt the LSP channel | [pass-no-stdout](../rules/pass-no-stdout.md) |
+| 39 | Listing a runtime function in `rg-ffi-kind` that keeps or aliases an argument (or allocates outside `zyl_result_alloc`): silent use-after-free once its region is released; the reuse pass trusts the same region summaries, so a wrong summary also lets it overwrite a live block | [icnf-regions-are-a-rewrite](../rules/icnf-regions-are-a-rewrite.md) |
+| 40 | A new runtime entry called through `ffi-call` needs a signature in `ffi_sigs.zyl` (else `E_CANNOT_INFER`), and one that reads raw memory or reinterprets a word belongs in `ffi-raw-p` | [pass-diagnostics](../rules/pass-diagnostics.md) |
+| 41 | A new instruction form in codegen or a `%` expansion that `asm_x86.zyl` encodes wrongly miscompiles only freestanding binaries (the compiler stages link with `cc`) | [cg-self-link](../rules/cg-self-link.md) |
+| 42 | Runtime state touched from several actors (a table, a cache) races unless it takes a lock once `threads_started` is set | [boot-runtime-module](../rules/boot-runtime-module.md) |
 
 ## Fixed: now compile errors (check old habits against these)
 
@@ -77,6 +75,9 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | `(+ x)`, `(* x)`, `(/ x)` evaluated to 0 | `(+ x)`/`(* x)` are `x`; `(/ x)` `(% x)` are `E_ARITY_MISMATCH` |
 | `let` among body forms leaked scope; `(let (x 1) a b)` dropped `b`; `(let ((x 1) (y 2)) …)` was a wrong program | bodies are implicit `begin`s; the binding list is `E_MALFORMED_FORM` ([fn-let-single-binding](../rules/fn-let-single-binding.md), [fn-begin-multi-form-bodies](../rules/fn-begin-multi-form-bodies.md)) |
 | one-armed `if` / `cond` without `else` → 0 | they are `Unit`; using one as a value is `E_TYPE_MISMATCH` ([fn-conditionals](../rules/fn-conditionals.md)) |
+| `alias` made a type variable | transparent alias; unknown target `E_UNKNOWN_TYPE` ([fn-unlowered-forms](../rules/fn-unlowered-forms.md)) |
+| a `defn` named after a keyword (`setup`, `test`) compiled but was never called | `E_RESERVED_KEYWORD` ([syn-naming-conventions](../rules/syn-naming-conventions.md)) |
+| `run-tests` options were ignored | `(:filter "s")` works; unknown option `E_MALFORMED_FORM` ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)) |
 | `make-variant` → 0 | `E_CANNOT_INFER` / `E_MALFORMED_FORM` |
 | `<`/`>` on records ordered by address | `E_TYPE_MISMATCH`; derive `Ord`, call `Ord.compare` ([data-equality-structural](../rules/data-equality-structural.md)) |
 | `((T : Ord) a b)` added a value parameter; `(a : Int)` ignored the type | `E_MALFORMED_PARAMETER` ([gen-no-type-parameter-syntax](../rules/gen-no-type-parameter-syntax.md)) |

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The standard library and compiler follow these conventions throughout, and the checker only half-enforces reserved names: `(let match 3 ...)` compiles, and some names (`when`, `unless`) are core library *functions*. Shadowing them makes code unreadable and can change which definition a call reaches.
+The standard library and compiler follow these conventions throughout, and the checker enforces the reserved keywords (`(let match 3 ...)` is `E_RESERVED_KEYWORD`), but some names (`when`, `unless`) are core library *functions* and can still be shadowed. Shadowing them makes code unreadable and can change which definition a call reaches.
 
 ## Conventions
 
@@ -24,7 +24,7 @@ Indentation is two spaces; the LSP formatter re-indents by paren depth.
 
 ```lisp
 (defn ReadFile (FileName) ...)   ; wrong case
-(let begin 5 begin)              ; compiles, unreadable
+(let begin 5 begin)              ; E_RESERVED_KEYWORD
 (defn d1 (x d2) x)               ; dummy names: use _
 ```
 
@@ -37,7 +37,7 @@ Indentation is two spaces; the LSP formatter re-indents by paren depth.
 
 ## Notes
 
-- `E_RESERVED_KEYWORD` is not raised today; the spec's reserved list is not enforced: `(let match 3 ...)` and `(let begin 5 ...)` compile.
+- The spec 1.3 keywords are reserved (`E_RESERVED_KEYWORD`, since 2026-09-28): none may name a function, parameter, `let` binding, type, variant, field, trait, alias, macro or module, so `(let match 3 ...)` and `(defn setup () ...)` are errors. `make-S` is reserved when the file declares a struct `S`. The standard library and the runtime are exempt.
 - `unit` is the Unit value and cannot be rebound: `(let unit 3 (print unit))` compiles, warns `W_UNUSED_VARIABLE`, and prints the Unit value (`0`), not 3.
 - `list`, `quote` and `quasiquote` head the reader's list forms: a variable named `list` works, but `(list ...)` is always the list literal.
 - A program type may not reuse a prelude constructor name (`Some`, `None`, `Ok`, `Err`, `Cons`, `Nil`): `E_DUPLICATE_VARIANT`.

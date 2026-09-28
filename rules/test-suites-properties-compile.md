@@ -1,6 +1,6 @@
 # test-suites-properties-compile
 
-> Group tests in a top-level `test-suite` with `setup`/`teardown` fixtures, check properties with `test-property` over `gen-int`, `gen-bool`, `gen-string` or `gen-float`, assert that code does or does not compile with `test-compile`, and check that an expression raises with `assert-fail`. Keyword options on `run-tests` are ignored.
+> Group tests in a top-level `test-suite` with `setup`/`teardown` fixtures, check properties with `test-property` over `gen-int`, `gen-bool`, `gen-string` or `gen-float`, assert that code does or does not compile with `test-compile`, and check that an expression raises with `assert-fail`. `run-tests` takes `(:filter "s")` and `(:parallel Bool)`.
 
 ## Why It Matters
 
@@ -13,7 +13,9 @@ Spec 20.5 is implemented (2026-09-28). The forms are rewritten on the parse tree
 | `(test-property "p" gen (fn (x ...) bool))` | one to three parameters; runs over the generator's fixed samples (edge cases such as 0, ±1, the Int limits and `""`, then a seeded sequence; no NaN or infinity); extra parameters pair each sample with the list rotated by 7 and 13; fails with ``property `p` failed for <sample>`` |
 | `(test-compile e)` / `(test-compile e (:expect-error true))` | top level only; decided at compile time by running the checks and the type checker on the program with `e` as a function body; becomes a test `test-compile line N` that fails with the reason (`did not compile: error[...]` or `compiled, but an error was expected`) |
 | `(assert-fail e)` / `(assert-fail e "msg")` | fails unless evaluating `e` raises; the message is a string literal |
-| `(run-tests :parallel true)` | the keyword is ignored: tests run one at a time in registration order |
+| `(run-tests (:filter "s"))` | runs only the tests whose name contains `s`; the summary counts only those |
+| `(run-tests (:parallel true))` | accepted; tests still run one at a time in registration order (deterministic output) |
+| any other `run-tests` option | `E_MALFORMED_FORM` |
 | a keyword on `test` | `E_MALFORMED_FORM` (a test is a name and one body form) |
 
 ## Bad

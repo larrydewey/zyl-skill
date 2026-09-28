@@ -19,7 +19,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `(impl-not Trait Target)` | top-level; `Target` a type or a trait (all implementors); any impl/derive of the pair, or an impl of `Trait` whose result derives from a protected value, is `E_IMPL_FORBIDDEN`; for `Show` the target gets a compiler-made `<hidden>` Show |
 | prelude `(trait Secret (wipe (self) Int))` | `(impl Secret T ...)` makes `T` key material: constructors yield secrets, params/fields of `T` are secret, prints `<secret>`, `(k.wipe)` erases; prelude `(impl-not Show Secret)` and `(impl-not Debug/Eq/Ord/Hash Secret)` |
 | `(extern "sym" (T...) R)` | C signature for a foreign symbol; required before `ffi-call` to it (`E_CANNOT_INFER` otherwise); concrete word-sized types only (`Int Bool String Ptr`, handles, `(Fn (A...) R)` callbacks, `Unit` result); `Float` or a type variable is `E_TYPE_MISMATCH`; retyping a `zyl_*` entry is `E_FFI_RESTRICTED` ([ffi-extern-required](../rules/ffi-extern-required.md)) |
-| `(alias Name Type)` | no-op: `Name` in an annotation is then an unknown type name, i.e. a fresh type parameter, not `Type` |
+| `(alias Name Type)` | transparent alias: `Name` means `Type` in every annotation; unknown target or self-reference `E_UNKNOWN_TYPE` |
 | `(defmacro name (params [&rest r]) template)`, `macro` | top level only; exactly one template form (`E_MALFORMED_FORM`); `&rest r` takes the remaining arguments, spliced with `,@r` where any number of expressions may appear (call arguments, `begin`, `print`; not `(list ,@r)` or `[,@r]`, which are constructor fields: write `` `(,@r) ``) ([macro-quasiquote-and-rest](../rules/macro-quasiquote-and-rest.md)) |
 | `(use path ...)`, `(pub <def>)`, `(feature-gate f <def>)` (top level only, else `E_PKG_FEATURE_NESTED`), `(module n)` (ignored), `(export n)` (dropped) | |
 
@@ -124,7 +124,7 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 
 ## Testing
 
-`(test "name" body)` (exactly one body form; `begin` for several), `(run-tests)` (keywords ignored), `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false`, `(assert-fail e msg?)` (fails unless `e` raises). Top-level `test-suite` with `setup`/`teardown`, `test-property` (`gen-int`/`gen-bool`/`gen-string`/`gen-float`, 1-3 parameters) and `test-compile` (`(:expect-error true)` optional) are implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)). A failing test prints `FAIL: <message>`; the binary exits 0 even when a test fails.
+`(test "name" body)` (exactly one body form; `begin` for several), `(run-tests)` (options `(:filter "s")`, `(:parallel Bool)`; anything else `E_MALFORMED_FORM`), `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false`, `(assert-fail e msg?)` (fails unless `e` raises). Top-level `test-suite` with `setup`/`teardown`, `test-property` (`gen-int`/`gen-bool`/`gen-string`/`gen-float`, 1-3 parameters) and `test-compile` (`(:expect-error true)` optional) are implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)). A failing test prints `FAIL: <message>`; the binary exits 0 even when a test fails.
 
 ## Types, regions, capabilities (annotation/argument names)
 
