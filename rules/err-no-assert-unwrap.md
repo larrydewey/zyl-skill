@@ -37,7 +37,7 @@ There is still no `E_ASSERT_FAIL` code. All of these unwind to the nearest `try`
 ## Notes
 
 - Inside a `test`, a failure is reported only as `FAIL` ([test-read-summary-line](test-read-summary-line.md)).
-- `assert-fail` evaluates its expression and always passes.
+- `(assert-fail e msg?)` fails unless `e` raises an error.
 - For function pre/postconditions, `requires`/`ensures` give a message naming the function ([contract-checks-and-profiles](contract-checks-and-profiles.md)).
 
 ## See Also

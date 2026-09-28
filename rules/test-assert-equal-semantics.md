@@ -48,11 +48,11 @@
 | `(assert-true e)` / `(assert-true e "msg")` | `e` must be a `Bool`; outside a test, fails with `msg` (string literal) or `assert-true failed`; inside a test, `FAIL` |
 | `(assert-false e)` / with message | `e` must be a `Bool` |
 | `(assert e "msg")` | `e` must be a `Bool`; outside a test, `PANIC: msg` (string literal) or `assert failed`; inside a test, `FAIL` |
-| `(assert-fail e)` | evaluates `e`, **always passes** |
+| `(assert-fail e)` | fails unless `e` raises an error |
 
 Outside a test, a failed `assert-equal` prints `PANIC: assert-equal failed` and exits 1.
 
 ## See Also
 
 - [data-equality-structural](data-equality-structural.md)
-- [test-unimplemented-features](test-unimplemented-features.md)
+- [test-suites-properties-compile](test-suites-properties-compile.md)

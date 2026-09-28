@@ -16,7 +16,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 6 | `print` of a struct/ADT with no `Show` impl, or of an `Option`/`List` of one, prints an address; `print` of a `Bool` prints `1`/`0` | [trait-derive-show](../rules/trait-derive-show.md) |
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | [fn-conditionals](../rules/fn-conditionals.md) |
-| 9 | `with-resource` runs no cleanup; `alias` makes a type variable | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
+| 9 | `alias` makes a type variable | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
 | 10 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
 | 11 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 12 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
@@ -32,7 +32,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 22 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 23 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
 | 24 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
-| 25 | `test-suite` drops its tests; `assert-fail` always passes | [test-unimplemented-features](../rules/test-unimplemented-features.md) |
+| 25 | A `defn` named after a special form (`setup`, `test`) compiles, but calls of it are the special form | [test-suites-properties-compile](../rules/test-suites-properties-compile.md) |
 | 26 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
 | 27 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
 | 28 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
@@ -89,4 +89,5 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | `=` on dynamic strings in the compiler compared pointers | content comparison ([pass-string-eq-in-compiler](../rules/pass-string-eq-in-compiler.md); `str-eq` remains the convention) |
 | `receive` was untyped; mailbox messages could be dropped at exit; actor output interleaved by the OS (before 2026-09-28) | typed Kahn channels, per-actor output buffers, deterministic under every schedule ([actor-channels-kahn](../rules/actor-channels-kahn.md)) |
 | `try` frames were never freed, so a `try` in a loop leaked | freed when the `try` ends |
+| `with-resource` released nothing; `test-suite` dropped its tests; `setup`/`teardown`/`test-property`/`test-compile` did nothing; `assert-fail` always passed (before 2026-09-28) | all implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md), [fn-unlowered-forms](../rules/fn-unlowered-forms.md)) |
 | the root package's `main` and top-level tests skipped the capability check | checked ([pkg-capabilities](../rules/pkg-capabilities.md)) |

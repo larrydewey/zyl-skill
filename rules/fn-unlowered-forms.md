@@ -1,6 +1,6 @@
 # fn-unlowered-forms
 
-> Do not rely on `with-resource` cleanup or `alias`: they type-check but do nothing; `make-struct` and `make-variant` do not compile at all. `read-line`, `exit` and `close` are lowered since 2026-09-25.
+> Do not rely on `alias`: it type-checks but does nothing; `make-struct` and `make-variant` do not compile at all. `with-resource` releases its resource (since 2026-09-28), and `read-line`, `exit` and `close` are lowered.
 
 ## Why It Matters
 
@@ -8,16 +8,16 @@ Recognizing a form is not implementing it. A form whose *shape* is wrong is `E_M
 
 | Form | What it actually does | Use instead |
 |---|---|---|
-| `(with-resource (n init) body...)` | binds `n` and runs the body; runs **no** release step | release explicitly |
 | `(alias A T)` | nothing; `A` in an annotation is then a fresh type variable, so `(x A)` accepts any type | the original type name |
 | `(make-struct Name ...)` | `E_CANNOT_INFER` ("no type for form not typed") | `(make-Name ...)` |
 | `(make-variant (T) V ...)` | `E_CANNOT_INFER` | `(V ...)` |
-| `test-suite`, `setup`, `teardown`, `test-property`, `test-compile`, `assert-fail` | see [test-unimplemented-features](test-unimplemented-features.md) | flat `test` forms |
 
 These used to be on the list and work now:
 
 | Form | Behavior |
 |---|---|
+| `(with-resource (n init) body...)` | binds `n`, runs the body, then `(Drop.drop n)` on the way out, normally or before an error propagates (spec 12.9); an `Int` is a file descriptor (`file-close`); implement `Drop` for your own resource types, else `E_TRAIT_NOT_FOUND` |
+| `test-suite`, `setup`, `teardown`, `test-property`, `test-compile`, `assert-fail` | implemented (2026-09-28): [test-suites-properties-compile](test-suites-properties-compile.md) |
 | `(read-line)` | one line from stdin without its newline (a trailing `\r` is dropped too); `""` at end of input; flushes stdout first (`zyl_read_line`) |
 | `(exit code)` | `code` an `Int`; flushes stdout and stderr and ends the process with that status (`zyl_exit`); its type is fresh, so it fits any branch |
 | `(close fd)` | the same as `file-close`: an `Int` descriptor, returns an `Int` |
@@ -28,21 +28,19 @@ Contracts (`requires`/`ensures`/`invariant`, profiles, `checkpoint` rollback, ty
 ## Bad
 
 ```lisp
-(defn main ()
-  (with-resource (fd (file-open "out.txt" "w"))
-    (begin
-      (file-write fd "data")
-      0)))                                 ; fd is never closed
+(alias Meters Int)
+(defn run ((d Meters)) d)          ; Meters is a fresh type variable: (run "x") compiles
 ```
 
 ## Good
 
 ```lisp
+(deftype Log (Log String))
+(impl Drop Log (defn drop (self) (match self (Log n (print (str-concat "closed " n))))))
+
 (defn main ()
-  (let fd (file-open "out.txt" "w")
-    (let _ (file-write fd "data")
-      (let _ (close fd)
-        0))))
+  (with-resource (l (Log "a"))
+    (begin (print "using a") 0)))  ; using a, then closed a
 ```
 
 ## Notes

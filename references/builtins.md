@@ -37,7 +37,7 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `(begin e...)` | last value; empty → `unit` |
 | `(match e arms...)` | constructor or literal arms, never mixed (not diagnosed); arms of one type |
 | `(try e (catch v h...))` | catches runtime panics (`error`, `E_INDEX_OUT_OF_BOUNDS`, `E_FFI_TIMEOUT`, contract failures...), not `Err` values and not SIGFPE; handler has the body's type |
-| `(with-resource (n init) body)` | binds; **no release** |
+| `(with-resource (n init) body)` | binds, runs `body`, then `(Drop.drop n)` on both exits (an `Int` is a file descriptor); no `Drop` impl is `E_TRAIT_NOT_FOUND` |
 | `and`, `or`, `not` | `Bool` only; short-circuit; `(or 5 6)` and `(not 0)` are `E_TYPE_MISMATCH` |
 | `(error "msg")` | lib (`allocator/allocator`), `String -> a`; panics / unwinds to `try` |
 | `when`, `unless` | lib (`core/core`); **eager** functions; the body must be `Unit` and runs even when the condition says not to |
@@ -124,7 +124,7 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 
 ## Testing
 
-`(test "name" body)` (exactly one body form; `begin` for several), `(run-tests)`, `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false` work. `assert-fail` evaluates its operand and always passes; `test-suite` drops its tests; `setup`, `teardown`, `test-property`, `test-compile`: not run. The binary exits 0 even when a test fails.
+`(test "name" body)` (exactly one body form; `begin` for several), `(run-tests)` (keywords ignored), `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false`, `(assert-fail e msg?)` (fails unless `e` raises). Top-level `test-suite` with `setup`/`teardown`, `test-property` (`gen-int`/`gen-bool`/`gen-string`/`gen-float`, 1-3 parameters) and `test-compile` (`(:expect-error true)` optional) are implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)). A failing test prints `FAIL: <message>`; the binary exits 0 even when a test fails.
 
 ## Types, regions, capabilities (annotation/argument names)
 

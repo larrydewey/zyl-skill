@@ -39,7 +39,9 @@ The stdlib is the implicit package `zyl/std`: no manifest entry, every definitio
 | `simd/simd` | `I64x2`, `I32x4`, `U8x16`: `i64x2 a b`, `i32x4 a b c d`, `u8x16 ...`, `-splat`, `-get`/`-set`, `-add`, `-sub`, `-and`, `-or`, `-xor`, `-eq`, `-min`, `-max`, `-hsum`, `u8x16-movemask`; portable SWAR, lane index out of range `E_INDEX_OUT_OF_BOUNDS` |
 | `ffi/ffi` | `ffi-pin-value`, `ffi-unpin-value`, `ffi-safe-call`, `ffi-pin-call-unpin` (no checking) — needs `ffi` |
 | `io/io` | `io-file-open-read/-write/-append`, `io-file-read h n`, `io-file-write h d`, `io-file-close`, `io-read-line`, `io-newline`, `io-print`, `io-print-int/-string/-float`, `io-safe-read/-write/-close`; `Stdout` (`make-stdout`), `StringBuffer` (`make-string-buffer`, `string-buffer-str/-len/-destroy`); trait `OutputStream` (`write`, `flush`) — needs `io` |
-| `testing/testing` | `test-run`, `test-suite-run`, `assert-equal-values`, `assert-true-value`, `assert-false-value`, `assert-fail-expr`, `property-int/-bool/-string/-float` (stubs); `test-count`, `run-tests-filtered/-parallel/-with-timeout` are placeholders that `error` |
+| `testing/testing` | `assert-equal-values`, `assert-true-value`, `assert-false-value`, `assert-fail-call thunk` (the assertions as functions); the test forms themselves are built in |
+| `core/resource` (prelude) | trait `Drop` (`drop (self) Unit`), impl for `Int` (file-close); what `with-resource` calls |
+| `core/property` (prelude) | `property-samples-int/-bool/-string/-float`, `property-check-1/-2/-3`, `property-rotate`; behind `test-property` |
 
 ## math (≈ 7,650 lines; `(use math/math)` loads all; arena first; bytes one per word)
 

@@ -40,7 +40,7 @@
 | C function gets garbage | pinned string passed where C expects a `char*`; an `extern` that does not match the C prototype | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md), [ffi-extern-word-sized-types](../rules/ffi-extern-word-sized-types.md) |
 | `zyl eval` and binary disagree | codegen or interpreter bug (shared front end) | bisect with prefixes + canary; `ZYL_MIR=0` / `ZYL_REUSE=0` / `ZYL_INLINE=0` to isolate a backend pass; interpreter test category |
 | Edits to stdlib/compiler have no effect outside the checkout | stale `~/.zyl` wins resolution | `ZYL_HOME=$PWD/build/boot` or `./install.sh` |
-| Test run "passes" but did nothing | `test-suite` wrapper, missing `(run-tests)`, `--filter` without `--full` | flat tests; read summary |
+| Test run "passes" but did nothing | missing `(run-tests)`, `--filter` without `--full` | read the summary line |
 | Exit 139 / 134 | compiler/runtime bug / internal abort | minimize and report |
 
 ## Compiler / bootstrap

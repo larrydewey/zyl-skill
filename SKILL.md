@@ -50,7 +50,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 1. **Type checking is sound and strict.** Every type error in the program is reported (`E_TYPE_MISMATCH`, `E_INFINITE_TYPE`, `E_CANNOT_INFER`, `E_UNBOUND_VARIABLE`), then the compile fails. Conditions are `Bool`, arithmetic is `Int` or `Float` with no mixing and no implicit conversion, statements are `Unit` (the literal is `unit`), both branches of an `if` share a type, and `main` is `() -> Int`. Every trait call resolves statically, and channels are typed. → [type-sound-checking](rules/type-sound-checking.md)
 2. **Lists have literal syntax; most other punctuation is invalid.** `[a b c]`, `(list a b c)` and `'(1 2 3)` build a `List` of one element type, and `` `(1 ,x ,@xs) `` fills in holes. A name inside quoted data, and a `,`/`,@` outside a quasiquote or macro template, is `E_MALFORMED_FORM`. `@ # $ | ^ \`, a lone `.` and non-ASCII bytes outside strings and comments are a located `E_INVALID_CHAR`. → [syn-list-literals-and-quote](rules/syn-list-literals-and-quote.md), [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 3. **Matches: spell constructors exactly, one level at a time, `_` last.** A nested pattern is `E_NESTED_PATTERN` and a non-exhaustive match is an error, but an arm head that is not a known constructor is still a silent catch-all: a misspelled constructor with no fields binds a variable. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-4. **Some things still compile and do the wrong thing.** `with-resource` runs no cleanup and `alias` makes a type variable. `print` of a record with no `Show` prints its address, and `(print true)` prints `1`. Integer arithmetic wraps, and division by zero kills the process with SIGFPE. → [fn-unlowered-forms](rules/fn-unlowered-forms.md), [references/pitfalls](references/pitfalls.md)
+4. **Some things still compile and do the wrong thing.** `alias` makes a type variable, and a `defn` named after a special form is never called. `print` of a record with no `Show` prints its address, and `(print true)` prints `1`. Integer arithmetic wraps, and division by zero kills the process with SIGFPE. → [fn-unlowered-forms](rules/fn-unlowered-forms.md), [references/pitfalls](references/pitfalls.md)
 5. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 6. **Only `if` branches and `match` arms need `begin` for several forms.** `defn`, `let`, `fn`, `while`, `for`, `cond` clauses and `catch` handlers sequence their forms. A form after an `if`'s else branch is `E_MALFORMED_FORM`, and `test` and `defmacro` take exactly one body form. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 7. **Every foreign symbol needs an `extern`, and every `ffi-call` a timeout.** Declare `(extern "sym" (ParamType ...) ResultType)` with word-sized types (a `Float` crosses only as its bits). End each `ffi-call` with a positive integer literal timeout in milliseconds: it is checked at compile time and enforced at run time (`E_FFI_TIMEOUT`, and the C function is abandoned). `ffi-pin` gives a `(Pin a)`, a pointer to a slot. → [ffi-extern-required](rules/ffi-extern-required.md), [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
@@ -144,7 +144,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-print-semantics`](rules/fn-print-semantics.md) - `print` writes each argument on its own line and returns `Unit`; build one-line output with `str-concat` and `Show.show`.
 - [`fn-string-equality`](rules/fn-string-equality.md) - `=`/`==`/`!=` on Strings compare contents and `<`/`>`/`<=`/`>=` order them by bytes, everywhere: every expression has a static type, so there is no address-comparison fallback. Comparing a String with anything else is `E_TYPE_MISMATCH`.
 - [`fn-underscore-discard`](rules/fn-underscore-discard.md) - Use `_` (or a `_`-prefixed name) for anything deliberately unused; never invent dummy names.
-- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not rely on `with-resource` cleanup or `alias`: they type-check but do nothing; `make-struct` and `make-variant` do not compile at all. `read-line`, `exit` and `close` are lowered since 2026-09-25.
+- [`fn-unlowered-forms`](rules/fn-unlowered-forms.md) **[CRITICAL]** - Do not rely on `alias`: it type-checks but does nothing; `make-struct` and `make-variant` do not compile at all. `with-resource` releases its resource (since 2026-09-28), and `read-line`, `exit` and `close` are lowered.
 
 ### 3. Structs, ADTs & Collections (CRITICAL)
 
@@ -299,7 +299,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`test-read-summary-line`](rules/test-read-summary-line.md) - Judge a test run by its output (`FAIL` lines and the `test result:` summary), not by the exit status.
 - [`test-regression-runner`](rules/test-regression-runner.md) - Run `./run_regression_tests.sh --full --no-boot --filter <word>` for targeted checks; `--filter` narrows the selected mode, it does not select one.
 - [`test-toplevel-forms-and-run-tests`](rules/test-toplevel-forms-and-run-tests.md) - Write tests as flat top-level `(test "name" body)` forms, end the file with `(run-tests)`, and do not define `main` in a test file.
-- [`test-unimplemented-features`](rules/test-unimplemented-features.md) **[CRITICAL]** - Don't use `test-suite`, `setup`/`teardown`, `test-property`, `test-compile`, `assert-fail`, keyword options or the `run-tests-*` helpers: they compile and do nothing, silently drop tests, or are rejected.
+- [`test-suites-properties-compile`](rules/test-suites-properties-compile.md) - Group tests in a top-level `test-suite` with `setup`/`teardown` fixtures, check properties with `test-property` over `gen-int`, `gen-bool`, `gen-string` or `gen-float`, assert that code does or does not compile with `test-compile`, and check that an expression raises with `assert-fail`. Keyword options on `run-tests` are ignored.
 
 ### 19. Modules & Packages (HIGH)
 
@@ -410,7 +410,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | Printing / strings / floats | `fn-print-semantics`, `fn-types-drive-codegen`, `fn-string-equality`, `data-field-types`, `trait-derive-show` |
 | Parsing / text | `data-views-and-slices`, `proj-idioms`, `syn-string-literals` |
 | Lists and data literals | `syn-list-literals-and-quote`, `data-collections-persistent` |
-| Error handling | `err-`, `contract-`, `fn-unlowered-forms` |
+| Error handling | `err-`, `contract-`, `fn-unlowered-forms` (`with-resource`) |
 | Mutation / state | `own-`, `data-struct-immutable-rebind`, `data-collections-persistent` |
 | Generic / reusable code | `gen-`, `trait-`, `closure-` |
 | Macros | `macro-`, `syn-list-literals-and-quote` |

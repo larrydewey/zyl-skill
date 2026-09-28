@@ -7,7 +7,7 @@
 | integer, `true`/`false`, byte literal | `IConst` |
 | string / float literal | `IStr` / `IFlt` (source text) |
 | variable | `ILoad` (a name the type pass renamed, e.g. to an instance `f~T`, loads the new name) |
-| `let`, `let-mut`, `with-resource` | `ILet` (mutability gone) |
+| `let`, `let-mut` | `ILet` (mutability gone; `with-resource`, `assert-fail`, `test-suite` and `test-property` were rewritten on the parse tree, `compiler/desugar.zyl`) |
 | `set!` | `ISet` |
 | `begin` / `if` / `while` | `ISeq` / `IIf` / `IWhile` |
 | `for` | nested `ILet`s around `IWhile` |
