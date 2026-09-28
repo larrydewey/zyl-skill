@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The compiler resolves the stdlib (and `actor_runtime.c`) from its bundle directory, chosen by `cli-resolve-bundledir` in `selfhost/driver.zyl`:
+The compiler resolves the stdlib (and the runtime: `rt.zo`, `rt.o`, `start.o`) from its bundle directory, chosen by `cli-resolve-bundledir` in `selfhost/driver.zyl`:
 
 1. If `ZYL_HOME` is set, it is the candidate; otherwise `$HOME/.zyl` is.
 2. If the candidate holds a `stdlib/` directory, it is used.
@@ -22,7 +22,7 @@ ZYL_HOME=$PWD/build/boot build/boot/zyl-self prog.zyl -o prog   # test against t
 ## Notes
 
 - `E_MODULE_NOT_FOUND` for a stdlib module: check the bundle directory's `stdlib/` exists and is current.
-- The bundle directory also supplies the runtime the binary links with (`actor_runtime.o` if newer than `actor_runtime.c`, else the source), so a stale install links a stale runtime too.
+- The bundle directory also supplies the runtime the binary links with (`rt.zo` for the Zyl linker, `rt.o` for a hosted `cc` link), so a stale install links a stale runtime too.
 - The compiler `chdir`s to the bundle directory before compiling; the source path and `-o` are resolved against the directory you ran it from first.
 - User modules resolve next to the source file or within its package.
 - No `ZYL_PATH`, no `zyl.toml`.

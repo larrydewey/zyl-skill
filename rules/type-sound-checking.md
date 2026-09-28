@@ -47,7 +47,6 @@ Also checked before or during typing: `E_ARITY_MISMATCH` (constructors included)
 
 ## Known holes
 
-- `receive` returns a value of any type (a mailbox holds whatever senders put there).
 - A lowercase name as a `deftype` field type, `(deftype Box (Bx a))`, is `E_UNKNOWN_TYPE` (since 2026-09-25; it used to leave the field unchecked). Write type parameters uppercase ([gen-generic-adts](gen-generic-adts.md)).
 - Contract clauses compiled out by the `off`/`production` profile are not type-checked at all.
 

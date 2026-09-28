@@ -23,8 +23,8 @@ The `(extern ...)` declaration types every call, but it cannot say what the C fu
 
 ## Notes
 
-- libc is always linked: `strlen`, `abs`, `getenv`, `puts`, `free`, `strdup`... Each still needs its extern.
-- Runtime entries need no extern and are typed by `stdlib/compiler/ffi_sigs.zyl`: `zyl_actor_wait_all`, `zyl_now_ms`, `zyl_argc`/`zyl_arg_str`, `zyl_getenv_str`, `zyl_err_is`, `zyl_ref_new`/`zyl_ref_get`/`zyl_ref_set`, ...
+- A program with a foreign `ffi-call` links hosted over libc, so all of libc is reachable: `strlen`, `abs`, `getenv`, `puts`, `free`, `strdup`... Each still needs its extern.
+- Runtime entries need no extern and are typed by `stdlib/compiler/ffi_sigs.zyl`: `zyl_now_ms`, `zyl_argc`/`zyl_arg_str`, `zyl_getenv_str`, `zyl_err_is`, `zyl_ref_new`/`zyl_ref_get`/`zyl_ref_set`, ...
 - In a package, every `ffi-call`/`ffi-pin`/`ffi-unpin` needs the `ffi` capability.
 
 ## See Also

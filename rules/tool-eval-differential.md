@@ -1,6 +1,6 @@
 # tool-eval-differential
 
-> Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on actors, FFI, division by zero and speed.
+> Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on FFI, division by zero, regions and speed.
 
 ## Why It Matters
 
@@ -8,7 +8,8 @@
 
 | | Compiled | Interpreter |
 |---|---|---|
-| Actors | yes | `E_UNSUPPORTED_INTERPRETED` |
+| Actors | threads, channels | the same: a spawn runs a compiled closure that interprets the body; output and schedules match |
+| `with-region` limits | enforced (`E_REGION_EXHAUSTED`) | ignored: the interpreter allocates in its own arenas |
 | FFI | any linked symbol, up to 16 args, timeout enforced | `dlsym`, foreign calls through `zyl_ffi_timed_argv` (timeout enforced, ≤ 16 args), `E_FFI_SYMBOL_NOT_FOUND` |
 | Integer division by zero | SIGFPE (exit 136) | `E_DIVISION_BY_ZERO` (exit 1) |
 | Undefined function | `E_UNBOUND_VARIABLE` from the type checker, before either runs | same |

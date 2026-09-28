@@ -24,7 +24,7 @@
 | `macro_rules!` | `defmacro` templates, hygienic; `&rest xs` collects the remaining arguments and `,@xs` splices them; arguments are substituted, so one used twice runs twice |
 | `vec![1, 2]` | `[1 2]` / `(list 1 2)` is a `List`; a `Vec` is built with `vec-create` + `vec-push` |
 | `&s[a..b]`, `&v[a..b]` | `(view-slice s a (- b a))` (`text/view`, zero-copy `StrView`), `(slice-vec v a (- b a))` (`collections/slice`) |
-| threads + channels | `spawn` + `send`/`(receive)`, reply to `(actor-self)`; `receive` is untyped |
+| threads + `mpsc` channels | `spawn` + typed single-writer single-reader channels (`chan`, `chan-tx`, `chan-rx`, `chan-send`, `chan-recv`); no `select`, no `try_recv`; one channel per producer for fan-in |
 | `extern "C"` | `(extern "sym" (Int String) Int)` + `(ffi-call "sym" args… timeout)`; word-sized types only, no `f64` |
 | Cargo.toml / ranges | `zyl.pkg` / bare minimum versions (MVS) |
 | Cargo.lock | `zyl.lock` (integrity record, commit it) |
@@ -46,7 +46,8 @@
 | mutable structs | immutable; rebind |
 | headers | files are modules; `pub` marks exports; `(use m { a b })` |
 | error codes / errno | `Result` |
-| pthread + mutex | actors (isolated, no shared mutable state) |
+| pthread + mutex | actors over channels (isolated, no shared mutable state; deterministic output) |
+| inline `asm` | none: `bit-popcount`, `bit-clz`, `bit-rotl`, `mul-hi`, `crc32c`... and `simd/simd` |
 | `#define MAX(a,b)` | `defmacro` on the AST; arguments still evaluated per use |
 | `void f(...)` | `&rest` macro parameters; functions have fixed arity |
 | Makefile | `zyl file.zyl` or `zyl build --locked`; reproducible builds |

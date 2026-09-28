@@ -1,6 +1,6 @@
 # pkg-capabilities
 
-> Declare the narrowest `(capabilities ...)` set a package needs; know that `main`, top-level tests and manifest-less files are not checked.
+> Declare the narrowest `(capabilities ...)` set a package needs; every definition is checked, `main` and top-level tests included, but a manifest-less file is not.
 
 ## Why It Matters
 
@@ -10,7 +10,7 @@ Absent `(capabilities ...)` means **none**. Using a gated construct or stdlib mo
 |---|---|
 | `io` | `file-open`, `file-read`, `file-write`, `file-close`, `read-line`; `core/io`, `stdlib/io` |
 | `ffi` | `ffi-call`, `ffi-pin`, `ffi-unpin`; `stdlib/ffi` |
-| `actor` | `spawn`, `send`, `receive`, `actor-self`; `stdlib/actor` |
+| `actor` | `spawn`, `chan`, `chan-send`, `chan-recv`; `stdlib/actor` |
 | `secret` | the `Secret` type in package code; `stdlib/math/secret` |
 | `native` | shipping/compiling C sources |
 | `unsafe` | `:unsafe` imports (not enforced) |
@@ -27,9 +27,8 @@ Absent `(capabilities ...)` means **none**. Using a gated construct or stdlib mo
 
 ## Limits
 
-- Only `defn`/`def` bodies are walked. `main` is never qualified (no owning package) and top-level `test` forms are not definitions when the pass runs, so a package with `(capabilities)` can call `ffi-call` or `spawn` directly from `main` and still build. Declare it anyway.
+- The root package's `main` (which stays unqualified) is checked under a `<main>` grant, and top-level `test` forms are checked too (since 2026-09-28).
 - A lone file without `zyl.pkg` declares nothing and is not checked.
-- Closure messages (`zyl_actor_send_closure`) cannot be sent from a Zyl program at all ([actor-no-closure-messages](actor-no-closure-messages.md)).
 - `zyl audit` lists each package's capabilities and the locked closure; `zyl update` reports closure growth.
 
 ## See Also

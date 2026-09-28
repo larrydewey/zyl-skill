@@ -8,7 +8,7 @@
 
 ## Setup
 
-- VS Code: `./install.sh --with-vscode` (needs `npm`); extension 0.4.0 is esbuild-bundled (`npx vsce package` → `zyl-0.4.0.vsix`); finds the server via `zyl.lsp.path`, `$ZYL_HOME/bin`, `~/.zyl/bin`, a workspace's `build/boot`, then `PATH`. **Zyl: Run Current File** = `Ctrl+Shift+Enter`.
+- VS Code: `./install.sh --with-vscode` (needs `npm`); extension 0.5.0 is esbuild-bundled (`npx vsce package` → `zyl-0.5.0.vsix`); finds the server via `zyl.lsp.path`, `$ZYL_HOME/bin`, `~/.zyl/bin`, a workspace's `build/boot`, then `PATH`. **Zyl: Run Current File** = `Ctrl+Shift+Enter`.
 - VS Code tasks: the extension contributes a `$zyl` problem matcher (headline `error[CODE]: msg` / `warning[CODE]: msg` + `--> file:line:col`), used by its own file and package tasks; use it in your `tasks.json` with `"problemMatcher": "$zyl"`.
 - Neovim: `vim.lsp.config.zyl = { cmd = { vim.fn.expand('~/.zyl/bin/zyl-lsp') }, filetypes = { 'zyl' } }`.
 - Emacs eglot / Helix: point at `~/.zyl/bin/zyl-lsp`, associate `.zyl`.
@@ -23,6 +23,7 @@
 - Completion has no local variables; hover shows a parameter's **declared** annotation by its source name (e.g. `StrView`), not an inferred type.
 - Rename is textual within the file: it also renames a shadowing local.
 - Navigation covers open documents only.
+- The server answers each request while its stdin stays open: a program's stdout is buffered, and reading stdin flushes it (the protocol test's `interactive` check; a 2026-09-28 regression hung every editor until this was fixed).
 - Memory: the JSON codec is linear (one growable buffer per message), but the front end and type checker allocate on the process heap, which is never freed: opening a 150 KB document takes about 470 MB, and its semantic tokens about 500 MB more.
 
 ## Notes

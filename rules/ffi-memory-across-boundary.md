@@ -41,7 +41,8 @@ Memory C returns is C's: if C `malloc`ed it, Zyl must `free` it, and a Zyl `Stri
 - `zyl_ptr_cstr`, `zyl_mem_read` and the other raw entries behind these helpers are `E_FFI_RESTRICTED` in user code; use `alloc-cstr`, `alloc-read-int`, `alloc-write-int` and `alloc-offset`.
 - Neither `String` nor `Ptr` has a null test. A C string that may be NULL (`getenv` of an unset variable) is safest declared `String` and tested with `str-length`: the runtime's string helpers read NULL as length 0 (though `(str-eq s "")` is false for it), so unset and empty become one case.
 - The runtime rejects non-zero pointers below `0x1000` in its string helpers; an indirect call through such a value exits with `zyl: invalid callee address`. Nothing else protects Zyl memory from C: test C with ASan/UBSan.
-- Callbacks: a top-level function passed for an extern parameter declared `(Fn (A ...) R)` is a code pointer (a `qsort` comparator, say). It runs on the FFI worker thread, sees the caller's `actor-self`, and a panic in it not caught by a `try` inside the callback ends the process. A closure argument is rejected (`E_INVALID_CAPABILITY`).
+- Callbacks: a top-level function passed for an extern parameter declared `(Fn (A ...) R)` is a code pointer (a `qsort` comparator, say). It runs on the FFI worker thread as the calling actor, and a panic in it not caught by a `try` inside the callback ends the process. A closure argument is rejected (`E_INVALID_CAPABILITY`).
+- In a hosted program (every program that calls foreign C) `alloc-malloc` memory comes from libc's allocator, so C may `free` it.
 - Foreign-call arguments are always placed in the process heap, never in a frame region, so a timed-out call that is abandoned never holds released memory.
 
 ## See Also

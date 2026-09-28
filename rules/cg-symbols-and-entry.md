@@ -1,6 +1,6 @@
 # cg-symbols-and-entry
 
-> User functions are labelled by mangled canonical keys (`zy_...`), the user entry is `_ZYL_main`, and every program shares one C `main` stub that runs it on a huge stack.
+> User functions are labelled by mangled canonical keys (`zy_...`), the user entry is `_ZYL_main`, and every program shares one `main` stub that runs it on a huge stack; a freestanding binary starts at the runtime's `_start`.
 
 ## Why It Matters
 
@@ -18,7 +18,7 @@ main:
     ret
 ```
 
-`zyl_call_on_big_stack` runs `_ZYL_main` on a pthread whose stack is an `mmap` reservation of 64 GiB (falling back to 16, 4, 1 GiB) with a guard page, and returns its value as the exit code. Literals go to `.rodata` (`.string`, `.double`). Output begins with `.file "<basename>.zyl"` so links are byte-identical.
+A freestanding binary enters at `_start` (`start.s`), which calls the runtime's `zyl_rt_start` (argc/argv/envp/auxv, the static TLS block, fs) and then `main`; a hosted one enters through libc's crt. `zyl_call_on_big_stack` runs `_ZYL_main` on a thread whose stack is an `mmap` reservation of 64 GiB (falling back to 16, 4, 1 GiB) with a guard page, and returns its value as the exit code. Literals go to `.rodata` (`.string`, and a float as its exact bits, `.quad`). Output begins with `.file "<basename>.zyl"` so links are byte-identical.
 
 ## Reading labels
 

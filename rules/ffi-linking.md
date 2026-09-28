@@ -4,16 +4,16 @@
 
 ## Why It Matters
 
-`zyl file.zyl` always links with `cc -no-pie prog.s <runtime> -o prog -lpthread`, where `<runtime>` is the prebuilt `actor_runtime.o` next to `actor_runtime.c` when it is newer, else `-O2 actor_runtime.c`. The single-file CLI takes `-o`, `--emit-asm`, `--error-format=json` and `--contracts=P`, and no objects or libraries. A missing C symbol is an ordinary linker error. Linking is the last step: the program must already type-check, so every foreign symbol needs its `(extern ...)` declaration (see [ffi-extern-required](ffi-extern-required.md)).
+A program that calls foreign C links **hosted**: `zyl file.zyl` runs `cc -no-pie prog.s rt.o -o prog -lpthread`, where `rt.o` is the Zyl runtime assembled from the committed `rt.s`. (A program with no foreign `ffi-call` is instead assembled and linked by the compiler itself, static and with no libc.) The single-file CLI takes `-o`, `--emit-asm`, `--error-format=json` and `--contracts=P`, and no objects or libraries. A missing C symbol is an ordinary linker error. Linking is the last step: the program must already type-check, so every foreign symbol needs its `(extern ...)` declaration (see [ffi-extern-required](ffi-extern-required.md)).
 
 ## Good: by hand
 
 ```bash
 zyl ffi-demo.zyl --emit-asm -o ffi-demo.s
-cc -no-pie ffi-demo.s mylib.c ~/.zyl/actor_runtime.c -o ffi-demo -lpthread -lm
+cc -no-pie ffi-demo.s mylib.c ~/.zyl/rt.o -o ffi-demo -lpthread -lm
 ```
 
-`actor_runtime.c` is in `~/.zyl` after install, or `build/boot/` / `runtime/` in a checkout. `-no-pie` is required.
+`rt.o` is in `~/.zyl` after install, or `build/boot/` in a checkout. `-no-pie` is required.
 
 ## Good: package native block
 

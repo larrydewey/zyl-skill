@@ -1,10 +1,10 @@
 # actor-spawn-zero-arg-entry
 
-> Pass `spawn` a named zero-argument function or a zero-parameter `fn`; captures of immutable values work (e.g. an `(actor-self)` id to reply to), an entry with a parameter is `E_TYPE_MISMATCH`, and a `let-mut` capture is `E_CAPABILITY_LEAK`.
+> Pass `spawn` a named zero-argument function or a zero-parameter `fn`; immutable captures (channel ends above all) work, an entry with a parameter is `E_TYPE_MISMATCH`, and a `let-mut` capture is `E_CAPABILITY_LEAK`.
 
 ## Why It Matters
 
-`zyl_actor_spawn` unpacks a capturing closure into its code and environment, so a spawned `fn` that reads immutable variables from the enclosing scope works (captured by value, like any closure). The usual use is handing the worker a reply address: `(let me (actor-self) (spawn (fn () (worker me k))))`. The entry must have type `() -> r`: one with a parameter is `E_TYPE_MISMATCH` at the `spawn` (it is not a message handler; loop on `(receive)` instead). `spawn` returns an `Actor`, which is not an `Int`: `(+ a 1)` is `E_TYPE_MISMATCH`. Capturing a `let-mut` is rejected at compile time (`E_CAPABILITY_LEAK`, located, with a label at the `let-mut`).
+`spawn` has type `(() -> a) -> Actor`. The runtime unpacks a capturing closure into its code and environment, so a spawned `fn` reads immutable variables of the enclosing scope (captured by value, like any closure), and the channel ends it captures directly move to the new actor ([actor-endpoint-ownership](actor-endpoint-ownership.md)). The entry takes no parameters: give it its inputs by capture or over a channel. `spawn` returns an `Actor`, which is not an `Int`: `(+ a 1)` is `E_TYPE_MISMATCH`.
 
 ## Bad
 
@@ -16,20 +16,25 @@
 ## Good
 
 ```lisp
-(defn worker (reply-to k) (send reply-to (* k 2)))
+(use actor/actor)
+
+(defn worker (rx tx) (chan-send tx (* 2 (chan-recv rx))))
 
 (defn main ()
-  (let me (actor-self)
-    (let k 21
-      (begin
-        (spawn (fn () (worker me k)))   ; immutable captures are fine
-        (print (receive))               ; 42
-        0))))
+  (let jobs (chan 1)
+    (let results (chan 1)
+      (let r (chan-rx jobs)
+        (let w (chan-tx results)
+          (let a (spawn (fn () (worker r w)))   ; r and w move to the actor
+            (begin
+              (chan-send (chan-tx jobs) 21)
+              (print (chan-recv (chan-rx results)))   ; 42
+              (actor-wait a)
+              0)))))))
 ```
 
 ## Notes
 
-- Deliver data to a running actor with `send` + `(receive)` ([actor-send-is-discarded](actor-send-is-discarded.md)) or closure messages ([actor-no-closure-messages](actor-no-closure-messages.md)).
 - Private actor state lives in `let-mut` locals (or loop parameters) of the entry function.
 
 ## See Also

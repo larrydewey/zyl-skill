@@ -16,7 +16,8 @@
 | call through a local / computed head | `ICall` on the local; computed head bound to `_callee_N` first |
 | `ffi-call` | after `ffi-check-call`: `zyl_*` symbol: `IFfi sym args` (timeout dropped); other symbol: `IFfi "zyl_ffi_timed" (ISymAddr sym, IStr sym, IConst ms, IConst argc, args...)` |
 | `with-region` | `parse-with-region` (Expr level, `E_REGION_SPEC` on a bad spec) then `IRegion kind block align limit body` (kind 1 arena, 2 fixed) via `ic-with-region` |
-| string built-ins, file I/O, byte buffers, atomics, `spawn`, `send`, `ffi-pin` | `IFfi` to runtime functions (`zyl_cstr_concat`, `zyl_file_open_c`, `zyl_bytebuf_new`, `zyl_actor_spawn`...) |
+| string built-ins, file I/O, byte buffers, atomics, `spawn`, the channel forms, `ffi-pin` | `IFfi` to runtime functions (`zyl_cstr_concat`, `zyl_file_open_c`, `zyl_bytebuf_new`, `zyl_actor_spawn`, `zyl_chan_send`...); `chan-send` reuses the `ESend` node |
+| bit intrinsics (`bit-popcount` ...) | `IFfi` to a `%` primitive the backends expand inline (`rt_mode.zyl`, `intrinsic-prim`); the interpreter evaluates a portable reference |
 | constructor / struct construction | `IVariant name tag fields` (a nullary constructor too: a one-word block) |
 | `match` | `IMatch` of `IArm`s (wildcard tag -1); nested patterns are rejected earlier (`E_NESTED_PATTERN`) |
 | `struct-get` | `IMatch` with one arm per struct type having that field |

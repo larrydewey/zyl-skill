@@ -31,7 +31,7 @@ The spec's five regions and rules R1–R8 describe a complete static system. Sin
 - Inference is whole-program and field-insensitive (union-find classes); it over-approximates, so a missed case costs heap memory, never a dangling pointer.
 - A call through a function value passes its arguments as H; runtime functions are trusted only from the compiler's table (`rg-ffi-kind`).
 - The REPL interpreter ignores regions and `with-region` limits.
-- `try`/`catch` frames (`zyl_try_push`) are still `malloc`ed per `try` and never freed.
+- `try`/`catch` frames (`zyl_try_push`) are freed when the `try` ends, so a `try` in a loop does not leak.
 - Two later mechanisms reduce memory further without changing regions: a self tail call recycles its frame region in place (`zyl_region_recycle`), and the reuse pass (`compiler/reuse.zyl`, `ZYL_REUSE=0` to disable) writes an update of a unique, dead value into the old block. Both are native-backend only; see [own-heap-never-freed](own-heap-never-freed.md).
 - `(Pin a)` is the type of a pinned slot; see [ffi-pin-passes-pointer](ffi-pin-passes-pointer.md).
 - Tail calls are jumps when their stack arguments fit the caller's incoming area; tail-call arguments are at least R because the frame is gone when the callee runs. See [fn-no-named-let-or-early-return](fn-no-named-let-or-early-return.md).

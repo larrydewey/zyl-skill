@@ -7,7 +7,7 @@
 `(Trait.method recv ...)` is resolved from the receiver's inferred type (spec §5.4) and redirected to the lifted impl `Trait.method_Type`. A function that calls a trait method on a parameter is trait-generic: it is specialized per type at every call *and every use as a value*, and the generic original is dropped ([gen-per-type-instances](gen-per-type-instances.md)); more than 256 instances of one function is `E_CANNOT_INFER`. The old run-time tag dispatch (`ic-trait-dispatch`) is gone, so:
 
 - a receiver whose type is known but has no impl is a located `E_TRAIT_NOT_FOUND` ("no impl of `Area.area` for type `String`", `= help: add (impl Area String ...)`);
-- a receiver whose type nothing determines (for example the untyped result of `(receive)`) is `E_CANNOT_INFER`, never defaulted;
+- a receiver whose type nothing determines (a lambda parameter no use constrains, say) is `E_CANNOT_INFER`, never defaulted;
 - a heterogeneous collection cannot be built at all: `[(make-Circle 1) (make-Rect 1 2)]` is `E_TYPE_MISMATCH` (one list, one element type). Wrap the variants in one ADT and implement the trait for it ([trait-no-dyn-use-adt-wrapper](trait-no-dyn-use-adt-wrapper.md)).
 
 ## Good
@@ -43,7 +43,6 @@
 
 ```lisp
 (Area.area "s")                                   ; E_TRAIT_NOT_FOUND: no impl for String
-(Area.area (receive))                             ; E_CANNOT_INFER: the receiver's type is unknown
 (total-area [(Tri 1) (Sq 2)])                     ; E_TYPE_MISMATCH: Tri and Shape in one list
 ```
 

@@ -10,7 +10,6 @@
 | `cannot unify Int with Bool` | an `Int` used as a condition, or `and`/`or`/`not` on Ints | compare: `(= n 0)` |
 | `cannot unify Int with Float` | `Int` and `Float` mixed in arithmetic | write the literal in the right type; `(ffi-call "zyl_f_of_int" n 1000)` |
 | `E_CANNOT_INFER: no type for ffi-call to `f`` | a foreign symbol with no `extern` | `(extern "f" (Int) Int)` |
-| `E_CANNOT_INFER: no type for untyped ffi result` | a `zyl_*` runtime entry with no signature in `ffi_sigs.zyl` (such as `zyl_actor_send_closure`) | use the typed form or stdlib function; programs cannot call it |
 | `E_CANNOT_INFER` on a byte load/store | handle could be `ByteBuf` or `ByteSlice` | annotate `((b ByteBuf))` |
 | `E_FFI_RESTRICTED` | a raw runtime entry (`zyl_word_*`, `zyl_view_*`, `zyl_mem_read`, ...) in user code, or an `extern` for a `zyl_*` entry | call the stdlib function built on it; drop the `extern` |
 | `E_MALFORMED_FORM` | a special form of the wrong shape (binding-list `let`, `if` without branches, several forms in a `test`/`defmacro`), a name in quoted data, a stray `,`/`,@` | see the form's shape in [builtins.md](builtins.md) |
@@ -32,8 +31,12 @@
 | `E_TRAIT_NOT_FOUND ... no impl of `Tr.m` for type `X`` | no impl for that type (located at the call) | add `(impl Tr X ...)` or `(derive X Tr)` |
 | `E_TRAIT_NOT_DERIVABLE` | a field type lacks the trait, a `Secret` field under Eq/Ord/Hash, or an underivable name | derive the field types first; drop the trait |
 | `E_DUPLICATE_IMPL` | two `(impl Tr X ...)`, or `Tr` derived twice for `X` | keep one |
-| Actor output missing | `main` returned first | `actor-wait` / `(ffi-call "zyl_actor_wait_all" 1000)` |
-| Actor reads a nonsense message | `receive` is untyped; a sender sent another type | one message type per actor |
+| Actor output appears late | an actor's output is buffered until it is joined | `actor-wait` where the output belongs ([actor-output-per-actor](../rules/actor-output-per-actor.md)) |
+| `PANIC: E_CHANNEL_NOT_OWNER` | the end moved to a spawned actor (or over a channel), or was nested in a captured value and never moved | [actor-endpoint-ownership](../rules/actor-endpoint-ownership.md) |
+| `PANIC: E_DEADLOCK` | every actor blocked: a reader waiting on a writer that finished or that waits on it, a join on a blocked actor | draw the network; each channel one writer, one reader |
+| `E_UNBOUND_VARIABLE` for `send`/`receive`/`actor-self` | the mailbox API was removed (2026-09-28) | channels: [actor-channels-kahn](../rules/actor-channels-kahn.md) |
+| A freestanding program misbehaves but the `ZYL_EXTERNAL_LD=1` build works | Zyl assembler or linker bug | [cg-self-link](../rules/cg-self-link.md) |
+| An editor gets no answers from `zyl-lsp` | an old server built before the stdin-flush fix; or stdout written by a pass | rebuild; [pass-no-stdout](../rules/pass-no-stdout.md) |
 | C function gets garbage | pinned string passed where C expects a `char*`; an `extern` that does not match the C prototype | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md), [ffi-extern-word-sized-types](../rules/ffi-extern-word-sized-types.md) |
 | `zyl eval` and binary disagree | codegen or interpreter bug (shared front end) | bisect with prefixes + canary; `ZYL_MIR=0` / `ZYL_REUSE=0` / `ZYL_INLINE=0` to isolate a backend pass; interpreter test category |
 | Edits to stdlib/compiler have no effect outside the checkout | stale `~/.zyl` wins resolution | `ZYL_HOME=$PWD/build/boot` or `./install.sh` |
@@ -65,10 +68,11 @@
 - `zyl prog.zyl --emit-asm -o prog.s` (only intermediate output; labels are mangled canonical keys).
 - `ZYL_DEBUG_STAGES=1 zyl prog.zyl -o prog` → stage names appended to `/tmp/dbg`; last line = crashing/hanging stage. (`cg-dbg` in codegen appends to `/tmp/dbg2` and has no callers.)
 - `ZYL_DEBUG_TYPES=1` → every function's inferred type scheme on stderr; `ZYL_STRICT_TYPES=report` → type errors as `W_TYPE_STRICT` warnings, compile continues (for counting only).
-- Backend switches, read at compile time: `ZYL_MIR=0` (stack machine only), `ZYL_INLINE=0`, `ZYL_INLINE_LIMIT=N` (default 6), `ZYL_REUSE=0`, `ZYL_REUSE_DEBUG=1`, `ZYL_REGIONS=0` (every allocation on the heap).
+- Backend switches, read at compile time: `ZYL_MIR=0` (stack machine only), `ZYL_INLINE=0`, `ZYL_INLINE_LIMIT=N` (default 6), `ZYL_UNROLL=N` (default 1), `ZYL_REUSE=0`, `ZYL_REUSE_DEBUG=1`, `ZYL_REGIONS=0` (every allocation on the heap), `ZYL_EXTERNAL_LD=1` (link with `cc`).
 - `ZYL_INTERP_CHECK=1 zyl eval prog.zyl` → the interpreter checks every operand's tag (`E_INTERP_TAG` means a type-checker bug).
 - Log an integer from compiler code: `(ffi-call "zyl_int_text" n 1000)` → String.
 - `zyl eval prog.zyl` vs `./prog`.
-- `cc -g -no-pie prog.s ~/.zyl/actor_runtime.c -o prog -lpthread && gdb ./prog`.
+- `cc -g -nostdlib -static -no-pie prog.s ~/.zyl/start.o ~/.zyl/rt.o -o prog && gdb ./prog` (a hosted program: `cc -g -no-pie prog.s ~/.zyl/rt.o -o prog -lpthread`).
+- Actor code: rerun under `ZYL_SCHED=deterministic` and `ZYL_SCHED_CHAOS=<seed>`; any difference is a runtime bug.
 - Small driver programs that `use` `compiler/*` modules to inspect ASTs / ICNF.
 - REPL `:type EXPR`, `:time EXPR`.

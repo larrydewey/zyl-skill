@@ -35,7 +35,7 @@ Code generation picks `%lld`/`%f`/`%s`, String comparison (`zyl_cstr_eq`, `zyl_c
 | A trait call on an unresolved receiver | run-time tag dispatch | `E_CANNOT_INFER`; calls resolve statically |
 | `vec-get` out of range | a `-1` sentinel | panic `E_INDEX_OUT_OF_BOUNDS` |
 
-The one known hole is `receive`, whose result is any type.
+There is no known hole left: `receive`, whose result was any type, went away with the mailboxes (2026-09-28); channels are typed.
 
 ## Notes
 

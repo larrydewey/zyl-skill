@@ -30,8 +30,8 @@ What forces the heap: storing into a global, `send`, a foreign `ffi-call`, captu
 ## Heap (still correct)
 
 ```lisp
-(defn stash (target)
-  (send target (Square 4)))      ; sent: heap
+(defn stash (tx)
+  (chan-send tx (Square 4)))     ; sent: heap
 ```
 
 ## Notes

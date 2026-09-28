@@ -25,17 +25,17 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 15 | Macro argument used twice is evaluated twice | [macro-args-spliced](../rules/macro-args-spliced.md) |
 | 16 | `ffi-call` without a positive literal timeout is `E_FFI_TIMEOUT_REQUIRED`; `(ffi-call "f" 5)` is zero args + 5 ms; a too-tight timeout raises `E_FFI_TIMEOUT` and abandons the C call | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
 | 17 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |
-| 18 | `receive` is untyped: a message of another type is read as whatever the receiver expects | [actor-send-is-discarded](../rules/actor-send-is-discarded.md) |
-| 19 | `send` to an actor that never calls `(receive)` is dropped; `(receive)` on `main` with no sender hangs | [actor-send-is-discarded](../rules/actor-send-is-discarded.md) |
-| 20 | A reply during the final drain can be lost | [actor-no-closure-messages](../rules/actor-no-closure-messages.md) |
-| 21 | `main` returns without waiting: actor work killed | [actor-always-wait](../rules/actor-always-wait.md) |
+| 18 | A channel end nested inside a captured struct or variant does not move at `spawn`: the actor's use fails only at run time (`E_CHANNEL_NOT_OWNER`, often followed by `E_DEADLOCK`) | [actor-endpoint-ownership](../rules/actor-endpoint-ownership.md) |
+| 19 | An actor's `print`s appear where it is joined (or at exit), not where it ran | [actor-output-per-actor](../rules/actor-output-per-actor.md) |
+| 20 | An unjoined actor's panic surfaces only at exit, after main's output, as status 1 | [actor-always-wait](../rules/actor-always-wait.md) |
+| 21 | `(exit code)` ends the process without joining actors | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
 | 22 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 23 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
 | 24 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
 | 25 | `test-suite` drops its tests; `assert-fail` always passes | [test-unimplemented-features](../rules/test-unimplemented-features.md) |
 | 26 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
 | 27 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
-| 28 | Capability violations in `main` / top-level tests / manifest-less files unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
+| 28 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
 | 29 | Stale `~/.zyl` shadows checkout stdlib | [pkg-stdlib-resolution](../rules/pkg-stdlib-resolution.md) |
 | 30 | Unknown CLI word after the source becomes the output file name | [tool-cli-arguments](../rules/tool-cli-arguments.md) |
 | 31 | `buf-append` on a non-fresh buffer accumulates | [proj-buf-append-appends](../rules/proj-buf-append-appends.md) |
@@ -55,6 +55,8 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 40 | stdout writes corrupt the LSP channel | [pass-no-stdout](../rules/pass-no-stdout.md) |
 | 41 | Listing a runtime function in `rg-ffi-kind` that keeps or aliases an argument (or allocates outside `zyl_result_alloc`): silent use-after-free once its region is released; the reuse pass trusts the same region summaries, so a wrong summary also lets it overwrite a live block | [icnf-regions-are-a-rewrite](../rules/icnf-regions-are-a-rewrite.md) |
 | 42 | A new runtime entry called through `ffi-call` needs a signature in `ffi_sigs.zyl` (else `E_CANNOT_INFER`), and one that reads raw memory or reinterprets a word belongs in `ffi-raw-p` | [pass-diagnostics](../rules/pass-diagnostics.md) |
+| 43 | A new instruction form in codegen or a `%` expansion that `asm_x86.zyl` encodes wrongly miscompiles only freestanding binaries (the compiler stages link with `cc`) | [cg-self-link](../rules/cg-self-link.md) |
+| 44 | Runtime state touched from several actors (a table, a cache) races unless it takes a lock once `threads_started` is set | [boot-runtime-module](../rules/boot-runtime-module.md) |
 
 ## Fixed: now compile errors (check old habits against these)
 
@@ -85,3 +87,6 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | `vec-get` out of range returned word -1 | `E_INDEX_OUT_OF_BOUNDS` panic (`vec-get-or` for a default) |
 | `error` in a 2/4-arg function under `try` hung (2026-09-24) | fixed ([err-try-any-arity](../rules/err-try-any-arity.md)) |
 | `=` on dynamic strings in the compiler compared pointers | content comparison ([pass-string-eq-in-compiler](../rules/pass-string-eq-in-compiler.md); `str-eq` remains the convention) |
+| `receive` was untyped; mailbox messages could be dropped at exit; actor output interleaved by the OS (before 2026-09-28) | typed Kahn channels, per-actor output buffers, deterministic under every schedule ([actor-channels-kahn](../rules/actor-channels-kahn.md)) |
+| `try` frames were never freed, so a `try` in a loop leaked | freed when the `try` ends |
+| the root package's `main` and top-level tests skipped the capability check | checked ([pkg-capabilities](../rules/pkg-capabilities.md)) |

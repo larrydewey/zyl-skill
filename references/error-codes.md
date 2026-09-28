@@ -62,7 +62,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 |---|---|---|
 | `E_TYPE_MISMATCH` | R | any unification failure, both types in the message: a non-`Bool` condition (`if`, `cond`, `while`, `and`/`or`/`not`, guards, `assert`), `Int` and `Float` mixed in arithmetic, `if` without `else` whose `then` is not `Unit`, arms or branches of two types, `main` not `() -> Int`, list-literal elements of two types, an argument against a parameter or field annotation, `<` on a struct/ADT ("ordering on P"), a `Result` given to `unwrap`, a non-literal `file-open` mode, non-`Int` byte offsets/values, a slice where a `ByteBuf` is needed, a spawn entry with parameters, `Float` or a type variable in an `extern` |
 | `E_INFINITE_TYPE` | R | occurs check: `(x x)` |
-| `E_CANNOT_INFER` | R | `ffi-call` to a foreign symbol with no `(extern ...)`; a runtime entry with no signature in `ffi_sigs.zyl` (`zyl_actor_send_closure`: "no type for untyped ffi result"); a trait call whose receiver type never resolves; a byte load/store handle that may be `ByteBuf` or `ByteSlice`; a function needing more than 256 specialized instances; `make-variant`/`make-struct` |
+| `E_CANNOT_INFER` | R | `ffi-call` to a foreign symbol with no `(extern ...)`; a runtime entry with no signature in `ffi_sigs.zyl`; a trait call whose receiver type never resolves; a byte load/store handle that may be `ByteBuf` or `ByteSlice`; a function needing more than 256 specialized instances; `make-variant`/`make-struct` |
 | `E_UNBOUND_VARIABLE` | R | unbound name or undefined function (the type pass reports every one; codegen keeps a located fallback); bare `:keyword`; `((x) ...)` pseudo-lambda; a `let` binding used after its `let` form ends; a call to a `defun` (not recognized, so its name is undefined) or to `tuple` |
 | `E_ARITY_MISMATCH` | R | wrong arg count; `/`, `%`, `bit-and/or/xor` with one operand (`operator 3 needs two operands`); `bit-not` ≠ 1 arg; a guard after `range` or on a `_` arm (read as the 2-arg `when`); malformed byte/load/store/atomic forms; `ffi-call` with more than 16 args |
 | `E_DUPLICATE_DEFINITION` | R | top-level name twice; redefining prelude names/types; macro+fn same file |
@@ -120,6 +120,12 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 | `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` | R | tests/top-level statements + `defn main` (incl. from a `use`d module) |
 | `E_CODEGEN_BUFFER_FULL` | R | > 63 MiB assembly |
 | `E_OUT_OF_MEMORY` | R | allocation failed / budget (`ZYL_MAX_MEMORY`, 0 disables; default 80% RAM); catalogued twice |
+| `E_CHANNEL_NOT_OWNER` | R | runtime: a send or receive on a channel end this actor does not own (it moved at a spawn or over a channel) |
+| `E_CHANNEL_CLOSED` | R | runtime: `chan-recv` on a closed, drained channel (its writer finished); catchable |
+| `E_CHANNEL_CAPACITY` | R | runtime: `(chan n)` with n outside 1..16777216 |
+| `E_DEADLOCK` | R | runtime: every live actor is blocked on a channel or a join; prints every actor's buffered output, then exits 1 (not catchable) |
+| `E_ACTOR_LIMIT` | R | runtime: the 1025th `spawn` |
+| `E_ASM_UNSUPPORTED`, `E_LINK_UNDEFINED`, `E_LINK_UNDEFINED_GOT` | U | the Zyl assembler met a form it does not encode / the linker found an undefined strong symbol; not in the catalog ([cg-self-link](../rules/cg-self-link.md)) |
 | `E_DIVISION_BY_ZERO` | I | compiled code dies with SIGFPE (exit 136) instead, which `try` cannot catch |
 | `E_INTERP_TAG` | R | the checking interpreter (`ZYL_INTERP_CHECK=1`) found a wrong-tag operand or a condition not 0/1: a type-checker bug |
 | `E_UNINITIALIZED_USE`, `E_ATOMIC_ABA`, `E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT` | C | a Stack bytebuf escape reports `E_REGION_ESCAPE` |
@@ -130,7 +136,7 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 | `E_OVERFLOW` | C | ints wrap |
 | `E_CONTRACT_VIOLATION` | R | failed `requires`/`ensures`/`invariant`: `precondition of f failed: C` (also `postcondition`, `invariant`); under the `warn` profile a stderr `warning: E_CONTRACT_VIOLATION: ...` and execution continues; `off`/`production` compile the checks out; `recover` arms match it by prefix |
 | `E_TEST_FAILURE`, `E_TEST_RUNNER_ERROR` | C | tests print `FAIL` |
-| `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_UNSUPPORTED_INTERPRETED`, `E_NO_MAIN`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |
+| `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_NO_MAIN`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |
 
 ## Traits
 
@@ -153,4 +159,4 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 
 ## Exit codes
 
-0 success · 1 compile error or runtime panic · 136 SIGFPE (integer `/` or `%` by zero) · 139 SIGSEGV (compiler/runtime bug) · 134 SIGABRT (internal error, e.g. `send` to a stopped actor).
+0 success · 1 compile error or runtime panic · 136 SIGFPE (integer `/` or `%` by zero) · 139 SIGSEGV (compiler/runtime bug) · 134 SIGABRT (internal error). An actor's uncaught panic sets status 1 at exit if nobody joined it.

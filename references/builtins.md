@@ -53,6 +53,11 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `bit-and bit-or bit-xor` | n-ary, at least two operands |
 | `bit-not` | exactly 1 arg |
 | `shl shr ashr` | `shr` logical, `ashr` arithmetic; counts ≥ 64 defined (0 / sign fill) |
+| `bit-popcount bit-clz bit-ctz bit-bswap` | 1 arg; clz/ctz give 64 for 0 (spec §21.13) |
+| `bit-rotl bit-rotr` | `(bit-rotl x n)`, count mod 64 |
+| `mul-hi mul-hi-u` | high 64 bits of the signed / unsigned 128-bit product |
+| `crc32c crc32c-u8` | one CRC-32C step over 8 bytes / 1 byte; no inversion; same result with or without SSE4.2 |
+| `bit-popcount32 bit-clz32 bit-ctz32 bit-bswap32 bit-rotl32 bit-rotr32` | on the low 32 bits; see [bits-intrinsics](../rules/bits-intrinsics.md) |
 
 No overflow checks; bitwise ops not constant-folded; no Int/Float conversion form (`(ffi-call "zyl_f_of_int" n 1000)` converts).
 
@@ -94,13 +99,16 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 
 | Form | Notes |
 |---|---|
-| `(spawn entry)` | zero-parameter `fn` or named fn (parameters are `E_TYPE_MISMATCH`); immutable captures OK; returns an `Actor` |
-| `(send a msg)` | `a` an `Actor`; async, FIFO per sender; one word; no-op if `a` not live; dropped if `a` never receives; `Unit` |
-| `(receive)` | next data message of the running actor (or `main`); blocks; queued closure messages ahead run first; **untyped** (its result takes whatever type the use needs: the one soundness hole) |
-| `(actor-self)` | running actor's `Actor`; on `main`, opens a mailbox so actors can reply |
+| `(spawn entry)` | `(() -> a) -> Actor`: a zero-parameter `fn` or named fn (parameters are `E_TYPE_MISMATCH`); immutable captures OK, and captured channel ends move to the actor |
+| `(chan n)` | `Int -> (Chan a)`; buffer of n (1..16777216, else `E_CHANNEL_CAPACITY`) |
+| `(chan-tx c)`, `(chan-rx c)` | the sending `(Tx a)` and receiving `(Rx a)` ends; the creator owns both |
+| `(chan-send tx v)` | `Unit`; blocks while full; `E_CHANNEL_NOT_OWNER` on an end the actor does not own |
+| `(chan-recv rx)` | the oldest value; blocks while empty; `E_CHANNEL_CLOSED` once the writer finished and it is drained; `E_DEADLOCK` when every live actor is blocked |
+| `actor-wait`, `actor-is-alive` | lib (`actor/actor`): join (emits the actor's output, re-raises its panic); `Bool` true until joined |
+| `send`, `receive`, `actor-self`, `actor-terminate` | removed 2026-09-28 (`E_UNBOUND_VARIABLE`); see [actor-channels-kahn](../rules/actor-channels-kahn.md) |
 | `(ffi-call "sym" args... timeout)` | symbol a string literal; last arg a positive integer literal timeout (ms), else compile error; foreign symbols need an `extern`, run on a worker thread and raise `E_FFI_TIMEOUT` on overrun; `zyl_*` symbols are typed by `compiler/ffi_sigs.zyl` and called directly (one with no signature is `E_CANNOT_INFER`; raw entries are `E_FFI_RESTRICTED` outside the stdlib); ≤ 16 args |
 | `(ffi-pin v)` / `(ffi-unpin p)` | `a -> (Pin a)` (C gets the slot's address) / `(Pin a) -> a`; a function is `E_FFI_TYPE_NOT_PINNABLE` |
-| runtime via `ffi-call` | `zyl_actor_wait_all` (`-> Unit`), `zyl_cstr_from_int arena n`, `zyl_int_text n`, `zyl_now_ms`, `zyl_argc`, `zyl_arg_str i`, `zyl_region_live_bytes`, `zyl_f_of_int`; `zyl_actor_send_closure` has no signature, so a program cannot send closure messages |
+| runtime via `ffi-call` | `zyl_cstr_from_int arena n`, `zyl_int_text n`, `zyl_now_ms`, `zyl_argc`, `zyl_arg_str i`, `zyl_region_live_bytes`, `zyl_f_of_int`, `zyl_float_bits`/`zyl_float_of_bits` (typed by `ffi_sigs.zyl`, no extern) |
 
 ## Bytes and atomics
 
@@ -120,4 +128,4 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 
 ## Types, regions, capabilities (annotation/argument names)
 
-Types `Int Float Bool String Unit` (value `unit`), handles `Actor ByteBuf ByteSlice Arena Ptr`, constructed `List Option Result Vec Map Slice StrView (Pin a) (Array a)`, `(Fn (A...) R)` in `extern`; any other uppercase name in an annotation is a type parameter (a misspelling is not reported). Regions `Stack Heap Global Circular Pin`; capabilities `Secret` — a parameter or field annotation, or a trait (`TCap`/`TMut` are inferred). A trait name in type position is `E_MALFORMED_PARAMETER`. `declassify`, `ct-eq-bool`, `ct-eq-words-bool` drop `Secret`.
+Types `Int Float Bool String Unit` (value `unit`), handles `Actor ByteBuf ByteSlice Arena Ptr`, constructed `List Option Result Vec Map Slice StrView (Chan a) (Tx a) (Rx a) (Pin a) (Array a)`, lane vectors `I64x2 I32x4 U8x16` (`simd/simd`), `(Fn (A...) R)` in `extern`; any other uppercase name in an annotation is a type parameter (a misspelling is not reported). Regions `Stack Heap Global Circular Pin`; capabilities `Secret` — a parameter or field annotation, or a trait (`TCap`/`TMut` are inferred). A trait name in type position is `E_MALFORMED_PARAMETER`. `declassify`, `ct-eq-bool`, `ct-eq-words-bool` drop `Secret`.

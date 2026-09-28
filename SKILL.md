@@ -2,7 +2,7 @@
 name: zyl
 description: >
   Expert Zyl knowledge for writing, reviewing and debugging Zyl code and the
-  self-hosted Zyl compiler. 180 rules in 26 categories across five tiers
+  self-hosted Zyl compiler. 183 rules in 26 categories across five tiers
   (foundations, language model, systems, engineering, compiler internals),
   prioritized by impact, plus reference tables for error codes, built-ins,
   the standard library, the pipeline and spec-vs-implementation status.
@@ -13,9 +13,10 @@ triggers:
   - .zyl files, zyl.pkg, zyl.lock
   - zyl, zyl-self, zyl-lsp, zyl repl, zyl eval, zyl doc
   - selfhost, stage1, stage2, stage3, boot.sh, fixed point, reseed
-  - stdlib/compiler, icnf, codegen, ic-, cg-, mr-, sb-
+  - stdlib/compiler, runtime/rt, icnf, codegen, asm_x86, elf_link, ic-, cg-, mr-, sb-
+  - spawn, chan, chan-send, chan-recv, actor-wait
 metadata:
-  version: "3.0.0"
+  version: "3.1.0"
   sources:
     - book/src (The Zyl Programming Language, Parts I-V and Appendices A-F)
     - zyl_specification.txt v5.0
@@ -24,7 +25,7 @@ metadata:
 
 # Zyl Expert Guide
 
-Zyl is a deterministic Lisp systems language: S-expression syntax, sound Hindley–Milner type checking, capability rules (TCap/TMut), region-based memory with in-place reuse, actors, a custom IR (ICNF), and x86_64 native code from a register-allocating backend. The compiler is written in Zyl and reproduces itself byte for byte (`./boot.sh`). Strict left-to-right evaluation; same input, same output.
+Zyl is a deterministic Lisp systems language: S-expression syntax, sound Hindley–Milner type checking, capability rules (TCap/TMut), region-based memory with in-place reuse, deterministic actors over Kahn channels, a custom IR (ICNF), and static x86_64 executables from a register-allocating backend, assembled and linked by the compiler itself with no libc. The compiler and its runtime are written in Zyl and reproduce themselves byte for byte (`./boot.sh`). Strict left-to-right evaluation; same input, same output.
 
 **The spec is the design; the compiler is the truth.** The type checker is sound, so most mistakes are compile errors now, but parts of the spec are still unimplemented and a few gaps fail *silently* (they compile fine and compute the wrong result; see [pitfalls](references/pitfalls.md)). Every rule here states current behavior. When a rule and the spec disagree, follow the rule; when a rule and the code disagree, the code wins — then fix the rule.
 
@@ -46,16 +47,16 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 
 ## The Ten Facts
 
-1. **Type checking is sound and strict.** Every type error in the program is reported (`E_TYPE_MISMATCH`, `E_INFINITE_TYPE`, `E_CANNOT_INFER`, `E_UNBOUND_VARIABLE`), then the compile fails. Conditions are `Bool`, arithmetic is `Int` or `Float` with no mixing and no implicit conversion, statements are `Unit` (the literal is `unit`), both branches of an `if` share a type, and `main` is `() -> Int`. Every trait call resolves statically. The known hole: `receive`'s result is not checked. → [type-sound-checking](rules/type-sound-checking.md)
+1. **Type checking is sound and strict.** Every type error in the program is reported (`E_TYPE_MISMATCH`, `E_INFINITE_TYPE`, `E_CANNOT_INFER`, `E_UNBOUND_VARIABLE`), then the compile fails. Conditions are `Bool`, arithmetic is `Int` or `Float` with no mixing and no implicit conversion, statements are `Unit` (the literal is `unit`), both branches of an `if` share a type, and `main` is `() -> Int`. Every trait call resolves statically, and channels are typed. → [type-sound-checking](rules/type-sound-checking.md)
 2. **Lists have literal syntax; most other punctuation is invalid.** `[a b c]`, `(list a b c)` and `'(1 2 3)` build a `List` of one element type, and `` `(1 ,x ,@xs) `` fills in holes. A name inside quoted data, and a `,`/`,@` outside a quasiquote or macro template, is `E_MALFORMED_FORM`. `@ # $ | ^ \`, a lone `.` and non-ASCII bytes outside strings and comments are a located `E_INVALID_CHAR`. → [syn-list-literals-and-quote](rules/syn-list-literals-and-quote.md), [syn-no-stray-characters](rules/syn-no-stray-characters.md)
 3. **Matches: spell constructors exactly, one level at a time, `_` last.** A nested pattern is `E_NESTED_PATTERN` and a non-exhaustive match is an error, but an arm head that is not a known constructor is still a silent catch-all: a misspelled constructor with no fields binds a variable. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
 4. **Some things still compile and do the wrong thing.** `with-resource` runs no cleanup and `alias` makes a type variable. `print` of a record with no `Show` prints its address, and `(print true)` prints `1`. Integer arithmetic wraps, and division by zero kills the process with SIGFPE. → [fn-unlowered-forms](rules/fn-unlowered-forms.md), [references/pitfalls](references/pitfalls.md)
 5. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 6. **Only `if` branches and `match` arms need `begin` for several forms.** `defn`, `let`, `fn`, `while`, `for`, `cond` clauses and `catch` handlers sequence their forms. A form after an `if`'s else branch is `E_MALFORMED_FORM`, and `test` and `defmacro` take exactly one body form. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 7. **Every foreign symbol needs an `extern`, and every `ffi-call` a timeout.** Declare `(extern "sym" (ParamType ...) ResultType)` with word-sized types (a `Float` crosses only as its bits). End each `ffi-call` with a positive integer literal timeout in milliseconds: it is checked at compile time and enforced at run time (`E_FFI_TIMEOUT`, and the C function is abandoned). `ffi-pin` gives a `(Pin a)`, a pointer to a slot. → [ffi-extern-required](rules/ffi-extern-required.md), [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
-8. **Actors exchange data with `send` + `(receive)`.** `(actor-self)` gives an id to reply to (main included). A spawn entry takes no parameters, and a `let-mut` capture is `E_CAPABILITY_LEAK`. Closure messages cannot be sent from a Zyl program. An actor that never calls `receive` drops its messages, and returning from `main` drains every actor. → [actor-send-is-discarded](rules/actor-send-is-discarded.md)
+8. **Actors talk only over Kahn channels.** `(chan n)`, `chan-tx`/`chan-rx`, blocking `chan-send`/`chan-recv`, no select: output is the same under every schedule. Each end has one owner and moves at `spawn` (direct captures) or over a channel (`E_CHANNEL_NOT_OWNER` otherwise). `actor-wait` joins, emits the actor's buffered output and re-raises its panic; `E_DEADLOCK` stops a stuck network. `send`/`receive`/`actor-self` are gone. → [actor-channels-kahn](rules/actor-channels-kahn.md), [actor-endpoint-ownership](rules/actor-endpoint-ownership.md)
 9. **Memory is regions, not a collector.** Per-call frame regions reclaim what the compiler proves short-lived, and the reuse pass updates a unique, dead value in place. Values that escape to the heap live until exit. Use `with-region` for bulk temporaries, and views (`text/view`, `collections/slice`) instead of copying substrings and sub-vectors. → [own-heap-never-freed](rules/own-heap-never-freed.md), [data-views-and-slices](rules/data-views-and-slices.md)
-10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, then commit the seed (a verified `./boot.sh` also refreshes `~/.zyl`). The native backend (ICNF, then MIR, then linear-scan registers) compiles most functions, and the stack machine compiles the rest. `ZYL_MIR=0`, `ZYL_INLINE=0`, `ZYL_REUSE=0` and `ZYL_REGIONS=0` bisect a miscompile. Introduce new syntax, or a new runtime function the compiler calls, in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md), [cg-native-backend-mir](rules/cg-native-backend-mir.md)
+10. **Compiler changes must reach a new fixed point:** `./boot.sh --bootstrap-from-self && ./boot.sh`, then commit the seed (a verified `./boot.sh` also refreshes `~/.zyl`). The native backend (ICNF, then MIR, then linear-scan registers) compiles most functions, and the stack machine compiles the rest. `ZYL_MIR=0`, `ZYL_INLINE=0`, `ZYL_REUSE=0` and `ZYL_REGIONS=0` bisect a miscompile. The runtime (`runtime/rt/`, seed `rt.s`) is Zyl too, and a freestanding program is linked by the compiler's own assembler and linker. Introduce new syntax, or a new runtime function the compiler calls, in two steps. → [boot-fixed-point-workflow](rules/boot-fixed-point-workflow.md), [cg-native-backend-mir](rules/cg-native-backend-mir.md), [boot-runtime-module](rules/boot-runtime-module.md)
 
 ## Minimal Correct Program
 
@@ -102,7 +103,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 2 | 12 | Macros | HIGH | `macro-` | 9 |
 | 3 | 13 | FFI | CRITICAL | `ffi-` | 7 |
 | 3 | 14 | Actors | CRITICAL | `actor-` | 7 |
-| 3 | 15 | Bits, Bytes & Buffers | HIGH | `bits-` | 7 |
+| 3 | 15 | Bits, Bytes & Buffers | HIGH | `bits-` | 8 |
 | 3 | 16 | Secrets & Constant-Time | CRITICAL | `secret-` | 7 |
 | 3 | 17 | Cryptography Library | MEDIUM | `crypto-` | 2 |
 | 4 | 18 | Testing | HIGH | `test-` | 7 |
@@ -110,10 +111,11 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 4 | 20 | Determinism | HIGH | `det-` | 4 |
 | 4 | 21 | Tooling (CLI, REPL, LSP) | MEDIUM | `tool-` | 5 |
 | 4 | 22 | Project Idioms | MEDIUM | `proj-` | 3 |
-| 5 | 23 | Bootstrap & Fixed Point | CRITICAL | `boot-` | 10 |
+| 5 | 23 | Bootstrap & Fixed Point | CRITICAL | `boot-` | 11 |
 | 5 | 24 | ICNF | MEDIUM | `icnf-` | 6 |
-| 5 | 25 | x86_64 Codegen | HIGH | `cg-` | 9 |
+| 5 | 25 | x86_64 Codegen | HIGH | `cg-` | 10 |
 | 5 | 26 | Writing Compiler Passes | HIGH | `pass-` | 13 |
+
 ## Tier 1 — Foundations (every program)
 
 ### 1. Syntax & Lexical Structure (CRITICAL)
@@ -252,13 +254,13 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 14. Actors (CRITICAL)
 
-- [`actor-always-wait`](rules/actor-always-wait.md) **[CRITICAL]** - Know how actors end: returning from `main` drains every actor, while `actor-wait` stops one at once and drops the messages still queued for it. Wait explicitly only where you need an ordering point.
-- [`actor-no-closure-messages`](rules/actor-no-closure-messages.md) **[CRITICAL]** - Use `send` + `(receive)` for every message: the runtime's closure messages (`zyl_actor_send_closure`) cannot be sent from a Zyl program.
-- [`actor-limits`](rules/actor-limits.md) - Design within the runtime's limits: at most 1024 actors per process (ids never reused), ~8 MB actor stacks, unbounded mailboxes, and a panic in any actor kills the whole process.
-- [`actor-no-let-mut-crossing`](rules/actor-no-let-mut-crossing.md) - Never reference a `let-mut` variable in a `send` message or spawned closure; snapshot it with `let` first.
-- [`actor-output-nondeterministic`](rules/actor-output-nondeterministic.md) - Let exactly one actor (usually `main`) produce ordered output, or collect results and print after `zyl_actor_wait_all`.
-- [`actor-send-is-discarded`](rules/actor-send-is-discarded.md) **[CRITICAL]** - Exchange data messages with `send` + `(receive)`, and reply to `(actor-self)` ids (main included); a sent message is dropped only if the target never calls `receive`, and `receive`'s result is not type-checked.
-- [`actor-spawn-zero-arg-entry`](rules/actor-spawn-zero-arg-entry.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a zero-parameter `fn`; captures of immutable values work (e.g. an `(actor-self)` id to reply to), an entry with a parameter is `E_TYPE_MISMATCH`, and a `let-mut` capture is `E_CAPABILITY_LEAK`.
+- [`actor-channels-kahn`](rules/actor-channels-kahn.md) **[CRITICAL]** - Move data between actors only over channels: `(chan n)` makes one, `chan-tx`/`chan-rx` are its two ends, `chan-send` blocks while it is full and `chan-recv` while it is empty. There is no select, no try-receive and no emptiness test, so the output is the same under every schedule.
+- [`actor-endpoint-ownership`](rules/actor-endpoint-ownership.md) **[CRITICAL]** - Each channel end belongs to one actor at a time. The creator owns both; an end moves only when a spawned closure captures it directly, or when it is itself sent over a channel. Using an end you do not own is `E_CHANNEL_NOT_OWNER`.
+- [`actor-always-wait`](rules/actor-always-wait.md) **[CRITICAL]** - Join each actor with `actor-wait` where its output and its failure belong: the join emits the actor's buffered output and re-raises its panic. At exit, every unjoined actor is joined in spawn order and the first unjoined panic sets status 1.
+- [`actor-output-per-actor`](rules/actor-output-per-actor.md) - An actor's `print`s go to its own buffer, emitted when it is joined (`actor-wait`) or at exit in spawn order; main's output goes straight to stdout. So actor output is deterministic, and it appears where the join is.
+- [`actor-spawn-zero-arg-entry`](rules/actor-spawn-zero-arg-entry.md) **[CRITICAL]** - Pass `spawn` a named zero-argument function or a zero-parameter `fn`; immutable captures (channel ends above all) work, an entry with a parameter is `E_TYPE_MISMATCH`, and a `let-mut` capture is `E_CAPABILITY_LEAK`.
+- [`actor-no-let-mut-crossing`](rules/actor-no-let-mut-crossing.md) - Never reference a `let-mut` variable in a `chan-send` value or a spawned closure; snapshot it with `let` first.
+- [`actor-limits`](rules/actor-limits.md) - Design within the runtime's limits: at most 1024 actors per program (`E_ACTOR_LIMIT`), 8 MiB actor stacks, channel buffers of 1 to 16777216 values, one OS thread per actor.
 
 ### 15. Bits, Bytes & Buffers (HIGH)
 
@@ -269,6 +271,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`bits-wide-loads-and-stores`](rules/bits-wide-loads-and-stores.md) - Use `load-u16`..`load-u64`, `load-i16`..`load-i64` and `store-*` for wide values, with an explicit `:le`/`:be`; buffers are typed `ByteBuf`/`ByteSlice`.
 - [`bits-bytebuf-regions`](rules/bits-bytebuf-regions.md) - Write `Pin` for any buffer whose address you take or share; `Stack` buffers live in the frame region and must not escape, and the other bytebuf region rules are still unchecked.
 - [`bits-shr-vs-ashr`](rules/bits-shr-vs-ashr.md) **[CRITICAL]** - Use `shr` (logical, zero fill) for bit patterns and `ashr` (arithmetic, sign fill) for signed numbers.
+- [`bits-intrinsics`](rules/bits-intrinsics.md) - Use the deterministic bit intrinsics (`bit-popcount`, `bit-clz`, `bit-ctz`, `bit-bswap`, `bit-rotl`, `bit-rotr`, `mul-hi`, `mul-hi-u`, `crc32c`, `crc32c-u8`, and the `...32` forms) and `stdlib/simd` lane vectors instead of loops or inline assembly; there is no inline assembly.
 
 ### 16. Secrets & Constant-Time (CRITICAL)
 
@@ -301,7 +304,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 ### 19. Modules & Packages (HIGH)
 
 - [`pkg-canonical-keys`](rules/pkg-canonical-keys.md) - Read linker symbols and resolver messages as canonical keys `<package>@<major>::<module>::<symbol>`, mangled injectively.
-- [`pkg-capabilities`](rules/pkg-capabilities.md) - Declare the narrowest `(capabilities ...)` set a package needs; know that `main`, top-level tests and manifest-less files are not checked.
+- [`pkg-capabilities`](rules/pkg-capabilities.md) - Declare the narrowest `(capabilities ...)` set a package needs; every definition is checked, `main` and top-level tests included, but a manifest-less file is not.
 - [`pkg-features`](rules/pkg-features.md) - Use features only to **add** top-level definitions or impls via top-level `(feature-gate f def)`; never to replace one.
 - [`pkg-library-no-main`](rules/pkg-library-no-main.md) **[CRITICAL]** - Never define `main` (or other generic names an importer might define) in a module meant to be `use`d.
 - [`pkg-manifest`](rules/pkg-manifest.md) - Write `zyl.pkg` with `name`, `version`, `zyl` and `edition`, scoped names, strict SemVer, and **bare minimum** version requirements.
@@ -316,16 +319,16 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 - [`det-left-to-right`](rules/det-left-to-right.md) **[CRITICAL]** - Rely on strict left-to-right evaluation everywhere, and never write code (or compiler passes) that reorders side effects.
 - [`det-no-address-dependent-output`](rules/det-no-address-dependent-output.md) - Never let an address influence output: give every printed type a `Show`, don't compare handles expecting content, don't derive names or ordering from pointers.
-- [`det-nondeterminism-sources`](rules/det-nondeterminism-sources.md) - Keep clock, environment, PID, kernel entropy and multi-actor output out of anything that must be reproducible — the compiler will not warn you.
+- [`det-nondeterminism-sources`](rules/det-nondeterminism-sources.md) - Keep clock, environment, PID, kernel entropy and foreign output out of anything that must be reproducible — the compiler will not warn you.
 - [`det-ordered-collections`](rules/det-ordered-collections.md) - Iterate only ordered structures (lists, association lists, insertion-ordered arrays); a hash table may be probed by key but never iterated.
 
 ### 21. Tooling (CLI, REPL, LSP) (MEDIUM)
 
 - [`tool-cli-arguments`](rules/tool-cli-arguments.md) - Put the source file first: `zyl file.zyl [-o out] [--emit-asm]`; everything else is a subcommand, and unknown words become the output path.
 - [`tool-debugging-the-pipeline`](rules/tool-debugging-the-pipeline.md) **[CRITICAL]** - Debug with `--emit-asm`, the `ZYL_*` bisection switches (`ZYL_MIR=0`, `ZYL_INLINE=0`, `ZYL_REUSE=0`, `ZYL_REGIONS=0`), `ZYL_DEBUG_STAGES`/`ZYL_DEBUG_TYPES`, `zyl eval` differential runs, and small driver programs that `use` compiler modules.
-- [`tool-eval-differential`](rules/tool-eval-differential.md) - Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on actors, FFI, division by zero and speed.
+- [`tool-eval-differential`](rules/tool-eval-differential.md) - Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on FFI, division by zero, regions and speed.
 - [`tool-lsp-and-editors`](rules/tool-lsp-and-editors.md) **[CRITICAL]** - Point any LSP client at `zyl-lsp` for the compiler's own diagnostics, type errors included; expect the pre-type checks one at a time, every type error at once, no capability check, byte-based columns and name-based (not scope-based) navigation.
-- [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; each name can be defined once per session.
+- [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; each function can be defined once per session, and actors an entry spawns are joined before the prompt returns.
 
 ### 22. Project Idioms (MEDIUM)
 
@@ -341,34 +344,36 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`boot-match-arm-call-sums`](rules/boot-match-arm-call-sums.md) - In a match arm, bind call results with `let` before combining a constant with two or more calls in one arithmetic expression (`E_MATCH_ARM_COMPLEX`); elsewhere, calls may be combined directly.
 - [`boot-field-parity-lifted`](rules/boot-field-parity-lifted.md) - Do not pad record types to an even field count: odd counts in nested constructions compile correctly in both backends. The even `CheckState` in `sexp_balance.zyl` is a leftover workaround, not a rule.
 - [`boot-failure-modes`](rules/boot-failure-modes.md) - Map a bootstrap failure to its cause before changing anything.
-- [`boot-fixed-point-workflow`](rules/boot-fixed-point-workflow.md) **[CRITICAL]** - After editing `stdlib/compiler/*.zyl`, `selfhost/` or `runtime/actor_runtime.c`: reseed, verify, commit the seed.
+- [`boot-fixed-point-workflow`](rules/boot-fixed-point-workflow.md) **[CRITICAL]** - After editing `stdlib/compiler/*.zyl`, `selfhost/`, `runtime/rt/` or a stdlib module the driver `use`s (the REPL and LSP modules included): reseed, verify, commit the seeds.
 - [`boot-lifted-constraints`](rules/boot-lifted-constraints.md) - Know which historical bootstrap constraints are lifted, so you neither follow dead rules blindly nor reintroduce the patterns they guarded against.
 - [`boot-moderate-bodies`](rules/boot-moderate-bodies.md) - Keep compiler function bodies moderate and flat; prefer short `let` chains and helpers over deep nesting.
 - [`boot-module-build`](rules/boot-module-build.md) - The compiler is built like any program: every boot stage compiles `selfhost/driver.zyl`, and module resolution follows its `(use ...)` tree through `stdlib/`. A compiler module is reached only through a `use`.
 - [`boot-one-deftype-per-name`](rules/boot-one-deftype-per-name.md) **[CRITICAL]** - Define each type name exactly once across everything one program imports, and keep variant names unique.
 - [`boot-parens-per-file`](rules/boot-parens-per-file.md) **[CRITICAL]** - Keep every top-level form independently balanced; a missing closer swallows everything after it in the same file.
 - [`boot-two-step-syntax`](rules/boot-two-step-syntax.md) - Introduce new syntax (and any new runtime function the compiler calls) in two steps: teach the compiler to accept it and reseed, then start using it in the compiler's own source.
+- [`boot-runtime-module`](rules/boot-runtime-module.md) **[CRITICAL]** - The runtime is Zyl (`runtime/rt/*.zyl`, entry `rt.zyl`), compiled with `--runtime-module`: only there do the locked `%` primitives exist and `zyl_*` defns become exported labels. Change it like compiler source: reseed, and land any entry the compiler calls in two steps.
 
 ### 24. ICNF (MEDIUM)
 
 - [`icnf-lowering-map`](rules/icnf-lowering-map.md) - Know what each source form lowers to, so you can predict codegen and write passes over ICNF.
 - [`icnf-new-form-needs-case`](rules/icnf-new-form-needs-case.md) **[CRITICAL]** - Give every new special form a case in the type pass and in `ic-expr-node`, and every new `Icnf` node a case in each ICNF pass and in both backends: lowering and the native backend's `ml-expr` turn anything they do not recognize into 0 silently.
-- [`icnf-optimizer-scope`](rules/icnf-optimizer-scope.md) **[CRITICAL]** - Expect four safe ICNF optimizations (small-function inlining, copy propagation of let-bound locals, integer constant folding for opcodes 0–10, dead-branch elimination), then in-place reuse after region inference; never add an optimization that reorders or drops effects.
+- [`icnf-optimizer-scope`](rules/icnf-optimizer-scope.md) **[CRITICAL]** - Expect six safe ICNF optimizations (small-function inlining, self-unrolling of small tree recursion, early exits at loop call sites, copy propagation of let-bound locals, integer constant folding for opcodes 0–10, dead-branch elimination), then in-place reuse after region inference; never add an optimization that reorders or drops effects.
 - [`icnf-regions-are-a-rewrite`](rules/icnf-regions-are-a-rewrite.md) - Region inference is two ICNF passes, the conservative `IStackVariant` rewrite and the whole-program `rg-*` classification into the `icnf-regions` side table; every extension must fail toward the heap.
 - [`icnf-tree-structure`](rules/icnf-tree-structure.md) - Treat ICNF as an untyped structured tree of 21 `Icnf` constructors (not SSA), with three parameter representation kinds and every analysis result in side tables keyed by node.
 - [`icnf-reuse-pass`](rules/icnf-reuse-pass.md) - In-place reuse (`reuse.zyl`, after region inference) lets a construction take the block of a value that is provably unique and dead; it only records decisions (`icnf-reuse`, owning clones `f~own`), the native backend acts on them, and every extension must fail toward allocating.
 
 ### 25. x86_64 Codegen (HIGH)
 
-- [`cg-c-call-alignment`](rules/cg-c-call-alignment.md) **[CRITICAL]** - Keep `rsp` 16-byte aligned at every call into C: the stack machine realigns around each C call (`cg-ext-call-aligned`); the native backend aligns its frame once, in the prologue, and only when the function calls C.
+- [`cg-c-call-alignment`](rules/cg-c-call-alignment.md) **[CRITICAL]** - Keep `rsp` 16-byte aligned at every call to an external SysV function (a `zyl_*` runtime entry or foreign C): the stack machine realigns around each C call (`cg-ext-call-aligned`); the native backend aligns its frame once, in the prologue, and only when the function calls C.
 - [`cg-call-arg-staging`](rules/cg-call-arg-staging.md) - Evaluate call arguments strictly left to right and never let one argument's evaluation clobber another's value: the stack machine stages them in scratch slots (or takes its direct-register path when that is provably safe), the native backend evaluates them into fresh vregs and moves them into argument registers with one parallel move.
 - [`cg-callee-saved-registers`](rules/cg-callee-saved-registers.md) **[CRITICAL]** - Every generated function preserves each callee-saved register it touches: the stack machine uses and saves only `rbx` and `r12`; the native backend allocates `rbx` and `r12`–`r15` and saves exactly the ones it used. Hand-written sequences use only the scratch registers.
-- [`cg-closure-call-protocol`](rules/cg-closure-call-protocol.md) - Calls through a local holding a function value go through the stack machine's `cg-call-indirect`, which passes one extra trailing argument: the closure env, or 0 for a plain code address. Every function either backend emits must start with `push rbp`, because the tag test relies on it.
+- [`cg-closure-call-protocol`](rules/cg-closure-call-protocol.md) - Calls through a local holding a function value go through the stack machine's `cg-call-indirect`, which passes one extra trailing argument: the closure env, or 0 for a plain code address. A code address is anything whose first word is not the closure tag, so no function may begin with the tag's eight bytes.
 - [`cg-emission-appends`](rules/cg-emission-appends.md) - Emit assembly by appending to the text buffer (`zyl_str_append_capped` via `cg-emit*`), never by copying.
 - [`cg-kind-of`](rules/cg-kind-of.md) - Remember codegen decides print format, float arithmetic and string/variant comparison from `kind-of` (0 word, 1 String, 2 Float, 3 variant): the literal/shape kind first, else the kind the type pass recorded for the ICNF node (`icnf-kinds`); and any non-word operator keeps a function out of the native backend.
 - [`cg-stack-machine-fallback`](rules/cg-stack-machine-fallback.md) - Know the stack machine as the fallback backend: every function the native backend declines (`mb-eligible` false, about 5% of the compiler's own functions, or all of them under `ZYL_MIR=0`) is compiled to code over `rax` with `rbp`-relative slots and no register allocator.
-- [`cg-symbols-and-entry`](rules/cg-symbols-and-entry.md) - User functions are labelled by mangled canonical keys (`zy_...`), the user entry is `_ZYL_main`, and every program shares one C `main` stub that runs it on a huge stack.
+- [`cg-symbols-and-entry`](rules/cg-symbols-and-entry.md) - User functions are labelled by mangled canonical keys (`zy_...`), the user entry is `_ZYL_main`, and every program shares one `main` stub that runs it on a huge stack; a freestanding binary starts at the runtime's `_start`.
 - [`cg-native-backend-mir`](rules/cg-native-backend-mir.md) **[CRITICAL]** - Most functions are compiled by the native backend: ICNF lowered to MIR (`ml-*`), liveness and linear-scan register allocation (`mir.zyl`), emission (`mb-*`). Extend it by widening `ml-ok` and `ml-expr` together; anything `mb-eligible` rejects falls back to the stack machine.
+- [`cg-self-link`](rules/cg-self-link.md) **[CRITICAL]** - Emit only instruction and operand forms `asm_x86.zyl` encodes: a freestanding program is assembled and linked by the compiler itself (`asm_x86.zyl`, `elf_link.zyl`) against `rt.zo`, so a new form in codegen or in a runtime primitive's expansion must be taught to the assembler first and checked against GNU as.
 
 ### 26. Writing Compiler Passes (HIGH)
 
@@ -409,14 +414,16 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | Mutation / state | `own-`, `data-struct-immutable-rebind`, `data-collections-persistent` |
 | Generic / reusable code | `gen-`, `trait-`, `closure-` |
 | Macros | `macro-`, `syn-list-literals-and-quote` |
-| Concurrency | `actor-`, `det-` |
+| Concurrency | `actor-`, `det-`, `tool-debugging-the-pipeline` (schedules) |
 | Calling C | `ffi-extern-required`, `ffi-`, `pkg-native-dependencies`, `bits-` |
+| Bit tricks, checksums, SIMD | `bits-intrinsics`, `bits-shr-vs-ashr` |
 | Crypto / key material | `secret-`, `crypto-`, `bits-` |
 | Tests | `test-` |
 | Multi-file programs, packages | `pkg-`, `test-program-library-tests-split` |
 | Performance / memory | `own-heap-never-freed`, `own-with-region`, `own-stack-promotion`, `data-views-and-slices`, `icnf-reuse-pass`, `cg-native-backend-mir` |
 | Code review | [pitfalls](references/pitfalls.md), all **[CRITICAL]** rules |
 | Compiler change | `boot-`, `pass-`, `icnf-`, `cg-`, `pass-evaluation-order-sets`, `det-` |
+| Runtime change (`runtime/rt/`) | `boot-runtime-module`, `boot-fixed-point-workflow`, `cg-self-link` |
 | Boot failure | `boot-failure-modes`, `tool-debugging-the-pipeline`, [debugging](references/debugging.md) |
 
 ### Where the Old Constraint List Went

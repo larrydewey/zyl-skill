@@ -19,9 +19,9 @@ Writing the correct region now keeps the program valid when the remaining checks
 
 ```lisp
 (defn make-buf () (bytebuf Stack 16))            ; E_REGION_ESCAPE: returned
-(defn leak ((target Actor))
+(defn leak ((tx (Tx ByteSlice)))
   (let b (bytebuf Stack 16)
-    (send target (byteslice b 0 4))))            ; E_REGION_ESCAPE: a slice points into b
+    (chan-send tx (byteslice b 0 4))))           ; E_REGION_ESCAPE: a slice points into b
 ```
 
 ## Good

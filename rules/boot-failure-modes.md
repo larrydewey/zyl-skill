@@ -7,7 +7,10 @@
 | `reproduced asm differs from committed seed` | compiler source changed its own output | reseed ([boot-fixed-point-workflow](boot-fixed-point-workflow.md)) |
 | `FIXED POINT BROKEN` | non-determinism, or a behavior change needing reseed | diff stage2.s/stage3.s; see below |
 | `error[E_TYPE_MISMATCH]` ... `the program does not type-check` in stage 2 | the compiler source itself is ill-typed (it is checked like any program) | fix the source; every error is listed before the stage fails |
-| `E_CANNOT_INFER` (`untyped ffi result`, or `ffi-call to ... which has no (extern ...) declaration`) in stage 2 | compiler source calls a runtime function the seed has no signature for, or one missing from the runtime's `X(...)` table | two steps ([boot-two-step-syntax](boot-two-step-syntax.md)) |
+| `E_CANNOT_INFER` (`ffi-call to ... which has no (extern ...) declaration`) in stage 2 | compiler source calls a runtime function the seed has no signature for | two steps ([boot-two-step-syntax](boot-two-step-syntax.md)) |
+| `reproduced runtime differs from committed rt.s` | a `runtime/rt/` change, or a compiler change that alters how the runtime compiles | reseed |
+| `runtime entries not emitted (annotate their parameter types)` | a `zyl_*` defn was never instantiated (an uncalled Num-generic function) | annotate its parameters, e.g. `(p Int)` |
+| a freestanding link fails with an unknown instruction or operand | codegen emitted a form `asm_x86.zyl` does not encode | [cg-self-link](cg-self-link.md) |
 | stage 2 crashes | stage 1 miscompiled the compiler | bisect with small inputs; then with the switches below |
 | a file's later definitions vanish | a missing closer earlier in that file | read the balance error's opener |
 | `E_UNBOUND_VARIABLE` for a function another module defines | missing `use` | add the `use` |

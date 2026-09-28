@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Since 2026-09-25 `cg-function` asks `mb-eligible` first, and about 95% of the compiler's own functions (4123 of 4348 in the committed seed) go through the native backend; the rest, and every function under `ZYL_MIR=0` at compile time, go through the stack machine ([cg-stack-machine-fallback](cg-stack-machine-fallback.md)). Both share one ABI (SysV argument registers, result in `rax`, the region frame words, `push rbp` first, callee-saved registers preserved), so they call each other freely. Design: `docs/native-backend-design.md`.
+Since 2026-09-25 `cg-function` asks `mb-eligible` first, and most functions (about 95% of the compiler's own when last counted, 2026-09-25) go through the native backend; the rest, and every function under `ZYL_MIR=0` at compile time, go through the stack machine ([cg-stack-machine-fallback](cg-stack-machine-fallback.md)). Both share one ABI (SysV argument registers, result in `rax`, the region frame words, callee-saved registers preserved; a native function with no spills, blocks, regions or C calls is frameless, with no `push rbp`), so they call each other freely. Design: `docs/native-backend-design.md`.
 
 ## Pipeline, per function
 

@@ -1,55 +1,44 @@
 # actor-always-wait
 
-> Know how actors end: returning from `main` drains every actor, while `actor-wait` stops one at once and drops the messages still queued for it. Wait explicitly only where you need an ordering point.
+> Join each actor with `actor-wait` where its output and its failure belong: the join emits the actor's buffered output and re-raises its panic. At exit, every unjoined actor is joined in spawn order and the first unjoined panic sets status 1.
 
 ## Why It Matters
 
-Every compiled program registers `zyl_actor_wait_all` as an `atexit` handler, so returning from `main` waits until every mailbox is empty and every actor is parked, then stops and joins them all (the actor's line printed in 200 of 200 runs, 2026-09-24; before that fix, 186 of 200). An actor does not stop when its entry function returns: it idles on its mailbox until that drain or an explicit wait. An actor blocked in `(receive)` at exit also counts as idle, so the drain stops it instead of hanging.
+An actor's uncaught panic ends only that actor; its message waits for the joiner. `(actor-wait a)` returns once `a` has finished, emits its output, and re-raises its panic, which `try` can catch. A second wait does nothing. When `main` returns, the runtime closes main's channels and joins every actor still unjoined, in spawn order; the first unjoined panic is printed after every actor's output and the exit status becomes 1. If `main` itself panics, the actors are abandoned.
 
 | Operation | Effect |
 |---|---|
-| `(actor-wait a)` (`actor/actor`) | mark `a` stopped and join its thread; **messages still queued are discarded** |
-| `(actor-terminate a)` | mark `a` stopped (and join) |
-| `(actor-is-alive a)` | a `Bool`: true until waited/terminated |
-| `(ffi-call "zyl_actor_wait_all" 1000)` | poll until every mailbox is empty and every actor is parked, then stop and join all of them; also runs automatically at exit. A runtime entry typed `-> Unit`, so it needs no extern |
+| `(actor-wait a)` (`actor/actor`) | block until `a` finishes; emit its output; re-raise its panic |
+| `(actor-is-alive a)` | a `Bool`: true until this program joins `a` (deterministic, never a race) |
+| return from `main` | join every unjoined actor in spawn order |
 
 ## Bad
 
 ```lisp
-(use actor/actor)
-(defn printer () (print (receive)))
 (defn main ()
-  (let a (spawn printer)
-    (begin
-      (send a 1)
-      (actor-wait a)                ; stops a now: 1 was never printed in 50 runs
-      0)))
+  (let _ (spawn (fn () (error "boom")))
+    (begin (print "main done") 0)))
+;; main done
+;; PANIC: boom          <- reported at exit, status 1: nobody joined the actor
 ```
 
 ## Good
 
 ```lisp
 (use actor/actor)
-(defn job-a () (print "a"))
-(defn job-b () (print "b"))
 (defn main ()
-  (let a (spawn (fn () (job-a)))
-    (let b (spawn (fn () (job-b)))
-      (begin
-        (actor-wait a)
-        (actor-wait b)
-        (print "all workers finished")   ; after both, because of the explicit waits
-        0))))
+  (let a (spawn (fn () (error "boom")))
+    (begin
+      (print (try (begin (actor-wait a) "ok") (catch e e)))   ; boom
+      0)))
 ```
 
 ## Notes
 
-- There is no `wait_all` language form (`(wait_all a)` is `E_UNBOUND_VARIABLE`).
-- Use `zyl_actor_wait_all` (or just return from `main`) when actors still have messages to handle; `actor-wait` drops them.
-- To know an actor has finished its work, have it `send` a reply to `(actor-self)` of the waiter and `receive` it; that is an ordering point that loses nothing.
-- The drain is not airtight: a reply sent while `zyl_actor_wait_all` is draining was lost in 1 to 6 of 200 runs (2026-09-24). See [actor-no-closure-messages](actor-no-closure-messages.md).
+- There is no `actor-terminate`: stopping an actor partway through would be a race.
+- A join that can never finish (the actor waits on a channel only the joiner feeds) is `E_DEADLOCK`.
 
 ## See Also
 
-- [actor-output-nondeterministic](actor-output-nondeterministic.md)
-- [actor-no-closure-messages](actor-no-closure-messages.md)
+- [actor-output-per-actor](actor-output-per-actor.md)
+- [actor-channels-kahn](actor-channels-kahn.md)

@@ -48,8 +48,8 @@ Contracts (`requires`/`ensures`/`invariant`, profiles, `checkpoint` rollback, ty
 ## Notes
 
 - Background: ICNF lowering turns any form it has no case for into `(IConst 0)`. That fail-soft default hid real bugs (`for`, `spawn`, `with-resource`, and until 2026-09-25 `read-line`, `exit` and `close`, all once lowered to 0). The type checker now catches forms it has no rule for (`E_CANNOT_INFER`), which is why `make-struct` and `make-variant` fail.
-- `exit` ends the process at once: nothing after it runs, and actors are not drained. Returning a status from `main` is the normal way out.
-- `spawn`, `send`, `receive` and `actor-self` *are* lowered; see [actor-send-is-discarded](actor-send-is-discarded.md).
+- `exit` flushes stdout and ends the process at once: nothing after it runs, and actors are not joined. Returning a status from `main` is the normal way out.
+- `spawn` and the channel forms *are* lowered; see [actor-channels-kahn](actor-channels-kahn.md).
 
 ## See Also
 

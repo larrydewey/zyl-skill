@@ -25,7 +25,7 @@ At run time a foreign symbol (anything not starting with `zyl_`) runs on a worke
 
 ```lisp
 (ffi-call "abs" -5 1000)                       ; 5
-(ffi-call "zyl_actor_wait_all" 1000)           ; zero real args: timeout only
+(ffi-call "zyl_now_ms" 1000)                   ; zero real args: timeout only
 (try (ffi-call "usleep" 300000 50)
   (catch e (if (ffi-call "zyl_err_is" e "E_FFI_TIMEOUT" 1000) -1 0)))   ; zyl_err_is gives a Bool
 ```
@@ -37,7 +37,7 @@ At run time a foreign symbol (anything not starting with `zyl_`) runs on a worke
 - Lowering: a runtime entry (`zyl_*` with no `extern`) is trusted code, called directly as `IFfi sym args`; its timeout is checked but unused. A symbol with an `extern` is foreign code whatever its prefix, so your own `zyl_...` C function is timed too. Any other symbol becomes `IFfi "zyl_ffi_timed" (ISymAddr sym, IStr sym, IConst ms, IConst argc, args...)`.
 - An overrunning C function is **abandoned, not killed**: its worker finishes and frees itself, the caller gets a fresh worker next call. Nothing the abandoned call was handed is reclaimed (Pin slots are never freed individually; the exit-time arena teardown is skipped once any call has been abandoned). A C function that never returns leaks one thread.
 - The worker belongs to the calling thread and is kept between calls, so thread-local C state such as `errno` stays consistent.
-- Callbacks (e.g. a `qsort` comparator passed as a top-level function name) run on the worker thread; they see the caller's `actor-self`, and a panic in the callback not caught by a `try` inside it ends the process.
+- Callbacks (e.g. a `qsort` comparator passed as a top-level function name) run on the worker thread as the calling actor (the worker inherits its owner id, so its output goes to that actor's buffer), and a panic in the callback not caught by a `try` inside it ends the process.
 - Determinism: whether a timeout fires depends on foreign timing; spec §27 treats FFI results, timeouts included, as observable external input.
 - The interpreter (`zyl eval`, REPL) enforces timeouts too, via `zyl_ffi_timed_argv`.
 - The compiler's own source uses `1000` everywhere, including zero-argument runtime calls.

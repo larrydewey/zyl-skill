@@ -1,6 +1,6 @@
 # cg-c-call-alignment
 
-> Keep `rsp` 16-byte aligned at every call into C: the stack machine realigns around each C call (`cg-ext-call-aligned`); the native backend aligns its frame once, in the prologue, and only when the function calls C.
+> Keep `rsp` 16-byte aligned at every call to an external SysV function (a `zyl_*` runtime entry or foreign C): the stack machine realigns around each C call (`cg-ext-call-aligned`); the native backend aligns its frame once, in the prologue, and only when the function calls C.
 
 ## Why It Matters
 
@@ -26,15 +26,15 @@ Arity 7+: stack args must sit at `[rsp]`, so they are copied into a fresh aligne
     mov r10, [r12+0]
     mov [rsp+0], r10
     ...
-    call snprintf
+    call <symbol>          ; the external function
     mov rsp, r12
 ```
 
-`print` (`cg-print-call`, `printf`), variant allocation (`cg-variant`: `zyl_ralloc` at a region site, `zyl_heap_alloc` at a heap site) and `setjmp` for `try` use the same save/`and`/restore idiom.
+`print` (`cg-print-call`: `zyl_print_int`, `zyl_print_float`, `zyl_print_str`), variant allocation (`cg-variant`: `zyl_ralloc` at a region site, `zyl_heap_alloc` at a heap site) and `zyl_try_push` for `try` use the same save/`and`/restore idiom.
 
 ## Native backend
 
-A native function's frame (saved registers, spill slots, staging words, stack-variant blocks) is rounded to a multiple of 16, so once `rsp` is aligned in the prologue it stays aligned for the whole body, and C calls need no per-call sequence. `mb-needs-align` emits `and rsp, -16` in the prologue only when the function has region words or contains an instruction that calls C (`mb-any-c-call`: a runtime `MCall`, `MAlloc`, `MArr` whose slow path calls the runtime, `MRegionCycle`). A function that calls only Zyl functions skips it: each callee aligns its own frame (native) or each of its own C calls (stack machine).
+A native function's frame (saved registers, spill slots, staging words, stack-variant blocks) is rounded to a multiple of 16, so once `rsp` is aligned in the prologue it stays aligned for the whole body, and C calls need no per-call sequence. `mb-needs-align` emits `and rsp, -16` in the prologue only when the function has region words or contains an instruction that calls C (`mb-any-c-call`). A function that calls only Zyl functions skips it: each callee aligns its own frame (native) or each of its own C calls (stack machine).
 
 ```asm
 zy_local_x2Fmain_0__t3__slen:
@@ -51,7 +51,7 @@ Mid-body sequences that push must push an even number of words; the allocation s
 
 ## Notes
 
-- A new native instruction that calls C must be added to `mb-any-c-call`, or the function may call C misaligned when it is entered from a stack-machine caller (whose calls to Zyl functions only preserve whatever parity happened to hold). As of 2026-09-25 `MReuse`, whose slow path calls `zyl_ralloc`/`zyl_heap_alloc`, is not in that list: a function whose only allocation is a reuse site is aligned only because it also has region words (with `ZYL_REGIONS=0` such a function gets no `and rsp, -16`).
+- A new native instruction that calls C must be added to `mb-any-c-call` (today: a runtime `MCall`, an `MAlloc`/`MArr` slow path, `MRegionCycle`, a non-literal `MStr`, an `MReuse` slow path), or the function may call C misaligned when it is entered from a stack-machine caller (whose calls to Zyl functions only preserve whatever parity happened to hold).
 - Native calls take at most six arguments (`ml-ok`), so the arity-7 copy never arises there.
 
 ## See Also

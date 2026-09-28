@@ -17,7 +17,9 @@ There is no command-line phase dump beyond assembly (`compiler/icnf_print.zyl` p
 | Reuse decisions | `ZYL_REUSE_DEBUG=1`: each function's facts and the fixpoint's round count, on stderr |
 | Compiled vs intended semantics | `zyl eval prog.zyl` vs `./prog` (differ ⇒ codegen or interpreter bug); `ZYL_INTERP_CHECK=1 zyl eval` also checks operand tags |
 | Link errors | an unlinked C symbol (a declared `extern` or `native` source missing); undefined Zyl functions are caught earlier, as `E_UNBOUND_VARIABLE` |
-| Runtime crash | `cc -g -no-pie prog.s ~/.zyl/actor_runtime.c -o prog -lpthread && gdb ./prog` (no DWARF for Zyl code) |
+| Runtime crash | `cc -g -nostdlib -static -no-pie prog.s ~/.zyl/start.o ~/.zyl/rt.o -o prog && gdb ./prog` (hosted: `cc -g -no-pie prog.s ~/.zyl/rt.o -o prog -lpthread`; no DWARF for Zyl code) |
+| Freestanding link fails or a binary differs from the `cc` link | `ZYL_EXTERNAL_LD=1` links with `cc`; a difference is the Zyl assembler or linker ([cg-self-link](cg-self-link.md)) |
+| Actor output or failure depends on the run | run under `ZYL_SCHED=deterministic` and `ZYL_SCHED_CHAOS=<seed>`: a difference is a runtime bug (Kahn networks are deterministic) |
 | Exit 139 / 134 / 136 | segfault / abort / SIGFPE (integer division by zero in compiled code): a crash other than division by zero is a compiler bug or runtime internal error — report it |
 | Performance | `bench/`: `./bench/build.sh`, then `python3 bench/matrix.py` (seven programs in Zyl, C, C++, Rust and Go; best of three wall time and peak RSS, `(!)` when outputs differ) |
 
