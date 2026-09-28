@@ -22,6 +22,7 @@ zyl hello.zyl --contracts=warn         # contract profile: strict (default)|debu
 zyl eval hello.zyl                     # run via ICNF interpreter, no binary
 zyl repl
 zyl doc [file.zyl | dir] [-o out.md]   # Markdown API docs from comments (stdout without -o)
+zyl balance [file.zyl | dir ...]     # delimiter, string and layout check (spec §1.6), status 1 on a fault
 zyl new owner/name | add NAME [VER] | fetch | build [--locked] | test
 zyl update | vendor | audit | key | help
 zyl publish [--index DIR [--url-base URL]]

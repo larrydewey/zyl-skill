@@ -35,13 +35,12 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | Code | Status | Trigger → fix |
 |---|---|---|
 | `E_INVALID_CHAR` | R | a byte that cannot start a token outside strings/comments, located: `@` (except in `,@`), `#`, `$`, `\|`, `^`, `\`, a `.` not followed by a letter, a control character, any non-ASCII byte, a BOM. `'` `` ` `` `,` `,@` are the quote/quasiquote/unquote/splice tokens, and `&` may start an identifier (`&rest`) |
-| `E_UNTERMINATED_STRING` | R | missing closing `"`; the balance check reports it first, unlocated ("reached end of input") |
+| `E_UNTERMINATED_STRING` | R | missing closing `"`; the balance check reports it first, located at the opening quote |
 | `E_INVALID_ESCAPE` | R | an escape other than `\n \t \r \0 \" \\ \e \xNN` in a string literal, located |
 | `E_BYTE_VALUE_OOB` | R | `(byte n)` outside 0..255 or non-integer; unlocated |
-| `E_UNBALANCED_UNCLOSED` | R | opener never closed (line/col + fix-it) |
+| `E_UNBALANCED_UNCLOSED` | R | opener never closed, or an opener in column 1 inside a still-open form (spec §1.6: catches a missing closer balanced by an extra one); located at the open form, fix-it names the line where indentation first contradicts nesting |
 | `E_UNBALANCED_UNEXPECTED_CLOSE` | R | stray closer |
-| `E_UNBALANCED_MISMATCHED_BRACKET` | R | `(` closed by `]` etc. |
-| `E_UNBALANCED_OPEN_STRING` | U | LSP balance check: unterminated string |
+| `E_UNBALANCED_MISMATCHED_BRACKET` | R | `(` closed by `]` etc.; located at the closer, labelled at the opener |
 | `E_MALFORMED_PARAMETER` | R | param not a name or `(name Type)`; `(a : Int)` ("write (a Int)"); `((T : Ord) x)`; a trait in type position, `(a Ord)` (`Secret` exempt; reported by the type pass); body swallowed by the param list; non-identifier macro param, misplaced `&rest`, non-identifier argument in a macro name position |
 | `E_MALFORMED_FORM` | R | a special form whose arguments have the wrong shape (it used to lower to the constant 0): `(let ((x 1) (y 2)) ...)`, `(let x 1)` with no body, `(if c)`, `(make-variant 1 2)`, a `defmacro` or `test` with more than one body form, a bare-`self` trait signature `(area self)`, `(quote a b)`; a name inside quoted data, `'(1 a)`, or outside an unquote in a quasiquote; a nested quasiquote; a `,` or `,@` outside a quasiquote and a macro template; in a template, `,@` where a fixed number of expressions is taken (an `if`, constructor fields, which include `(list ,@xs)` and `[,@xs]`) or of anything but the `&rest` parameter; a form after an `if`'s else branch; a quote or unquote with nothing after it, and a non-name in an import list (`{ a, b }`). Raised by `arity_check`, `expr_inner`, `parser`, `module_resolver` and `macro_expand`; located |
 | `E_UNEXPECTED_TOKEN_IN_EXPR` | R | load/store endian not `:le`/`:be`; bytebuf capacity not an integer literal or region not a region name; unlocated |

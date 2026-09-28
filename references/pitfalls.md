@@ -46,7 +46,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 
 | # | Pitfall | Rule |
 |---|---|---|
-| 34 | A missing closer swallows the rest of its file | [boot-parens-per-file](../rules/boot-parens-per-file.md) |
+| 34 | A misplaced paren that keeps both the count and the column-1 layout intact re-nests code inside one form; `zyl balance` after every edit catches everything else | [tool-balance](../rules/tool-balance.md) |
 | 35 | Same type name in two modules: the later `use` wins, the other module misreads tags | [boot-one-deftype-per-name](../rules/boot-one-deftype-per-name.md) |
 | 36 | Allocating inside a per-element lookup: compiler temporaries mostly land in the heap, which never frees | [pass-no-allocation-in-lookups](../rules/pass-no-allocation-in-lookups.md) |
 | 37 | New special form without an `ic-expr-node` case lowers to 0 (a form whose parser rejects it is `E_MALFORMED_FORM`, but a parsed, unlowered one is still silent) | [icnf-new-form-needs-case](../rules/icnf-new-form-needs-case.md) |

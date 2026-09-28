@@ -4,7 +4,7 @@
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Function missing from output / `E_UNBOUND_VARIABLE` for a visible function | paren imbalance nesting it in an earlier form | check balance of preceding forms |
+| Function missing from output / `E_UNBOUND_VARIABLE` for a visible function | a form nested in an earlier one (the column-1 rule now reports most of these as `E_UNBALANCED_UNCLOSED`); run `zyl balance` | check balance of preceding forms |
 | A list of `error[E_TYPE_MISMATCH]` / `E_CANNOT_INFER` ending in `the program does not type-check (N errors above)` | the type checker reports every error, then fails; the first is usually the cause of the rest | fix from the top; `ZYL_DEBUG_TYPES=1` prints each function's inferred scheme on stderr |
 | `cannot unify Int with Unit` at `main` or a `defn` | `main` must return an `Int` (end with `0`); a body ending in `print`/`set!`/one-armed `if` is `Unit` | end with the value |
 | `cannot unify Int with Bool` | an `Int` used as a condition, or `and`/`or`/`not` on Ints | compare: `(= n 0)` |

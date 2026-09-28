@@ -2,7 +2,7 @@
 name: zyl
 description: >
   Expert Zyl knowledge for writing, reviewing and debugging Zyl code and the
-  self-hosted Zyl compiler. 183 rules in 26 categories across five tiers
+  self-hosted Zyl compiler. 184 rules in 26 categories across five tiers
   (foundations, language model, systems, engineering, compiler internals),
   prioritized by impact, plus reference tables for error codes, built-ins,
   the standard library, the pipeline and spec-vs-implementation status.
@@ -81,6 +81,8 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
     0))                                      ; main's value is the exit status
 ```
 
+After every edit, check the file with `zyl balance` ([tool-balance](rules/tool-balance.md)); never count parens by hand.
+
 Tests live in a separate file: top-level `(test "name" (assert-equal actual expected))` forms and a final `(run-tests)`, no `main`.
 
 ## Rule Categories by Priority
@@ -109,7 +111,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 4 | 18 | Testing | HIGH | `test-` | 7 |
 | 4 | 19 | Modules & Packages | HIGH | `pkg-` | 11 |
 | 4 | 20 | Determinism | HIGH | `det-` | 4 |
-| 4 | 21 | Tooling (CLI, REPL, LSP) | MEDIUM | `tool-` | 5 |
+| 4 | 21 | Tooling (CLI, REPL, LSP) | MEDIUM | `tool-` | 6 |
 | 4 | 22 | Project Idioms | MEDIUM | `proj-` | 3 |
 | 5 | 23 | Bootstrap & Fixed Point | CRITICAL | `boot-` | 11 |
 | 5 | 24 | ICNF | MEDIUM | `icnf-` | 6 |
@@ -120,7 +122,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 ### 1. Syntax & Lexical Structure (CRITICAL)
 
-- [`syn-brackets-and-balance`](rules/syn-brackets-and-balance.md) - `()` and `{}` read as plain lists, `[a b]` reads as the list literal `(list a b)`; keep every opener matched, and know the balance check only catches net imbalance.
+- [`syn-brackets-and-balance`](rules/syn-brackets-and-balance.md) - `()` and `{}` read as plain lists, `[a b]` reads as the list literal `(list a b)`; keep every opener matched, start every top-level form in column 1 and no nested form there, and check with `zyl balance`.
 - [`syn-int-literal-range`](rules/syn-int-literal-range.md) **[CRITICAL]** - Write any constant at or above 2^63 as its negative two's-complement `Int`; never write an unsigned-sized literal.
 - [`syn-keywords-and-symbols`](rules/syn-keywords-and-symbols.md) - Use `:keyword` tokens only where a form expects them; they are not values.
 - [`syn-naming-conventions`](rules/syn-naming-conventions.md) - kebab-case functions and variables, PascalCase types and variants, `?` predicates, `_` for unused, two-space indent; treat special-form names as reserved.
@@ -328,6 +330,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`tool-debugging-the-pipeline`](rules/tool-debugging-the-pipeline.md) **[CRITICAL]** - Debug with `--emit-asm`, the `ZYL_*` bisection switches (`ZYL_MIR=0`, `ZYL_INLINE=0`, `ZYL_REUSE=0`, `ZYL_REGIONS=0`), `ZYL_DEBUG_STAGES`/`ZYL_DEBUG_TYPES`, `zyl eval` differential runs, and small driver programs that `use` compiler modules.
 - [`tool-eval-differential`](rules/tool-eval-differential.md) - Use `zyl eval` / the REPL for fast iteration, but confirm behavior with a compiled binary: the interpreter differs on FFI, division by zero, regions and speed.
 - [`tool-lsp-and-editors`](rules/tool-lsp-and-editors.md) **[CRITICAL]** - Point any LSP client at `zyl-lsp` for the compiler's own diagnostics, type errors included; expect the pre-type checks one at a time, every type error at once, no capability check, byte-based columns and name-based (not scope-based) navigation.
+- [`tool-balance`](rules/tool-balance.md) **[CRITICAL]** - After every edit to a `.zyl` file, run `zyl balance <file>` (in a checkout, `build/boot/zyl-self balance`); never count parens by eye or with a script. It is the check every compile runs first, it follows the lexer exactly, and it catches a misplaced paren even when the count nets to zero.
 - [`tool-repl`](rules/tool-repl.md) - Use the REPL (`zyl repl`) to explore expressions and definitions; each function can be defined once per session, and actors an entry spawns are joined before the prompt returns.
 
 ### 22. Project Idioms (MEDIUM)
@@ -349,7 +352,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`boot-moderate-bodies`](rules/boot-moderate-bodies.md) - Keep compiler function bodies moderate and flat; prefer short `let` chains and helpers over deep nesting.
 - [`boot-module-build`](rules/boot-module-build.md) - The compiler is built like any program: every boot stage compiles `selfhost/driver.zyl`, and module resolution follows its `(use ...)` tree through `stdlib/`. A compiler module is reached only through a `use`.
 - [`boot-one-deftype-per-name`](rules/boot-one-deftype-per-name.md) **[CRITICAL]** - Define each type name exactly once across everything one program imports, and keep variant names unique.
-- [`boot-parens-per-file`](rules/boot-parens-per-file.md) **[CRITICAL]** - Keep every top-level form independently balanced; a missing closer swallows everything after it in the same file.
+- [`boot-parens-per-file`](rules/boot-parens-per-file.md) **[CRITICAL]** - Keep every top-level form independently balanced and starting in column 1; check every edited file with `zyl balance`.
 - [`boot-two-step-syntax`](rules/boot-two-step-syntax.md) - Introduce new syntax (and any new runtime function the compiler calls) in two steps: teach the compiler to accept it and reseed, then start using it in the compiler's own source.
 - [`boot-runtime-module`](rules/boot-runtime-module.md) **[CRITICAL]** - The runtime is Zyl (`runtime/rt/*.zyl`, entry `rt.zyl`), compiled with `--runtime-module`: only there do the locked `%` primitives exist and `zyl_*` defns become exported labels. Change it like compiler source: reseed, and land any entry the compiler calls in two steps.
 
@@ -424,6 +427,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | Code review | [pitfalls](references/pitfalls.md), all **[CRITICAL]** rules |
 | Compiler change | `boot-`, `pass-`, `icnf-`, `cg-`, `pass-evaluation-order-sets`, `det-` |
 | Runtime change (`runtime/rt/`) | `boot-runtime-module`, `boot-fixed-point-workflow`, `cg-self-link` |
+| Any `.zyl` edit | `tool-balance` |
 | Boot failure | `boot-failure-modes`, `tool-debugging-the-pipeline`, [debugging](references/debugging.md) |
 
 ### Where the Old Constraint List Went

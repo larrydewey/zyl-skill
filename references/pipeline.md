@@ -8,7 +8,7 @@
 
 | # | Stage | Function / module | Can raise |
 |---|---|---|---|
-| 1 | Balance check | `compile-check-balance` / `sexp_balance.zyl` (`sb-check-string`, `sb-hint`) | `E_UNBALANCED_*`, `E_UNTERMINATED_STRING` |
+| 1 | Balance check (spec §1.6: brackets, strings, the column-1 layout rule, NUL bytes; also `zyl balance`) | `compile-check-balance` / `sexp_balance.zyl` (`sb-check-string`, `sb-hint`; the REPL uses `sb-check-nets`) | `E_UNBALANCED_*`, `E_UNTERMINATED_STRING` |
 | 2 | Lex + parse (no-dispatch: every form a generic list; `'` `` ` `` `,` `,@` become `quote`/`quasiquote`/`unquote`/`unquote-splicing` lists, `[...]` a `list`) | `zyl-lex`, `zyl-parse-file`, `check-lexed-to-end` / `lexer.zyl`, `parser.zyl`, `ast.zyl` | `E_INVALID_CHAR`, `E_UNTERMINATED_STRING`, `E_INVALID_ESCAPE`, `E_BYTE_VALUE_OOB` |
 | 3 | Module resolution, qualification (list literals and well-formed quasiquotes rewritten to `Cons`/`Nil`/`zyl-qq-append`), `impl-not`, orphan rule, Ast→ExprInner | `mr-resolve-program-full` / `module_resolver.zyl`, `qualify.zyl`, `expr_inner.zyl` (`convert-program`, `convert-ast`), package modules | `E_MODULE_*`, `E_PKG_*`, `E_MALFORMED_PARAMETER`, `E_MALFORMED_FORM` (quoted names, bad quasiquote), `E_NESTED_PATTERN`, `E_MATCH_NONEXHAUSTIVE` (literal match), `E_REGION_SPEC`, `E_UNEXPECTED_TOKEN_IN_EXPR`, field `set!` `E_MUT_CONFLICT` |
 | 4 | Macro expansion (`&rest`, `,@` splicing) | `me-expand-program` / `macro_expand.zyl` (`me-collect`, `me-strip`, `me-rewrite`) | `E_MACRO_*`, arity, duplicate, unbound, `E_MALFORMED_FORM` |
