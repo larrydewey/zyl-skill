@@ -18,7 +18,7 @@
 | `(Fn (A B) R)` | a function from `A B` to `R` |
 | `Secret`, `(Secret Int)` | a secret value |
 
-- An unknown **uppercase** name (`T`, `Bogus`, `Byte`, an `alias` name) is a type variable scoped to that one signature: `((a T) (b T))` forces both arguments to one type, and the function stays polymorphic. `Byte` is not a type.
+- An unknown **uppercase** name (`T`, `Bogus`, `Byte`) is a type variable scoped to that one signature: `((a T) (b T))` forces both arguments to one type, and the function stays polymorphic. `Byte` is not a type.
 - An unknown lowercase name is a fresh, unconstrained variable per occurrence.
 - A trait name (`(a Ord)`) is `E_MALFORMED_PARAMETER: `Ord` is a trait, not a type`; `(a : Int)` is `E_MALFORMED_PARAMETER` too (write `(a Int)`).
 
@@ -37,7 +37,7 @@
 ## Notes
 
 - `Vec<T>` is notation only: `<` and `>` are identifier characters. Write `(Vec T)`.
-- `(alias Name Type)` has no effect; `Name` is then just an unknown uppercase name (a type variable).
+- `(alias Name Type)` makes `Name` mean `Type` in every annotation (transparent); an unknown target is `E_UNKNOWN_TYPE`.
 - `Bool` params reject `1`/`0`: pass `true`/`false`.
 - Hover in the language server shows a parameter's annotated type by its source name.
 
