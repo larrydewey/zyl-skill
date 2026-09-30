@@ -11,7 +11,7 @@
 | 24 | Test binary exit status 0 despite failures | Implicit `main` now returns `zyl_run_tests` result | ✅ Done |
 | 29 | `buf-append` on non-fresh buffer accumulates | Already documented in `proj-buf-append-appends` | ✅ Documented |
 | 30 | REPL ignores `with-region` limits | Documented as known limitation | ✅ Documented |
-| 31 | Tuple syntax | Attempted, then **reverted** — the stub built values nothing could read; see below | ❌ Reverted |
+| 31 | Tuple syntax | `(tuple ...)` + `(tuple-get t i)`, element types part of the type (spec 21.5) | ✅ Done |
 | 32 | No way to write a test that is *expected* to panic | `(:expect-panic true)` option on `test`, carried through `test-suite` | ✅ Done |
 | 33 | `let*` unavailable | Sugar for nested `let`, rewritten in `desugar.zyl` | ✅ Done |
 | 34 | `try`/`catch` unwinds rather than matching (spec 12.2) | Left as the one remaining deviation, but the type checker now enforces it: a `Result` body cannot be caught | ✅ Enforced |
@@ -27,7 +27,8 @@
 8. `error: return an Err, and add panic for the raising half`
 9. `let*: sequential bindings, sugar for nested let`
 10. `Revert the tuple stub: it built values nothing could read`
-11. Seed updates for each
+11. `tuple: build and read tuples, with the element types in the type`
+12. Seed updates for each
 
 ## Skill Docs Commits
 
@@ -40,7 +41,7 @@
 
 ## Test Status
 
-- All 387 regression tests pass (378 + 4 new compile-fail + error-as-value + let* + 2 try/option compile-fail)
+- All 391 regression tests pass (378 + 6 new compile-fail + error-as-value + let* + tuples)
 - Fixed point holds (verified with `./boot.sh`)
 
 ---
@@ -99,24 +100,39 @@ wherever a value of the other shape is expected, but **not** in statement
 position, where the value is discarded — `(begin (error "x") (print "after"))`
 compiles, prints, and exits 0.
 
-## Tuples: reverted, and why
+## Tuples: how they ended up working
 
-`(tuple ...)` (spec 21.5) was implemented earlier in the session as a special
-form lowering to an `IVariant` whose tag was the tuple's arity, plus a
-`Tuple<T1,T2>` type in the type pass. It was reverted (`810dd2c`).
+The first attempt was wrong and was reverted: `(tuple ...)` lowered to an
+`IVariant` with a made-up tag equal to the arity, and a tuple value could not
+be read at all — no `match` arm could name it, because the constructor was
+never registered in the variant table icnf matches against. Removing it left
+the tree matching what the book already said, but "absent" was the wrong
+answer too.
 
-It was not a feature. A tuple value **could not be read**: no `match` arm could
-name it, because the constructor was never registered in the variant table that
-icnf matches against, so its tag was never resolvable. There was no field access
-either. The tag was the arity, which any `deftype` could also produce, so it
-meant nothing. And it appeared in neither the reserved-name list nor the LSP
-builtins, while the book said `(tuple 1 2)` is an undefined function — so a
-reader had no way to learn any of this.
+The working version (614e8ab) treats a tuple as what it is — a generated
+single-variant ADT, one per element type list, named `__Tuple<arity>~<types>`.
+So the element types are part of the type, `(tuple 1 2)` and
+`(tuple "a" "b")` cannot be unified, and a positional read is type-checked
+rather than a raw word.
 
-Doing it properly is not a desugar. The element types are unknown until the type
-pass, so the variant must be generated there and registered in the variant table
-icnf matches against, and a destructuring form added on top. Book 4.5's advice
-(use a struct or a single-variant ADT) stands.
+This could not be a parse-time desugar, which is the thing the first attempt
+got wrong: the element types are unknown until the type pass. So the name is
+derived in `type_annotate.zyl`, the `deftype` that gives the variant a tag is
+pushed onto `ta-extra` (which `ta-annotate` returns as part of the program, so
+`ic-collect-vt` registers it), and it is marked as a struct so the tag is
+globally unique — each generated type numbers its own tags from 0, and a match
+on one must not fire on another.
+
+`tuple-get` reuses `struct-get`'s `ta-pending` deferral. Tuple reads are tagged
+`"@t"` in the pending because `@` cannot appear in an identifier: the struct
+path routes an unresolved receiver through a "sole struct with this field"
+heuristic that knows nothing about tuples, and without the tag a generic
+receiver got that heuristic's wrong message.
+
+**Known limit:** a generic function cannot take a tuple. Nothing can say a type
+parameter is a tuple (no trait bounds, spec 6.1), so `tuple-get` on one is
+`E_CANNOT_INFER`. Concrete tuples, nesting, returning them, and mixed element
+types all work.
 
 ## Verified conformant, no change needed
 
