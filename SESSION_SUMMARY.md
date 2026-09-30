@@ -11,9 +11,10 @@
 | 24 | Test binary exit status 0 despite failures | Implicit `main` now returns `zyl_run_tests` result | ✅ Done |
 | 29 | `buf-append` on non-fresh buffer accumulates | Already documented in `proj-buf-append-appends` | ✅ Documented |
 | 30 | REPL ignores `with-region` limits | Documented as known limitation | ✅ Documented |
-| 31 | Tuple syntax | Added `(tuple ...)` special form with type checking, ICNF lowering, and codegen | ✅ Done |
+| 31 | Tuple syntax | Attempted, then **reverted** — the stub built values nothing could read; see below | ❌ Reverted |
 | 32 | No way to write a test that is *expected* to panic | `(:expect-panic true)` option on `test`, carried through `test-suite` | ✅ Done |
-| 33 | `try`/`catch` unwinds rather than matching (spec 12.2) | Left as the one remaining deviation, but the type checker now enforces it: a `Result` body cannot be caught | ✅ Enforced |
+| 33 | `let*` unavailable | Sugar for nested `let`, rewritten in `desugar.zyl` | ✅ Done |
+| 34 | `try`/`catch` unwinds rather than matching (spec 12.2) | Left as the one remaining deviation, but the type checker now enforces it: a `Result` body cannot be caught | ✅ Enforced |
 
 ## Compiler Commits (no co-authors)
 
@@ -21,11 +22,12 @@
 2. `test: fix exit status for test runner`
 3. `when/unless: fix to be proper short-circuiting special forms`
 4. `recover: warn when catch-all arm shadows specific error code arms`
-5. `tuple: add (tuple ...) syntax with type checking, ICNF, and codegen`
 6. `test: add (:expect-panic bool) to the test form`
 7. `test: take a test's options as sibling forms, and reject unknown ones`
 8. `error: return an Err, and add panic for the raising half`
-9. Seed updates for each
+9. `let*: sequential bindings, sugar for nested let`
+10. `Revert the tuple stub: it built values nothing could read`
+11. Seed updates for each
 
 ## Skill Docs Commits
 
@@ -38,7 +40,7 @@
 
 ## Test Status
 
-- All 383 regression tests pass (378 + 2 option compile-fail + error-as-value + try-cannot-catch-err)
+- All 387 regression tests pass (378 + 4 new compile-fail + error-as-value + let* + 2 try/option compile-fail)
 - Fixed point holds (verified with `./boot.sh`)
 
 ---
@@ -49,7 +51,7 @@ These require significant architecture changes and are NOT quick wins:
 
 | Priority | Item | Description |
 |----------|------|-------------|
-| Low | `let*` / named let | Loop-carried state |
+| Low | named let | Blocked: needs a closure that rebinds captured state, which `E_MUT_CONFLICT` forbids. `let*` is done |
 | Low | Trait bounds / associated types / dyn | Major type system extension |
 | Low | Error-as-value semantics | `error` returns `Err` instead of panicking |
 | Low | Default public package index | Infrastructure |
@@ -96,3 +98,41 @@ Watch for: writing `error` where `panic` was meant. The type checker catches it
 wherever a value of the other shape is expected, but **not** in statement
 position, where the value is discarded — `(begin (error "x") (print "after"))`
 compiles, prints, and exits 0.
+
+## Tuples: reverted, and why
+
+`(tuple ...)` (spec 21.5) was implemented earlier in the session as a special
+form lowering to an `IVariant` whose tag was the tuple's arity, plus a
+`Tuple<T1,T2>` type in the type pass. It was reverted (`810dd2c`).
+
+It was not a feature. A tuple value **could not be read**: no `match` arm could
+name it, because the constructor was never registered in the variant table that
+icnf matches against, so its tag was never resolvable. There was no field access
+either. The tag was the arity, which any `deftype` could also produce, so it
+meant nothing. And it appeared in neither the reserved-name list nor the LSP
+builtins, while the book said `(tuple 1 2)` is an undefined function — so a
+reader had no way to learn any of this.
+
+Doing it properly is not a desugar. The element types are unknown until the type
+pass, so the variant must be generated there and registered in the variant table
+icnf matches against, and a destructuring form added on top. Book 4.5's advice
+(use a struct or a single-variant ADT) stands.
+
+## Verified conformant, no change needed
+
+Probed rather than assumed:
+
+- `recover` (§23.4): all four arm rules — `E_` code matched by message prefix,
+  `_` and type-named arms matching anything, arms tried in order, and an
+  unmatched error propagating.
+- `checkpoint` (§23.5): restores every outer `let-mut` the body assigned, before
+  the error propagates.
+- Contract profiles (§23): `warn` reports and continues, `off`/`production`
+  compile the clause out, `(contracts P form)` and a bare `(contracts P)` both
+  override for the following form. `--contracts=warn` and
+  `(contracts warn (defn ...))` both work.
+
+  One trap worth recording: `(contracts warn (print (f 0)))` does **not** relax
+  `f`'s already-compiled `requires`. The override applies to the form it wraps,
+  so it has to wrap the *definition*. A call site cannot retroactively change how
+  a body was lowered.
