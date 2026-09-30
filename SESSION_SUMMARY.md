@@ -11,6 +11,7 @@
 | 24 | Test binary exit status 0 despite failures | Implicit `main` now returns `zyl_run_tests` result | ✅ Done |
 | 29 | `buf-append` on non-fresh buffer accumulates | Already documented in `proj-buf-append-appends` | ✅ Documented |
 | 30 | REPL ignores `with-region` limits | Documented as known limitation | ✅ Documented |
+| 31 | Tuple syntax | Added `(tuple ...)` special form with type checking, ICNF lowering, and codegen | ✅ Done |
 
 ## Compiler Commits (no co-authors)
 
@@ -18,7 +19,8 @@
 2. `test: fix exit status for test runner`
 3. `when/unless: fix to be proper short-circuiting special forms`
 4. `recover: warn when catch-all arm shadows specific error code arms`
-5. Seed updates for each
+5. `tuple: add (tuple ...) syntax with type checking, ICNF, and codegen`
+6. Seed updates for each
 
 ## Skill Docs Commits
 
@@ -42,7 +44,6 @@ These require significant architecture changes and are NOT quick wins:
 
 | Priority | Item | Description |
 |----------|------|-------------|
-| Low | Tuple syntax | Sugar for single-field structs |
 | Low | `let*` / named let | Loop-carried state |
 | Low | Trait bounds / associated types / dyn | Major type system extension |
 | Low | Error-as-value semantics | `error` returns `Err` instead of panicking |
