@@ -57,7 +57,7 @@ The prelude implements all six for `Int`, `Float`, `Bool`, `String`, `List`, `Op
 - Derive each trait once per type: naming `Show` in two `derive`s (or deriving it beside a hand-written impl) is a located `E_DUPLICATE_IMPL`.
 - Works for generic and recursive ADTs: `(StMk "k" (Some 2))` shows `StMk(k, Some(2))`.
 - `==` on records is already deep structural without `Eq`. `<`/`>` order only Int, Float and String: on an ADT or struct they are `E_TYPE_MISMATCH` ("ordering on P"), so derive `Ord` and use `Ord.compare` ([data-equality-structural](data-equality-structural.md)).
-- `(defstruct+ Name fields... (:derive [Eq Show]))` derives too: it is rewritten into a separate `derive` before qualification, with the same field checks.
+- `defstruct+` **without** inline `(:derive [...])` **auto-derives all six prelude traits** (Show, Debug, Eq, Ord, Hash, Clone). An inline `(:derive [Eq Show])` clause becomes a separate `derive` for only those traits, with the same field checks.
 - `print` of a struct, or of an Option/Result/List whose payload type has no `Show` impl, prints the raw value (an address). An explicit `(Show.show x)` on a known type with no impl is a located `E_TRAIT_NOT_FOUND` — derive or write the impl; `(Show.show (Some p))` reports it inside `core/option.zyl`, where the payload's `Show.show` is called. There is no run-time fallback ([trait-static-dispatch](trait-static-dispatch.md)).
 - The REPL keeps a `derive` entry as a definition.
 

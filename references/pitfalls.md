@@ -20,7 +20,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 10 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
 | 11 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 12 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
-| 13 | `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
+| 13 | `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive`/`auto-derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
 | 14 | Macro argument used twice is evaluated twice | [macro-args-spliced](../rules/macro-args-spliced.md) |
 | 15 | `ffi-call` without a positive literal timeout is `E_FFI_TIMEOUT_REQUIRED`; `(ffi-call "f" 5)` is zero args + 5 ms; a too-tight timeout raises `E_FFI_TIMEOUT` and abandons the C call | [ffi-timeout-always-last](../rules/ffi-timeout-always-last.md) |
 | 16 | `(ffi-pin str)` passed where C wants `const char*` | [ffi-pin-passes-pointer](../rules/ffi-pin-passes-pointer.md) |

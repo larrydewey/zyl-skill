@@ -39,7 +39,7 @@
 - Constructor arguments are evaluated left to right and matched to fields in declaration order; the arity and the field types are checked (`(make-Person 30 "Ann")` is `E_TYPE_MISMATCH`, pass `true`/`false` to Bool fields).
 - Untyped fields are type parameters of the struct ([data-no-tuples-implicit-generic-structs](data-no-tuples-implicit-generic-structs.md)).
 - A trait call works as `struct-get`'s first argument or before `.field`: `(struct-get (Nm.nm p) "x")`, `(Nm.nm p).x`. In head position `((expr).f.m args)` reads the fields, then calls method `m` on the result ([trait-qualified-calls](trait-qualified-calls.md)).
-- `defstruct+` defines exactly the same struct; its `(:derive [Eq Show])` clause becomes a separate `derive` ([trait-derive-show](trait-derive-show.md)).
+- `defstruct+` defines the same struct and **auto-derives all 6 prelude traits** (Show, Debug, Eq, Ord, Hash, Clone) when no inline `(:derive [...])` is present. An inline `(:derive [Eq Show])` clause becomes a separate `derive` for only those traits ([trait-derive-show](trait-derive-show.md)).
 - Each struct gets a program-unique tag (from 100000 upward).
 
 ## See Also
