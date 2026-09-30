@@ -36,8 +36,8 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 26 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
 | 27 | Stale `~/.zyl` shadows checkout stdlib | [pkg-stdlib-resolution](../rules/pkg-stdlib-resolution.md) |
 | 28 | Unknown CLI word after the source becomes the output file name | [tool-cli-arguments](../rules/tool-cli-arguments.md) |
-| 29 | `buf-append` on a non-fresh buffer accumulates | [proj-buf-append-appends](../rules/proj-buf-append-appends.md) |
-| 30 | `with-region` limits (`E_REGION_EXHAUSTED`) are enforced only in compiled code; `zyl eval` and the REPL ignore regions | [own-with-region](../rules/own-with-region.md) |
+| 29 | `buf-append` on a non-fresh buffer accumulates | documented in [proj-buf-append-appends](../rules/proj-buf-append-appends.md) |
+| 30 | `with-region` limits (`E_REGION_EXHAUSTED`) are enforced only in compiled code; `zyl eval` and the REPL ignore regions | known limitation: REPL uses separate arenas, not regions |
 | 31 | A slice shares its Vec's storage: a later `vec-set` through a Vec that still uses that storage shows through the slice | [data-collections-persistent](../rules/data-collections-persistent.md) |
 
 ## Compiler-contributor extras
