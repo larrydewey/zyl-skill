@@ -17,7 +17,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | [fn-conditionals](../rules/fn-conditionals.md) |
 | 9 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms; `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
-| 10 | `try` does not catch `Err` values (it catches panics) | [err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md) |
+| 10 | `try` does not catch `Err` values (it catches panics) | documented: use `Result`/`Option` for expected failures ([err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md)) |
 | 11 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 12 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
 | 13 | `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive`/`auto-derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
