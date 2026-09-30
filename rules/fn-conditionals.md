@@ -37,7 +37,7 @@ Since 2026-09-25 the type checker enforces what used to be a silent wrong value.
 - A branch that is only an effect (`print`, `set!`, a loop) is `Unit`, so both branches of an `if` in statement position must be Unit or both something else; `(if c (print "x") 0)` is `E_TYPE_MISMATCH`. Use `unit` for an explicit empty branch.
 - `if` takes at most two branches: forms after the else branch are silently dropped ([fn-begin-multi-form-bodies](fn-begin-multi-form-bodies.md)).
 - `and`/`or` are desugared to `if` and short-circuit.
-- `when`/`unless` in the prelude are **functions**: both arguments are evaluated, so `(when false (print "x"))` prints. Their body must be `Unit`. Use `if` for effects, or write a macro ([macro-prefer-functions](macro-prefer-functions.md)).
+- `when`/`unless` are now **special forms** with short-circuit evaluation (fixed 2026-09-29). They take a `Bool` condition and a `Unit` body, evaluating the body only when the condition is true/false respectively. `(when false (print "x"))` no longer prints.
 - A `cond` clause whose test is the literal `true` or `else` ends the `cond`; clauses after it are unreachable. A clause body may hold several forms.
 - Comparisons: `=`/`==` (same op), `!=`, `<`, `>`, `<=`, `>=`. Ordering works on Int, Float and String; order an ADT with `Ord.compare`.
 - A Bool prints as `1`/`0` with `print`, but as `true`/`false` inside a printed container.
