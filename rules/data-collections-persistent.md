@@ -1,10 +1,10 @@
 # data-collections-persistent
 
-> `Vec` is generic (`(Vec T)`), `core/map` is `(Map String V)`, and `collections/map`/`collections/set` hold `Int`s; every operation returns an updated value: always rebind to the result and treat the old value as used up, because versions share storage.
+> `Vec` is generic (`(Vec T)`), `core/map` is `(Map String V)`, and `collections/intmap`/`collections/set` hold `Int`s; every operation returns an updated value: always rebind to the result and treat the old value as used up, because versions share storage.
 
 ## Why It Matters
 
-`collections/vec` is `(deftype Vec (VecC (Array T) Int Arena))`: a typed, bounds-checked runtime array, the length this version sees, and the arena the array lives in. `vec-get` returns `T`, so a String element prints and compares as text. Operations return a new `Vec` that **shares the array** with the old one until one of them outgrows it: `vec-set` writes the shared array, and a `vec-push` onto an old version overwrites what a newer version sees at that index. `collections/map` and `collections/set` are Int-keyed arena tables with the same sharing.
+`collections/vec` is `(deftype Vec (VecC (Array T) Int Arena))`: a typed, bounds-checked runtime array, the length this version sees, and the arena the array lives in. `vec-get` returns `T`, so a String element prints and compares as text. Operations return a new `Vec` that **shares the array** with the old one until one of them outgrows it: `vec-set` writes the shared array, and a `vec-push` onto an old version overwrites what a newer version sees at that index. `collections/intmap` and `collections/set` are Int-keyed arena tables with the same sharing.
 
 The compiler may reuse the old `Vec` record's block for the new one when the old value is provably unique and dead (`compiler/reuse.zyl`, Perceus-style "functional but in place"; `ZYL_REUSE=0` disables it). That is invisible to the program: it never changes what a reachable value holds, and it does not stop the array sharing above.
 
@@ -43,13 +43,13 @@ The compiler may reuse the old `Vec` record's block for the new one when the old
 
 ## API cheatsheet
 
-| Vec (`collections/vec`) | Map (`core/map`) | Int map (`collections/map`) | Int set (`collections/set`) |
+| Vec (`collections/vec`) | Map (`core/map`) | Int map (`collections/intmap`) | Int set (`collections/set`) |
 |---|---|---|---|
-| `(vec-create arena cap)` (`arena`: an `Arena`) | `(map-new)` | `(map-create arena cap)` | `(set-create arena cap)` |
-| `(vec-create-default cap)` (new private arena) | | `map-create-default cap` | `set-create-default cap` |
-| `vec-push v x` (grows by doubling) | `map-insert m k v` (replaces) | `map-put m k v` | `set-add s k` |
-| `vec-get v i` (out of range: `E_INDEX_OUT_OF_BOUNDS` panic) | `map-get m k` returns `Option`; `map-get-or m k d` | `map-get m k default` | `set-contains s k` (Bool) |
-| `vec-get-or v i default` | `map-has`, `map-remove` | `map-has` (Bool), `map-remove` | `set-remove s k` |
+| `(vec-create arena cap)` (`arena`: an `Arena`) | `(map-new)` | `(intmap-new-with arena cap)` | `(set-create arena cap)` |
+| `(vec-create-default cap)` (new private arena) | | `intmap-new cap` | `set-create-default cap` |
+| `vec-push v x` (grows by doubling) | `map-insert m k v` (replaces) | `intmap-put m k v` | `set-add s k` |
+| `vec-get v i` (out of range: `E_INDEX_OUT_OF_BOUNDS` panic) | `map-get m k` returns `Option`; `map-get-or m k d` | `intmap-get m k default` | `set-contains s k` (Bool) |
+| `vec-get-or v i default` | `map-has`, `map-remove` | `intmap-has` (Bool), `intmap-remove` | `set-remove s k` |
 | `vec-set v i x` (`i` = len within cap extends; other out-of-range `i`: unchanged) | `map-entries`, `map-size`, `map-map-values f m` | `map-len`, `map-find` | `set-len s` |
 | `vec-pop v` (empty: unchanged), `vec-last v` (empty: panic), `vec-len`, `vec-cap`, `vec-free` | | | |
 

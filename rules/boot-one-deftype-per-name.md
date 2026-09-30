@@ -13,6 +13,29 @@ Since sound type checking (verified 2026-09-25) the same program is rejected, bu
 
 Programs that happen to use each constructor only in its own module still compile and run correctly, which makes the collision easy to miss until a third module imports both.
 
+**Function names collide the same way, and worse.** The stdlib shipped two
+types both called `Map` (`core/map`, generic; `collections/map`, an
+arena-backed Int table) which also both exported `map-get`, `map-remove`
+and `map-has` — with *incompatible* signatures, 2 arguments against 3. A
+program that imported both was accepted, and the three shared names
+resolved to the Int-only module, so `core/map`'s versions became
+unreachable. The symptom was `E_ARITY_MISMATCH: map-get called with 2
+argument(s), but it takes 3` on correct code — no mention of `Map` at all.
+
+Note what that is and is not. The type checker did its job: the two `Map`s
+never unify, and a value of the wrong one is caught. What it cannot catch is
+the *name* resolving to a function that exists but is not the one you meant,
+because both candidates are well-typed. A collision where the losing side
+is not diagnosed is worse than one that fails loudly, so when a rename is
+available, take it: the Int table is `IntMap` in `collections/intmap` now,
+and the three shared names moved with it.
+
+`duplicate_check.zyl` had claimed the pair was "never `use`d together" and
+used that to justify checking names only within one resolved program. The
+claim was an assumption about which modules those were, and this pair was
+the counterexample — nothing enforced it. A name being reused across
+modules is not by itself evidence the reuse is safe.
+
 ## Good
 
 - Prefix variants by domain (`Tk*` tokens, `A*`/`Ast*` AST, `E*` ExprInner, `I*` ICNF, `CGS`/`CGE`/`CGR`/`CGP` codegen state).

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Output must be a pure function of input. Iterating a hash table exposes hash seeds or allocation order. The compiler's tables are lists built in source order or sorted by name (`qualify.zyl`); `core/map` is an association list; `collections/map`/`set` scan insertion-ordered arrays. The runtime's source-span table and the interpreter's FNV-1a function table are hash tables that are only **probed by key**.
+Output must be a pure function of input. Iterating a hash table exposes hash seeds or allocation order. The compiler's tables are lists built in source order or sorted by name (`qualify.zyl`); `core/map` is an association list; `collections/intmap`/`set` scan insertion-ordered arrays. The runtime's source-span table and the interpreter's FNV-1a function table are hash tables that are only **probed by key**.
 
 ## Good
 

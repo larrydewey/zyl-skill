@@ -22,11 +22,11 @@ Binding a second name to a `let-mut` Int gives an independent copy, so later `se
 ## Bad
 
 ```lisp
-(use collections/map)
+(use collections/intmap)
 (use collections/vec)
-(let m1 (map-put (map-create-default 4) 1 100)
-  (let m2 (map-put m1 1 111)      ; overwrites in the shared buffer
-    (map-get m1 1 0)))            ; 111, not 100
+(let m1 (intmap-put (intmap-new 4) 1 100)
+  (let m2 (intmap-put m1 1 111)   ; overwrites in the shared buffer
+    (intmap-get m1 1 0)))         ; 111, not 100
 
 (let v1 (vec-push (vec-create-default 4) 1)
   (let v2 (vec-push v1 2)         ; writes slot 1 of the shared storage

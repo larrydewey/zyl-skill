@@ -54,7 +54,7 @@ For raw memory (bytes addressed as `Ptr`), use an explicit arena:
 
 - Classes are field-insensitive: a variant, its fields and anything read out of it share one level, so one escaping use keeps the whole structure in the heap.
 - `(arena-create block-size)` gives an `Arena` handle: `block-size` below 16 means the 64 KiB default. `arena-alloc`/`arena-alloc-zeroed` give a `Ptr`. `arena-reset` frees all blocks; `arena-destroy` frees everything (handle dead).
-- Collections take a typed `Arena`: `(vec-create arena cap)`, `map-create`, `set-create` with a handle from `arena-create` (passing `0` is `E_TYPE_MISMATCH`), or `vec-create-default`/`map-create-default`/`set-create-default cap` for a new private arena that is never freed (one arena per call inside a loop). Release arena-backed collections with `arena-reset`/`arena-destroy`, not `vec-free`/`map-free`.
+- Collections take a typed `Arena`: `(vec-create arena cap)`, `intmap-new-with`, `set-create` with a handle from `arena-create` (passing `0` is `E_TYPE_MISMATCH`), or `vec-create-default`/`intmap-new`/`set-create-default cap` for a new private arena that is never freed (one arena per call inside a loop). Release arena-backed collections with `arena-reset`/`arena-destroy`, not `vec-free`/`intmap-free`.
 - Arena memory is raw: what you get is a `Ptr`, read and written with `alloc-read-int`/`alloc-write-int`, not typed Zyl values.
 - The compiler itself gains little from regions (its build time and peak memory are unchanged): its data mostly escapes into results or global tables.
 - `ZYL_REGIONS=0` at compile time makes every site H (the old behaviour), for bisecting a suspected region bug.

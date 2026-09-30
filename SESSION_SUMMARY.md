@@ -46,7 +46,7 @@
 
 ## Test Status
 
-- All 409 regression tests pass (378 + 17 new compile-fail + error-as-value + let* + tuples + len + vec/map literals + type predicates + quote brackets)
+- All 420 regression tests pass (378 + 28 new compile-fail + error-as-value + let* + tuples + len + vec/map literals + type predicates + quote brackets + int-literal range + operator arity + float range) (378 + 17 new compile-fail + error-as-value + let* + tuples + len + vec/map literals + type predicates + quote brackets)
 - Fixed point holds (verified with `./boot.sh`)
 
 ---
@@ -175,6 +175,102 @@ gap and three false alarms, and the false alarms all came from the same
 place: asserting a value without checking how it was produced. The literal
 silently evaluating to 0 is a genuine defect, found by accident — see
 below.
+
+## Fixing what the probe found, and two more defects after it
+
+**Integer literals: silent zero.** `9223372036854775808` evaluated to `0`,
+and `-9223372036854775809` wrapped to a *positive* value of the wrong sign.
+`zyl_cstr_to_int_base` answers 0 for a value it cannot hold, so a literal
+too large simply became the number zero and the program carried on. Now
+`E_INTEGER_OVERFLOW`, reported from the token stream before parsing, in
+every base — the radix forms had the same hole. Four bugs of my own got
+there, each looking plausible:
+
+- `(- c 97 87)` parses as `(c-97)-87`, not `c-87`. `-` took three arguments
+  with no arity error, so `'f'` scored -82 and the comparison ran backwards:
+  `0xffff000000000000` passed and `0x7F00000000000000` was rejected. A
+  check wrong in *both* directions looks like it is working.
+- Testing `<= 102` before `<= 70` catches `'F'` in the `a-f` branch.
+- `'a'` is ten, not zero.
+- The underlying one: `str-length` on a substring of a substring of a *view*
+  reports a length that is wrong either way. Work on indices, not
+  substrings.
+
+**Two `Map` types, colliding on three function names.** `core/map` is a
+generic `Map<K, V>`; `collections/map` was an arena-backed Int table. They
+also both exported `map-get`/`map-remove`/`map-has` with incompatible
+signatures. Importing both compiled clean, and the shared names silently
+resolved to the Int-only one — so the generic versions became unreachable
+behind an arity error that mentioned neither `Map` nor the collision. The
+type checker cannot catch this: both candidates are well-typed, so it is
+the *name* that is wrong, not the program. The Int one is `IntMap` now.
+
+The rename also exposed that `core/map`'s `map-has` returned `1`/`0` rather
+than a `Bool`, which eight LSP call sites had grown a `(> (map-has ...) 0)`
+workaround for. Renaming the type was not enough; the three shared function
+names are what actually collided.
+
+**`E_FLOAT_OVERFLOW` deleted, not implemented.** A float literal out of
+range is `inf` or `0.0` — IEEE, and what C/Python/JS/Rust produce. The
+opposite of the integer case, where the alternative was a silent 0 or a
+silent wrap: `inf` announces itself. A catalogued code that nothing raises
+implies a check that does not exist, so it is gone and the header says why.
+
+## Three things I reported as bugs that were not
+
+The session's clearest lesson, and all three were the same mistake: asserting
+from the spec text without checking what the code does.
+
+1. **`crc32c`** — reported as a signature divergence. The spec says
+   `Int Int -> Int` and the code agrees; my test passed a String.
+2. **`quote`** — reported as "not implemented". It is implemented, and its
+   `E_MALFORMED_FORM` on a name inside quoted data is exactly what the spec
+   asks for. Only the bracket case was broken.
+3. **n-ary `-`** — reported as a bug because §21.1 writes `(- a b)`. The
+   book has said "Arithmetic (n-ary, left-associative)" all along,
+   `regression/arithmetic.zyl` pins `(- 10 2 2 2 2)` = 2 in a test named
+   `int-modulo-like` (chained subtraction is how you spell modulo), and
+   enforcing the spec would have broken four real call sites in codegen.zyl
+   before the compiler even finished building.
+
+Also **`mul-hi`/`mul-hi-u` are correct** — the bad result came from the
+literal `18446744073709551615`, which does not fit an Int64. That is what
+led to the integer-literal bug above.
+
+So: absence from a spec list is not evidence. The §2 `Expr :=` grammar omits
+`defstruct`, `trait`, `impl`, `set!` and plain `(let x e1 e2)`, all of which
+exist. The §1.3 keyword list *was* exhaustive-looking and did omit `let*`.
+
+## A process failure worth naming
+
+Five commits claimed to add notes to `spec/02-syntax-and-forms.md` and did
+not. Every one was a `str.replace` whose anchor was not in the file, and
+Python's `str.replace` is not an error when the pattern is absent — it
+returns the string unchanged. I verified those commits by test output and
+never checked the file. The table rows landed (a different replace, whose
+anchor matched); all seven prose notes did not. `b48162a` claimed "the
+notation is now called out in spec/02" and that was false when made.
+
+Now every insertion asserts its anchor appears exactly once and its own text
+appears exactly once after.
+
+## Two features deliberately not built
+
+**Trait bounds (§6.1).** Would be *additive* — a colon distinguishes
+`((T : Ord) a)` from `((x Int) a)`, so none of the 3,867 typed parameters in
+166 files break — and the machinery is mostly there: a `Trait.method` call
+on a type parameter already resolves per specialization. What is missing is
+§6.4's case, a parameter with no call-site evidence, which needs a finite
+candidate set from the program's impls. Deferred deliberately; the spec's
+own "Implemented:" section already documents the current state and the
+rejected forms have precise diagnostics.
+
+**Recursive named `let`.** Blocked on a measured property: **closures
+capture by value.** A closure over a `let-mut` local still reads the value
+from before the `set!`. So binding the name before the initializer — the
+obvious one-line fix — would compile and then capture an uninitialized
+slot. The two real designs (by-reference capture, or a one-slot mutable
+cell, which the language has no primitive for) are both language-wide.
 
 ## Two stdlib defects the probe uncovered
 

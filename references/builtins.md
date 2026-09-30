@@ -28,8 +28,9 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | Form | Notes |
 |---|---|
 | `(let name v body...)` / `(let (name v) body...)` | one binding; several body forms are a `begin`; `(let ((x 1) (y 2)) ...)` and a missing body are `E_MALFORMED_FORM`; local `let` is monomorphic |
+| `(let* ((name v) ...) body...)` | sugar for nested `let`, each binding in scope for the rest and the body; at least one `(name v)` binding and one body form, else `E_MALFORMED_FORM` |
 | `(let-mut name v body...)`, `(set! name v)` | `set!` only on `let-mut`/`for` vars; `Unit` |
-| `(fn (p...) body...)`, `(lambda ...)` | capture by value; no self-reference (a `let`-bound lambda cannot call itself) |
+| `(fn (p...) body...)`, `(lambda ...)` | capture **by value** — a closure sees an enclosing local's value as of when it was built, not later mutations; so no self-reference: a `let`-bound lambda cannot call itself, and the named form `(let (loop init) body)` binds `loop` for `body` only. Fixing that needs by-reference capture or a mutable cell, both language-wide |
 | `(if c t e)` | `c` is `Bool`; without `e` the form is `Unit` and `t` must be `Unit` |
 | `(cond (t b...) ... (else b...))` | tested in order; `else`/`true` clause ends it; without one the `cond` is `Unit` |
 | `(while c body...)` | `Unit` |
@@ -76,7 +77,7 @@ Zero-copy substrings: `text/view` (`StrView`, `Cursor`); see [stdlib.md](stdlib.
 
 ## Data
 
-`(struct-get v "field")`, `v.field`, `v.a.b`, `(expr).field` (any expression, chained: `(seg).b.y`), `(make-Name ...)`, constructor application. `make-struct`, `make-variant`: `E_CANNOT_INFER` (write the constructor). `tuple`: undefined.
+`(struct-get v "field")`, `v.field`, `v.a.b`, `(expr).field` (any expression, chained: `(seg).b.y`), `(make-Name ...)`, constructor application. `make-struct`, `make-variant`: `E_CANNOT_INFER` (write the constructor). `tuple`/`tuple-get`: `(tuple e...)` builds a generated one-variant type, so the element types are part of a tuple's type and `(tuple 1 2)` and `(tuple "a" "b")` cannot be mixed; `(tuple-get t i)` reads from 0, `E_INDEX_OUT_OF_BOUNDS` past the end (naming the arity), `E_TYPE_MISMATCH` on a non-tuple, `E_CANNOT_INFER` on a receiver whose type is unknown. `len`: String, List, Vec, Map, IntMap, resolved to that type's own length function, `E_TYPE_MISMATCH` otherwise. `vec`/`map`: element and entry literals. The six predicates (`int? float? bool? string? struct? alias?`): decided while type checking from the operand's *static type* (so `(bool? false)` is true), operand still evaluated, `E_CANNOT_INFER` on an unknown receiver, `alias?` always false, a `defn` of the same name shadows. `(struct-get v "field")`, `v.field`, `v.a.b`, `(expr).field` (any expression, chained: `(seg).b.y`), `(make-Name ...)`, constructor application. `make-struct`, `make-variant`: `E_CANNOT_INFER` (write the constructor).
 
 List literals build a `Cons` chain, elements evaluated left to right, all of one type (`E_TYPE_MISMATCH` otherwise; see [syn-list-literals-and-quote](../rules/syn-list-literals-and-quote.md)):
 
