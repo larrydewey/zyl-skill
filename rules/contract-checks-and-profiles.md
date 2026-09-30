@@ -73,6 +73,7 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
 - Under `off`/`production` a clause is removed before type checking, so a stripped clause is not checked at all: `(requires (undefined-thing 1))` compiles. Build with the default profile at least once.
 - `warn` output goes to stderr unbuffered, so it can appear before earlier stdout lines.
 - `recover` catches `error` panics and contract violations, not `(Err ...)` values.
+- `recover` arm order matters: a catch-all arm (`(String)` or `(_)`) before a specific error code arm (`(E_...)`) emits `W_RECOVER_SHADOW` warning.
 - A tail call in a body that has `ensures` is no longer a tail call (the check runs after it), so deep recursion there uses stack.
 - Contracts never alter type inference, ownership, regions or concurrency (spec P8).
 - For recoverable failures a caller should handle, return `Result` instead ([err-result-for-expected-failures](err-result-for-expected-failures.md)).
