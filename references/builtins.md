@@ -124,7 +124,7 @@ List literals build a `Cons` chain, elements evaluated left to right, all of one
 
 ## Testing
 
-`(test "name" body)` (exactly one body form; `begin` for several), `(run-tests)` (options `(:filter "s")`, `(:parallel Bool)`; anything else `E_MALFORMED_FORM`), `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false`, `(assert-fail e msg?)` (fails unless `e` raises). Top-level `test-suite` with `setup`/`teardown`, `test-property` (`gen-int`/`gen-bool`/`gen-string`/`gen-float`, 1-3 parameters) and `test-compile` (`(:expect-error true)` optional) are implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)). A failing test prints `FAIL: <message>`; the binary exits 0 even when a test fails.
+`(test "name" body)` (exactly one body form; `begin` for several; option forms after the body, of which only `(:expect-panic Bool)` is defined — it inverts the test so the body must raise; any other option is `E_MALFORMED_FORM`), `(run-tests)` (options `(:filter "s")`, `(:parallel Bool)`; anything else `E_MALFORMED_FORM`), `assert-equal` (both sides one type; structural on ADTs; Floats within 1e-5), `assert-true`, `assert-false`, `(assert-fail e msg?)` (fails unless `e` raises). Top-level `test-suite` with `setup`/`teardown`, `test-property` (`gen-int`/`gen-bool`/`gen-string`/`gen-float`, 1-3 parameters) and `test-compile` (`(:expect-error true)` optional) are implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md)). A failing test prints `FAIL: <message>` and the binary exits 1.
 
 ## Types, regions, capabilities (annotation/argument names)
 
