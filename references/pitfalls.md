@@ -31,7 +31,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 21 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 22 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
 | 23 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
-| 24 | Test binary exit status 0 despite failures | [test-read-summary-line](../rules/test-read-summary-line.md) |
+| 24 | Test binary exit status 0 despite failures | fixed: implicit main returns `zyl_run_tests` result |
 | 25 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
 | 26 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |
 | 27 | Stale `~/.zyl` shadows checkout stdlib | [pkg-stdlib-resolution](../rules/pkg-stdlib-resolution.md) |
@@ -89,6 +89,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | `error` in a 2/4-arg function under `try` hung (2026-09-24) | fixed ([err-try-any-arity](../rules/err-try-any-arity.md)) |
 | `=` on dynamic strings in the compiler compared pointers | content comparison ([pass-string-eq-in-compiler](../rules/pass-string-eq-in-compiler.md); `str-eq` remains the convention) |
 | mixed literal + constructor arms in `match` | `E_MATCH_MIXED_PATTERNS` ([match-mixed-patterns](../rules/match-mixed-patterns.md)) |
+| test binary exit status 0 despite failures | fixed: implicit main returns `zyl_run_tests` result |
 | `receive` was untyped; mailbox messages could be dropped at exit; actor output interleaved by the OS (before 2026-09-28) | typed Kahn channels, per-actor output buffers, deterministic under every schedule ([actor-channels-kahn](../rules/actor-channels-kahn.md)) |
 | `try` frames were never freed, so a `try` in a loop leaked | freed when the `try` ends |
 | `with-resource` released nothing; `test-suite` dropped its tests; `setup`/`teardown`/`test-property`/`test-compile` did nothing; `assert-fail` always passed (before 2026-09-28) | all implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md), [fn-unlowered-forms](../rules/fn-unlowered-forms.md)) |
