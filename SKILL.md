@@ -94,7 +94,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 | 1 | 1 | Syntax & Lexical Structure | CRITICAL | `syn-` | 7 |
 | 1 | 2 | Functions, Bindings & Control Flow | CRITICAL | `fn-` | 15 |
 | 1 | 3 | Structs, ADTs & Collections | CRITICAL | `data-` | 12 |
-| 1 | 4 | Pattern Matching | CRITICAL | `match-` | 8 |
+| 1 | 4 | Pattern Matching | CRITICAL | `match-` | 9 |
 | 1 | 5 | Error Handling | CRITICAL | `err-` | 5 |
 | 1 | 6 | Contracts | HIGH | `contract-` | 1 |
 | 2 | 7 | Ownership, Capabilities & Regions | HIGH | `own-` | 8 |
@@ -171,6 +171,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`match-exhaustive-or-underscore`](rules/match-exhaustive-or-underscore.md) - Cover every variant, or end with a single `_` arm; a non-exhaustive constructor match is a compile-time error.
 - [`match-guards-literal-arms-only`](rules/match-guards-literal-arms-only.md) **[CRITICAL]** - Use `(when cond)` guards only after plain literal alternatives; test constructor fields inside the arm body instead.
 - [`match-literal-requires-underscore`](rules/match-literal-requires-underscore.md) - Literal, OR and range matches must end with `_`, bind nothing, and cannot be mixed with constructor arms.
+- [`match-mixed-patterns`](rules/match-mixed-patterns.md) **[CRITICAL]** - Literal patterns and constructor patterns cannot be mixed in the same `match`; now emits `E_MATCH_MIXED_PATTERNS`.
 - [`match-misspelled-last-arm`](rules/match-misspelled-last-arm.md) **[CRITICAL]** - Spell every constructor in a match arm exactly: an arm head that is not a known constructor is a catch-all that binds nothing.
 - [`match-no-nested-patterns`](rules/match-no-nested-patterns.md) **[CRITICAL]** - Match one constructor level at a time: a field position holds only a name or `_`; a nested pattern is `E_NESTED_PATTERN`.
 

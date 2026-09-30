@@ -11,7 +11,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 1 | Integer literal ≥ 2^63 (e.g. `0xFF51AFD7ED558CCD`) becomes `0` | [syn-int-literal-range](../rules/syn-int-literal-range.md) |
 | 2 | `\0` in a string literal ends the string (`"a\0b"` has length 1) | [syn-string-literals](../rules/syn-string-literals.md) |
 | 3 | Misspelled constructor in the **last** match arm is a catch-all binding | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
-| 4 | Mixed literal + constructor arms: undiagnosed (`(match n (1 ...) (Red ...) (_ ...))` compiles) | [match-literal-requires-underscore](../rules/match-literal-requires-underscore.md) |
+| 4 | Mixed literal + constructor arms: now `E_MATCH_MIXED_PATTERNS` compile error | [match-mixed-patterns](../rules/match-mixed-patterns.md) |
 | 5 | Misspelled or unknown type name in an annotation (`(a Intt)`) is a fresh type parameter: accepted, checks nothing | [type-sound-checking](../rules/type-sound-checking.md) |
 | 6 | `print` of a struct/ADT with no `Show` impl, or of an `Option`/`List` of one, prints an address; `print` of a `Bool` prints `1`/`0` | [trait-derive-show](../rules/trait-derive-show.md) |
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
@@ -88,6 +88,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | `vec-get` out of range returned word -1 | `E_INDEX_OUT_OF_BOUNDS` panic (`vec-get-or` for a default) |
 | `error` in a 2/4-arg function under `try` hung (2026-09-24) | fixed ([err-try-any-arity](../rules/err-try-any-arity.md)) |
 | `=` on dynamic strings in the compiler compared pointers | content comparison ([pass-string-eq-in-compiler](../rules/pass-string-eq-in-compiler.md); `str-eq` remains the convention) |
+| mixed literal + constructor arms in `match` | `E_MATCH_MIXED_PATTERNS` ([match-mixed-patterns](../rules/match-mixed-patterns.md)) |
 | `receive` was untyped; mailbox messages could be dropped at exit; actor output interleaved by the OS (before 2026-09-28) | typed Kahn channels, per-actor output buffers, deterministic under every schedule ([actor-channels-kahn](../rules/actor-channels-kahn.md)) |
 | `try` frames were never freed, so a `try` in a loop leaked | freed when the `try` ends |
 | `with-resource` released nothing; `test-suite` dropped its tests; `setup`/`teardown`/`test-property`/`test-compile` did nothing; `assert-fail` always passed (before 2026-09-28) | all implemented ([test-suites-properties-compile](../rules/test-suites-properties-compile.md), [fn-unlowered-forms](../rules/fn-unlowered-forms.md)) |

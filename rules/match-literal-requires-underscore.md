@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-A match whose arms start with literals is an implementation extension compiled to an `if` chain. Without a trailing `_` it is `E_MATCH_NONEXHAUSTIVE: a literal-pattern match must end with a `_` arm` (raised at parse time). Literal patterns bind no names: refer to the value through the scrutinee's own variable. Mixing literal and constructor arms in one `match` is rejected by the type checker, though not with a clear message: the constructor arm's binders come out unbound (`E_UNBOUND_VARIABLE`) and the constructor fails to unify with the literal's type.
+A match whose arms start with literals is an implementation extension compiled to an `if` chain. Without a trailing `_` it is `E_MATCH_NONEXHAUSTIVE: a literal-pattern match must end with a `_` arm` (raised at parse time). Literal patterns bind no names: refer to the value through the scrutinee's own variable. Mixing literal and constructor arms in one `match` is now rejected at parse time with `E_MATCH_MIXED_PATTERNS` (see [match-mixed-patterns](match-mixed-patterns.md)).
 
 ## Bad
 
@@ -13,7 +13,7 @@ A match whose arms start with literals is an implementation extension compiled t
 ;; E_MATCH_NONEXHAUSTIVE: a literal-pattern match must end with a `_` arm
 
 (match v (0 "zero") (Some x "some") (_ "o"))
-;; E_TYPE_MISMATCH + E_UNBOUND_VARIABLE `x`: mixed arms
+;; E_MATCH_MIXED_PATTERNS: literal patterns and constructor patterns cannot be mixed
 ```
 
 ## Good
