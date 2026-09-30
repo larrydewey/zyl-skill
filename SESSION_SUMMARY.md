@@ -28,7 +28,12 @@
 9. `let*: sequential bindings, sugar for nested let`
 10. `Revert the tuple stub: it built values nothing could read`
 11. `tuple: build and read tuples, with the element types in the type`
-12. Seed updates for each
+12. `len: one name for the length of a String, List, Vec, or Map`
+13. `intmap: give the arena-backed Int map its own name, so Map means one thing`
+14. `vec, map: the element and entry literals from spec 21.5`
+15. `predicates: the six type predicates of spec 21.4`
+16. `quote: a bracketed datum is the same datum as a parenthesized one`
+17. Seed updates for each
 
 ## Skill Docs Commits
 
@@ -41,7 +46,7 @@
 
 ## Test Status
 
-- All 391 regression tests pass (378 + 6 new compile-fail + error-as-value + let* + tuples)
+- All 409 regression tests pass (378 + 17 new compile-fail + error-as-value + let* + tuples + len + vec/map literals + type predicates + quote brackets)
 - Fixed point holds (verified with `./boot.sh`)
 
 ---
@@ -133,6 +138,70 @@ receiver got that heuristic's wrong message.
 parameter is a tuple (no trait bounds, spec 6.1), so `tuple-get` on one is
 `E_CANNOT_INFER`. Concrete tuples, nesting, returning them, and mixed element
 types all work.
+
+## Working the spec's builtin list as a checklist
+
+After the four items, I stopped adding features and instead took the spec's
+§21 builtin list and *ran* every entry, which is how the next four gaps
+were found. Probing beats reading: five of the entries I expected to be
+fine were not, and two things I was sure were bugs were not.
+
+What the probe found, beyond the four already done:
+
+- `len` did not exist at all. The same idea had four names (`str-length`,
+  `list-length`, `vec-len`, `map-size`) and nothing uniform. Now resolved
+  during type checking to the argument type's own length function, so the
+  four names still work.
+- `int?`/`float?`/`bool?`/`string?`/`struct?`/`alias?` did not exist. They
+  are decided in the type pass, which is the *only* option: a Zyl value is
+  an untyped word, so there is no tag at runtime to test.
+- `(vec ...)` and `(map ...)` did not exist.
+- `'[1 2 3]` was rejected while `'(1 2 3)` was accepted — two spellings of
+  one datum behaving differently.
+
+What the probe cleared, which is worth as much:
+
+- **`crc32c` was correct.** The spec says `Int Int -> Int` and the
+  implementation agrees. I had reported a divergence from a bad test
+  (`(crc32c 0 "a")` correctly fails — `x` is an Int, not a String).
+- **`quote` was not missing.** Its `E_MALFORMED_FORM` on a name inside
+  quoted data is exactly what the spec asks for; there is no symbol type.
+  Only the bracket case was broken.
+- **`mul-hi`/`mul-hi-u` are correct.** The bad result came from the literal
+  `18446744073709551615`, which does not fit an Int64.
+
+That last one is the useful lesson from this round. Probing found a real
+gap and three false alarms, and the false alarms all came from the same
+place: asserting a value without checking how it was produced. The literal
+silently evaluating to 0 is a genuine defect, found by accident — see
+below.
+
+## Two stdlib defects the probe uncovered
+
+**Two types named `Map`.** `core/map` is a generic `Map<K, V>`; an
+arena-backed Int-to-Int one lived in `collections/map`, and they also
+shared `map-get`, `map-remove` and `map-has` with incompatible
+signatures. Nothing stopped a program importing both: it compiled clean and
+the shared names silently resolved to the Int-only one, so the generic
+versions became unreachable behind an arity error. The losing side of a
+name collision that is not diagnosed is the worst shape one can take. The
+Int one is now `IntMap` in `collections/intmap`.
+
+`duplicate_check.zyl` had claimed the two were "never `use`d together" and
+used that to justify checking names only within one resolved program. That
+was an assumption about which modules those were, and this pair was the
+counterexample — nothing enforced it. The comment now says so.
+
+The rename also exposed that `core/map`'s `map-has` returned `1`/`0`
+instead of a Bool, which eight LSP call sites had grown a `(> (map-has
+...) 0)` workaround for.
+
+**Out-of-range integer literals evaluate to 0.** `9223372036854775808`
+prints `0`; `-9223372036854775809` prints `9223372036854775807`. This one
+is **not fixed** — it is a silent wrong answer, which is the worst class of
+bug, and it is a lexer fix (a range check on the literal text, plus a token
+for the overflow so the diagnostic has a position) that deserves its own
+commit and its own review. It is the first thing I would do next.
 
 ## Verified conformant, no change needed
 
