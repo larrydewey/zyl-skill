@@ -16,7 +16,7 @@ An actor's uncaught panic ends only that actor; its message waits for the joiner
 
 ```lisp
 (defn main ()
-  (let _ (spawn (fn () (error "boom")))
+  (let _ (spawn (fn () (panic "boom")))
     (begin (print "main done") 0)))
 ;; main done
 ;; PANIC: boom          <- reported at exit, status 1: nobody joined the actor
@@ -27,7 +27,7 @@ An actor's uncaught panic ends only that actor; its message waits for the joiner
 ```lisp
 (use actor/actor)
 (defn main ()
-  (let a (spawn (fn () (error "boom")))
+  (let a (spawn (fn () (panic "boom")))
     (begin
       (print (try (begin (actor-wait a) "ok") (catch e e)))   ; boom
       0)))

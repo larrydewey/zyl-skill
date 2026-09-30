@@ -13,6 +13,7 @@
 | 30 | REPL ignores `with-region` limits | Documented as known limitation | ✅ Documented |
 | 31 | Tuple syntax | Added `(tuple ...)` special form with type checking, ICNF lowering, and codegen | ✅ Done |
 | 32 | No way to write a test that is *expected* to panic | `(:expect-panic true)` option on `test`, carried through `test-suite` | ✅ Done |
+| 33 | `try`/`catch` unwinds rather than matching (spec 12.2) | Left as the one remaining deviation, but the type checker now enforces it: a `Result` body cannot be caught | ✅ Enforced |
 
 ## Compiler Commits (no co-authors)
 
@@ -23,7 +24,8 @@
 5. `tuple: add (tuple ...) syntax with type checking, ICNF, and codegen`
 6. `test: add (:expect-panic bool) to the test form`
 7. `test: take a test's options as sibling forms, and reject unknown ones`
-8. Seed updates for each
+8. `error: return an Err, and add panic for the raising half`
+9. Seed updates for each
 
 ## Skill Docs Commits
 
@@ -36,7 +38,7 @@
 
 ## Test Status
 
-- All 380 regression tests pass (378 + 2 new compile-fail cases)
+- All 383 regression tests pass (378 + 2 option compile-fail + error-as-value + try-cannot-catch-err)
 - Fixed point holds (verified with `./boot.sh`)
 
 ---
@@ -61,35 +63,36 @@ cd /home/larry/git/larry/zyl
 
 The repo is at a clean fixed point ready for the next session.
 
-## Error-as-value (spec 21.8) — why it is blocked
+## Error-as-value (spec 21.8) — how it was done
 
-Spec §21.8 says `(error msg)` returns `(Err msg)` and does not throw. Making
-it so is not a mechanical change:
+`(error msg)` returns `(Err msg)` and raises nothing; the raising half is the
+new `(panic msg)`, which keeps the old `error`'s body (`zyl_panic`) and its
+intent.
 
-- `error` is defined in `stdlib/allocator/allocator.zyl`, the lowest module —
-  it has no `use` at all, and `core/result` (which declares `Ok`/`Err`)
-  *depends on* allocator. So `error` cannot name `Err` without a cycle.
-- The corpus treats `error` as a panic in 27 places across 22 files
-  (5 stdlib, 15 tests, plus book/website examples). Flipping the meaning
-  breaks every one of them: 33 regression tests fail at the type checker
-  with `cannot unify Int with (Result ? String)`, because `error` is
-  almost always in a value position expecting `Int`.
-- `assert-fail` desugars to `(error msg)`, so it must move to the panicking
-  form too, or it would stop failing.
+The one real obstacle was the dependency cycle: `error` was in
+`allocator/allocator.zyl`, the lowest module, and `core/result` — which
+declares `Ok`/`Err` — depends on it. Chosen fix: `error` moved **up** into
+`core/result.zyl`, beside the `Err` it constructs; `panic` stayed in the
+allocator. `panic` joins the reserved names.
 
-Options, in rough order of cost:
+Consequence worth knowing: `error` is now in scope only where `Result` is, so
+a program that explicitly loads `core/option` but not `core/result`/`core/core`
+does not get it (26 stdlib/test modules are in that shape, though none call
+`error`). Programs with no explicit core import get `core/core` implicitly and
+are fine. Precedent: `map` also needs an import.
 
-1. **Move `error` up a level** into `core/result` (or a new `core/error`
-   that uses it). Cheapest, but `error` stops being available to anything
-   that only has the allocator, and it is prelude, so ordering matters.
-2. **Make the compiler lower `error` itself** to an `Err` construction,
-   the way it lowers `assert-equal`. Still needs `Err`'s tag present,
-   so a program that never loads `core/result` has no `Err` to build.
-3. **Give it its own builtin value type** (`(error msg)` yields a
-   `Failure`, with `to-result` to convert). Departs from §21.8's wording
-   but has no dependency problem, and it is the only option that does not
-   make `error`'s type depend on what the program happens to import.
+Cost: 22 files. 15 call sites in tests, 4 in stdlib (`result-expect`,
+`option-expect`, `property-fail`, and `assert-fail`'s own rewrite, which has to
+keep raising), and 3 in shell-embedded Zyl under `tests/scripts` — the last
+were easy to miss, since they are not `.zyl` files.
 
-Option 3 is the one worth considering seriously; 1 is the cheapest if the
-prelude can be reordered. This needs a decision before code, since it
-changes what programs are allowed to write.
+`try`/`catch` is the one remaining deviation from spec §12.2: it still unwinds
+instead of matching a `Result`. That is now *enforced* rather than merely
+documented — body and handler must share one type, so
+`(try (error "x") (catch e 7))` is `E_TYPE_MISMATCH` and `try` cannot be used to
+intercept an `Err` at all. Pinned as `compile-fail/try-cannot-catch-err`.
+
+Watch for: writing `error` where `panic` was meant. The type checker catches it
+wherever a value of the other shape is expected, but **not** in statement
+position, where the value is discarded — `(begin (error "x") (print "after"))`
+compiles, prints, and exits 0.

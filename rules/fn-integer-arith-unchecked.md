@@ -38,4 +38,4 @@ The spec requires checked overflow (`E_OVERFLOW`) and `E_DIVISION_BY_ZERO`. Comp
 
 - [syn-int-literal-range](syn-int-literal-range.md) - oversized literals become 0
 - [tool-eval-differential](tool-eval-differential.md) - REPL vs compiled differences
-- [err-try-catches-error-not-err](err-try-catches-error-not-err.md) - what `try` does catch
+- [err-try-catches-panic-not-err](err-try-catches-panic-not-err.md) - what `try` does catch

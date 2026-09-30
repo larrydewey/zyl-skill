@@ -17,7 +17,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | fixed: now special forms with short-circuit evaluation |
 | 9 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms (now `W_RECOVER_SHADOW` warning); `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
-| 10 | `try` does not catch `Err` values (it catches panics) | documented: use `Result`/`Option` for expected failures ([err-try-catches-error-not-err](../rules/err-try-catches-error-not-err.md)) |
+| 10 | `try` does not catch `Err` values (it catches panics) | documented: use `Result`/`Option` for expected failures ([err-try-catches-panic-not-err](../rules/err-try-catches-panic-not-err.md)) |
 | 11 | Rebuilt record with two same-typed fields swapped (different types are now a type error) | [data-reconstruct-field-order](../rules/data-reconstruct-field-order.md) |
 | 12 | Collection result discarded, or old version reused after update | [data-collections-persistent](../rules/data-collections-persistent.md) |
 | 13 | `(module …)`, `(export …)` do nothing (`derive` and `defstruct+ :derive`/`auto-derive` work) | [trait-derive-show](../rules/trait-derive-show.md) |
@@ -86,7 +86,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | Float passed to C `double` | `Float` in an `extern` is `E_TYPE_MISMATCH` ([ffi-extern-word-sized-types](../rules/ffi-extern-word-sized-types.md)) |
 | spawned `fn` parameter was 0 | a spawn entry with parameters is `E_TYPE_MISMATCH` ([actor-spawn-zero-arg-entry](../rules/actor-spawn-zero-arg-entry.md)) |
 | `vec-get` out of range returned word -1 | `E_INDEX_OUT_OF_BOUNDS` panic (`vec-get-or` for a default) |
-| `error` in a 2/4-arg function under `try` hung (2026-09-24) | fixed ([err-try-any-arity](../rules/err-try-any-arity.md)) |
+| a panic in a 2/4-arg function under `try` hung (2026-09-24) | fixed ([err-try-any-arity](../rules/err-try-any-arity.md)) |
 | `=` on dynamic strings in the compiler compared pointers | content comparison ([pass-string-eq-in-compiler](../rules/pass-string-eq-in-compiler.md); `str-eq` remains the convention) |
 | mixed literal + constructor arms in `match` | `E_MATCH_MIXED_PATTERNS` ([match-mixed-patterns](../rules/match-mixed-patterns.md)) |
 | test binary exit status 0 despite failures | fixed: implicit main returns `zyl_run_tests` result |

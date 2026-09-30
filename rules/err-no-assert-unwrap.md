@@ -29,7 +29,7 @@ There is still no `E_ASSERT_FAIL` code. All of these unwind to the nearest `try`
 
 ```lisp
 (assert (> n 0) "n must be positive")                   ; PANIC: n must be positive
-(if (<= n 0) (error (str-concat "bad n: " name)) unit)  ; computed message
+(if (<= n 0) (panic (str-concat "bad n: " name)) unit)  ; computed message
 (let v (result-expect (parse s) "bad number") (* v 2))
 (let v (option-unwrap (lookup k) -1) ...)               ; with a default
 ```

@@ -14,7 +14,7 @@
 | `4..=9 if v =>` | `((range 4 9) …)`; a guard after `range` is `E_ARITY_MISMATCH` — test in the body |
 | `Option`/`Result`, `?` | same types; **no `?`**: nested `match` or `result-and-then` |
 | `unwrap()` | `result-expect r "msg"` or `result-unwrap r default`; the `unwrap` form takes only an `Option` (`None` panics `unwrap on None`) |
-| `panic!` / `catch_unwind` | `(error "msg")` / `(try e (catch m h))` |
+| `panic!` / `catch_unwind` | `(panic "msg")` / `(try e (catch m h))` |
 | `()` | `Unit`, value `unit`; `print`, `set!`, `while` return it |
 | `fn main()` | `(defn main () … 0)`: `main` returns an `Int`, the exit status |
 | `fn f<T: Ord>(a: T)` | `(defn f (a) …)` — no type-parameter or bound syntax (`((T : Ord) a)` and `(a Ord)` are `E_MALFORMED_PARAMETER`); specialized per type at each call, a missing impl reported there |

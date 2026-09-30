@@ -36,10 +36,11 @@ Authority: `dispatch-special` in `stdlib/compiler/expr_inner.zyl`, `ic-op-of` in
 | `(for ((i 0) (j 1)) c body)`, `(for (i 0) c body)`, `(for () c body)` | no step: body must `set!`; `Unit` |
 | `(begin e...)` | last value; empty → `unit` |
 | `(match e arms...)` | constructor or literal arms, never mixed (not diagnosed); arms of one type |
-| `(try e (catch v h...))` | catches runtime panics (`error`, `E_INDEX_OUT_OF_BOUNDS`, `E_FFI_TIMEOUT`, contract failures...), not `Err` values and not SIGFPE; handler has the body's type |
+| `(try e (catch v h...))` | catches runtime panics (`panic`, `E_INDEX_OUT_OF_BOUNDS`, `E_FFI_TIMEOUT`, contract failures...), not `Err` values and not SIGFPE; handler has the body's type |
 | `(with-resource (n init) body)` | binds, runs `body`, then `(Drop.drop n)` on both exits (an `Int` is a file descriptor); no `Drop` impl is `E_TRAIT_NOT_FOUND` |
 | `and`, `or`, `not` | `Bool` only; short-circuit; `(or 5 6)` and `(not 0)` are `E_TYPE_MISMATCH` |
-| `(error "msg")` | lib (`allocator/allocator`), `String -> a`; panics / unwinds to `try` |
+| `(error "msg")` | lib (`core/result`), `String -> (Result _ String)`; **returns `(Err msg)` and raises nothing** ([err-result-for-expected-failures](../rules/err-result-for-expected-failures.md)) |
+| `(panic "msg")` | lib (`allocator/allocator`), `String -> a`; panics / unwinds to `try` |
 | `when`, `unless` | lib (`core/core`); **eager** functions; the body must be `Unit` and runs even when the condition says not to |
 | `assert`, `unwrap` | lowered; `(assert c "msg")` panics with the literal message, else `assert failed`; `unwrap` takes an `Option` (a `Result` is `E_TYPE_MISMATCH`), `None` panics `unwrap on None` ([err-no-assert-unwrap](../rules/err-no-assert-unwrap.md)) |
 

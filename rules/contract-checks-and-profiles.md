@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Contracts are enforced. They are lowered in `stdlib/compiler/expr_inner.zyl` (`contract-defn-body`, `contract-check`, `contract-profile`) to `(assert-true C "E_CONTRACT_VIOLATION: ...")` under the active profile; there is no separate injection phase. A false condition panics, and the panic unwinds to the nearest `try` like `error`. What each form does:
+Contracts are enforced. They are lowered in `stdlib/compiler/expr_inner.zyl` (`contract-defn-body`, `contract-check`, `contract-profile`) to `(assert-true C "E_CONTRACT_VIOLATION: ...")` under the active profile; there is no separate injection phase. A false condition panics, and the panic unwinds to the nearest `try` like `panic`. What each form does:
 
 | Form | Implemented as |
 |---|---|
@@ -63,7 +63,7 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
 
 (let-mut x 10
   (begin
-    (try (checkpoint (begin (set! x 20) (error "fail"))) (catch e 0))
+    (try (checkpoint (begin (set! x 20) (panic "fail"))) (catch e 0))
     (print x)))                         ; 10: rolled back
 ```
 
@@ -72,7 +72,7 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
 - Conditions are ordinary code: each must be `Bool` (`(requires 1)` is `E_TYPE_MISMATCH`), evaluated on every call, subject to every static check. Keep them pure and cheap.
 - Under `off`/`production` a clause is removed before type checking, so a stripped clause is not checked at all: `(requires (undefined-thing 1))` compiles. Build with the default profile at least once.
 - `warn` output goes to stderr unbuffered, so it can appear before earlier stdout lines.
-- `recover` catches `error` panics and contract violations, not `(Err ...)` values.
+- `recover` catches panics (including `panic`) and contract violations, not `(Err ...)` values.
 - `recover` arm order matters: a catch-all arm (`(String)` or `(_)`) before a specific error code arm (`(E_...)`) emits `W_RECOVER_SHADOW` warning.
 - A tail call in a body that has `ensures` is no longer a tail call (the check runs after it), so deep recursion there uses stack.
 - Contracts never alter type inference, ownership, regions or concurrency (spec P8).

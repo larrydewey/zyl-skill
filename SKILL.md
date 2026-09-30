@@ -179,9 +179,9 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 
 - [`err-helper-argument-order`](rules/err-helper-argument-order.md) - Option/Result helpers take the value first and the function second; `collections/collections` list helpers take the collection **last**; `-unwrap` helpers require a default.
 - [`err-no-assert-unwrap`](rules/err-no-assert-unwrap.md) - `assert` takes a `Bool` and shows a string-literal message (`PANIC: msg`), otherwise a fixed `assert failed`; `unwrap` takes only an `Option` and panics with `unwrap on None`. Use literal messages and the `-expect` helpers where the message matters.
-- [`err-result-for-expected-failures`](rules/err-result-for-expected-failures.md) - Return `Result` (`Ok`/`Err`) for failures a caller can handle, `Option` (`Some`/`None`) for absence; reserve `error` for unrecoverable conditions.
-- [`err-try-catches-error-not-err`](rules/err-try-catches-error-not-err.md) **[CRITICAL]** - `try`/`catch` intercepts `error` panics only; an `(Err ...)` value passes straight through it.
-- [`err-try-any-arity`](rules/err-try-any-arity.md) - Catching `error` from a call of any arity works now (the 2/4-argument hang was fixed 2026-09-24); remove old workarounds that kept erroring functions at odd arity.
+- [`err-result-for-expected-failures`](rules/err-result-for-expected-failures.md) - Return `Result` (`Ok`/`Err`) for failures a caller can handle, `Option` (`Some`/`None`) for absence; `error` returns an `Err`, `panic` aborts.
+- [`err-try-catches-panic-not-err`](rules/err-try-catches-panic-not-err.md) **[CRITICAL]** - `try`/`catch` intercepts panics only; an `(Err ...)` value passes straight through it, and the type checker rejects trying to catch one.
+- [`err-try-any-arity`](rules/err-try-any-arity.md) - Catching a `panic` from a call of any arity works now (the 2/4-argument hang was fixed 2026-09-24); remove old workarounds that kept panicking functions at odd arity.
 
 ### 6. Contracts (HIGH)
 

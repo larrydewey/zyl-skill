@@ -17,7 +17,7 @@ Every access is bounds-checked against the buffer's capacity (or slice length). 
       (load-i8 :le buf 0)            ; -56
       (load-u8 :le buf 64)           ; 0 -- out of range
       (if (= (store-u8 :le buf 100 1) 0)
-        (error "offset out of range")  ; taken: PANIC: offset out of range
+        (panic "offset out of range")  ; taken: PANIC: offset out of range
         0))))
 ```
 

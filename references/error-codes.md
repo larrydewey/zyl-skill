@@ -88,7 +88,7 @@ Legend: **R** raised · **C** catalogued only (never raised) · **U** raised but
 | `E_MUT_CONFLICT` | R | `set!` on non-`let-mut`, parameter, struct field, or captured var inside a closure |
 | `E_CAPABILITY_LEAK` | R | `let-mut` name in `send` message or `spawn` body |
 | `E_CT_VIOLATION` | R | Secret in branch / subject of a multi-arm match (one-arm destructuring is allowed), index/offset, `/`/`%` |
-| `E_SECRET_DEBUG` | R | Secret to `print`, into an `error` message, or into the text a `show` impl returns (impl bodies are checked); a secret inside a `Secret` field of a printed record is redacted, not an error |
+| `E_SECRET_DEBUG` | R | Secret to `print`, into a `panic` message, or into the text a `show` impl returns (impl bodies are checked); a secret inside a `Secret` field of a printed record is redacted, not an error |
 | `E_SECRET_ESCAPE` | R | Secret to `spawn`/`send`/`file-write` |
 | `E_ZEROIZE_MISSING` | W | Secret param consumed into public result without zeroize |
 | `E_PKG_CAPABILITY_VIOLATION` | R | undeclared capability in a package (not `main`/tests) |
@@ -129,7 +129,7 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 | `E_INTERP_TAG` | R | the checking interpreter (`ZYL_INTERP_CHECK=1`) found a wrong-tag operand or a condition not 0/1: a type-checker bug |
 | `E_UNINITIALIZED_USE`, `E_ATOMIC_ABA`, `E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT` | C | a Stack bytebuf escape reports `E_REGION_ESCAPE` |
 | `E_CODEGEN`, `E_CODEGEN_BUFFER_LIMIT`, `E_LIST_NTH_OOB` | C | |
-| `E_USER_ERROR` | C | `error` prints `PANIC: <msg>` instead |
+| `E_USER_ERROR` | C | `panic` prints `PANIC: <msg>` instead; `error` returns an `Err` and prints nothing |
 | `E_ASSERT_FAIL` | C | a failing `assert` panics with its string-literal message, or `assert failed` |
 | `E_NULL_POINTER`, `E_BYTE_OOB`, `E_BYTEBUF_CAP_EXCEEDED`, `E_BYTEBUF_OVERLAP`, `E_BYTEBUF_INVALID`, `E_ALIGNMENT_FAILED`, `E_ALIGN_CHECK_FAILED` | C | byte ops fail closed returning 0; `align-check` returns a Bool |
 | `E_OVERFLOW` | C | ints wrap |

@@ -11,7 +11,7 @@ Each prohibited use leaks through timing, cache or an output channel. They are c
 | steer control flow: `if`/`while`/`for`/`cond` condition, subject of a `match` with **more than one arm** | `E_CT_VIOLATION` |
 | address memory: index of `w-get`, `w-set`, `list-nth`, `alloc-read-int`, byte load/store offsets | `E_CT_VIOLATION` |
 | be an operand of `/` or `mod`/`%` | `E_CT_VIOLATION` |
-| reach `print`, an `error` message, or the text a `show` impl returns | `E_SECRET_DEBUG` |
+| reach `print`, a `panic` message, or the text a `show` impl returns | `E_SECRET_DEBUG` |
 | reach `spawn`, `send`, `file-write` | `E_SECRET_ESCAPE` |
 | be a raw `ffi-call` argument | `E_FFI_PIN_REQUIRED` |
 | be consumed into a public result without `zeroize` | `E_ZEROIZE_MISSING` (warning) |
@@ -24,7 +24,7 @@ Each prohibited use leaks through timing, cache or an output channel. They are c
 ;; error[E_CT_VIOLATION]: in `leak`: secret-dependent branch ...   (located: --> file:line:col)
 
 (defn check ((k Secret))
-  (error (str-concat "bad key " (ffi-call "zyl_int_text" k 1000))))   ; E_SECRET_DEBUG
+  (panic (str-concat "bad key " (ffi-call "zyl_int_text" k 1000))))   ; E_SECRET_DEBUG
 
 (defstruct Login (user String) (pw Secret))
 (impl Show Login (defn show (self) (str-concat self.user (Show.show self.pw))))  ; E_SECRET_DEBUG
