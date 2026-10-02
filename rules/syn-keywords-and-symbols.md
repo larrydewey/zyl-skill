@@ -4,24 +4,35 @@
 
 ## Why It Matters
 
-A bare `:foo` in expression position is `E_UNBOUND_VARIABLE` (unbound identifier `:foo`). Keywords are only meaningful inside particular forms. The lexer also skips whitespace after the colon, so `: Ord` and `:Ord` are the same token. The specified `((T : Ord) a b)` and `(a : Int)` spellings are therefore not annotations; since 2026-09-25 both are rejected as `E_MALFORMED_PARAMETER` ("a parameter's type is written (name Type), without a colon") instead of being read as an extra parameter or an ignored annotation.
+A bare `:foo` in expression position is `E_UNBOUND_VARIABLE` ("`:foo` is not defined"). Keywords are only meaningful inside particular forms. The lexer also skips whitespace after the colon, so `: Ord` and `:Ord` are the same token. The specified `((T : Ord) a b)` and `(a : Int)` spellings are therefore not annotations; since 2026-09-25 both are rejected as `E_MALFORMED_PARAMETER` ("a parameter's type is written (name Type), without a colon") instead of being read as an extra parameter or an ignored annotation.
 
 ## Bad
 
+Each definition is its own error.
+
 ```lisp
-(let mode :fast (print mode))       ; E_UNBOUND_VARIABLE: `:fast`
-(defn smallest ((T : Ord) a b) a)   ; E_MALFORMED_PARAMETER
-(defn f ((a : Int)) a)              ; E_MALFORMED_PARAMETER: write (a Int)
+(defn fast () (let mode :fast mode))  ; E_UNBOUND_VARIABLE: `:fast` is not defined
+(defn smallest ((T : Ord) a b) a)     ; E_MALFORMED_PARAMETER
+(defn f ((a : Int)) a)                ; E_MALFORMED_PARAMETER: write (a Int)
 ```
 
 ## Good
 
 ```lisp
-(load-u8 :le buf 0)                  ; endian selector of byte forms
 (defstruct+ Pt (x) (y) (:derive [Eq Ord]))
-(use acme/pkg :unsafe { f })         ; import marker (parsed, currently ignored)
 (defn f ((a Int)) a)
+
+(defn main ()
+  (let b (bytebuf Heap 8)
+    (begin
+      (store-u8 :le b 0 7)             ; endian selector of byte forms
+      (print (load-u8 :le b 0))        ; 7
+      (print (== (make-Pt 1 2) (make-Pt 1 2)))  ; 1
+      (print (f 3))                    ; 3
+      0)))
 ```
+
+`(use acme/pkg :unsafe { f })` is the import marker (parsed, currently ignored); it needs `acme/pkg` in the package's manifest, so it cannot be shown in a lone file.
 
 ## Notes
 

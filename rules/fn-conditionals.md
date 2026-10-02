@@ -4,15 +4,17 @@
 
 ## Why It Matters
 
-Since 2026-09-25 the type checker enforces what used to be a silent wrong value. A one-armed `if` and a `cond` with no `else` clause have type `Unit`, so using one where an Int or String is expected is `E_TYPE_MISMATCH` ("cannot unify Int with Unit"). Every condition (`if`, `cond`, `while`, `when`, guards, assertions, contract clauses) must be a `Bool`: there is no truthiness, so `(if 1 ...)` or `(if count ...)` is `E_TYPE_MISMATCH` ("cannot unify Int with Bool"). `and`, `or` and `not` take and return Bools.
+Since 2026-09-25 the type checker enforces what used to be a silent wrong value. A one-armed `if` and a `cond` with no `else` clause have type `Unit`, so using one where an Int or String is expected is `E_TYPE_MISMATCH` ("`Int` and `Unit` must be the same type"). Every condition (`if`, `cond`, `while`, `when`, guards, assertions, contract clauses) must be a `Bool`: there is no truthiness, so `(if 1 ...)` or `(if count ...)` is `E_TYPE_MISMATCH` ("`if` needs a Bool condition, but this is `Int`"). `and`, `or` and `not` take and return Bools.
 
 ## Bad
 
+Each definition is its own error; the compiler reports every type error it finds.
+
 ```lisp
-(defn sign (n) (if (> n 0) 1))             ; E_TYPE_MISMATCH: Int with Unit
-(defn classify (n) (cond ((< n 0) "neg"))) ; E_TYPE_MISMATCH: String with Unit
-(if 1 (print "y") (print "n"))             ; E_TYPE_MISMATCH: Int with Bool
-(or 5 6)                                   ; E_TYPE_MISMATCH: operands must be Bool
+(defn sign (n) (if (> n 0) 1))             ; E_TYPE_MISMATCH: `Int` and `Unit`
+(defn classify (n) (cond ((< n 0) "neg"))) ; E_TYPE_MISMATCH: `String` and `Unit`
+(defn yes () (if 1 (print "y") (print "n")))  ; E_TYPE_MISMATCH: needs a Bool condition
+(defn either () (or 5 6))                  ; E_TYPE_MISMATCH: operands must be Bool
 ```
 
 ## Good
@@ -30,12 +32,19 @@ Since 2026-09-25 the type checker enforces what used to be a silent wrong value.
 
 (defn log-if-positive (n)
   (if (> n 0) (print n)))                  ; Unit on both paths: no else needed
+
+(defn main ()
+  (begin
+    (print (sign -4))                      ; -1
+    (print (classify 0))                   ; zero
+    (log-if-positive 7)                    ; 7
+    0))
 ```
 
 ## Notes
 
 - A branch that is only an effect (`print`, `set!`, a loop) is `Unit`, so both branches of an `if` in statement position must be Unit or both something else; `(if c (print "x") 0)` is `E_TYPE_MISMATCH`. Use `unit` for an explicit empty branch.
-- `if` takes at most two branches: forms after the else branch are silently dropped ([fn-begin-multi-form-bodies](fn-begin-multi-form-bodies.md)).
+- `if` takes at most two branches: a form after the else branch is `E_MALFORMED_FORM` ([fn-begin-multi-form-bodies](fn-begin-multi-form-bodies.md)).
 - `and`/`or` are desugared to `if` and short-circuit.
 - `when`/`unless` are now **special forms** with short-circuit evaluation (fixed 2026-09-29). They take a `Bool` condition and a `Unit` body, evaluating the body only when the condition is true/false respectively. `(when false (print "x"))` no longer prints.
 - A `cond` clause whose test is the literal `true` or `else` ends the `cond`; clauses after it are unreachable. A clause body may hold several forms.

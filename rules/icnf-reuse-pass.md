@@ -6,7 +6,7 @@
 
 Values are immutable, so an update such as `(LCons v t)` built from `l` allocates a new record. When the old value is unique (nothing else refers to it) and dead (nothing uses it afterwards), nothing can observe the old block, so the new record can be written into it: Koka's Perceus "functional but in place", decided statically. Getting uniqueness or death wrong is silent memory corruption (a live value overwritten), so every condition is conservative.
 
-`ru-reuse` runs last in `lower-after-mono` (`pipeline.zyl`), after `rg-regions`, and:
+`ru-reuse` runs last in `lower-icnf` (`pipeline.zyl`), after `rg-regions`, and:
 
 1. Collects which functions are opaque (named as a value, called through a closure, or `main`): they get no owning clone.
 2. Computes per-function facts to a fixpoint over the whole program, in program order (at most 20 rounds; a round re-walks only functions that call one whose facts changed): which parameters an owning clone reuses (a bit mask, which only grows) and whether results are fresh.
@@ -26,15 +26,21 @@ At run time the block is taken only when its size header covers the new record; 
 ```lisp
 ; reusing where a record field is not read out of the old value:
 ; bump's new P shares no pointer with p, so no class ties p's block to the result's region
-(defn bump (p) (match p (P x y (P (+ x 1) y))))     ; P of two Ints: reuse-mask=0 (correctly)
+(deftype P (P Int Int))
+(defn bump (p) (match p (P x y (P (+ x 1) y))))    ; ZYL_REUSE_DEBUG: reuse-mask=0 (correctly)
+(defn px (p) (match p (P x _ x)))
+(defn main () (begin (print (px (bump (P 1 2)))) 0))
 ```
 
 ## Good
 
 ```lisp
 ; the new LCons keeps t, a binder of l: set-head~own takes l's block
-(defn set-head (l v) (match l (LNil LNil) (LCons _ t (LCons v t))))
-(defn spin (l n) (if (= n 0) l (spin (set-head l n) (- n 1))))   ; calls set-head~own
+(deftype L (LNil) (LCons Int L))
+(defn set-head (l v) (match l (LNil LNil) (LCons _ t (LCons v t))))   ; reuse-mask=1
+(defn spin (l n) (if (= n 0) l (spin (set-head l n) (- n 1))))       ; calls set-head~own
+(defn hd (l) (match l (LNil 0) (LCons h _ h)))
+(defn main () (begin (print (hd (spin (LCons 0 (LCons 9 LNil)) 5))) 0))
 ```
 
 ## Notes

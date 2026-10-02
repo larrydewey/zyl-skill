@@ -10,9 +10,13 @@ Many compiler tables are association lists searched linearly, and the type pass 
 
 ```lisp
 ; two allocations per comparison
+(defn has-suffix (s suf)
+  (let n (str-length s)
+    (let k (str-length suf)
+      (and (>= n k) (str-eq (str-substring s (- n k) k) suf)))))
 (defn type-name-matches (n name)
   (or (str-eq n name)
-      (has-suffix n (str-concat "::" name))))   ; has-suffix calls str-substring
+      (has-suffix n (str-concat "::" name))))   ; str-concat, then str-substring
 ```
 
 ## Good

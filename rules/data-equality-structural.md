@@ -9,27 +9,41 @@ The type pass generates a per-type equality function `T.==` for each struct and 
 ## Bad
 
 ```lisp
-(< (Some "b") (Some "a"))                 ; E_TYPE_MISMATCH: ordering on (Option String)
 (defstruct Pt (x Int) (y Int))
-(< (make-Pt 1 2) (make-Pt 2 0))           ; E_TYPE_MISMATCH: ordering on Pt
-(== (view-of "ab") (view-slice "xab" 1 2)) ; false: compares base, offset, length
+(defn main ()
+  (begin
+    (print (< (Some "b") (Some "a")))       ; E_TYPE_MISMATCH: ordering on (Option String)
+    (print (< (make-Pt 1 2) (make-Pt 2 0))) ; E_TYPE_MISMATCH: ordering on Pt
+    0))
+```
+
+```lisp
+(use text/view)
+(defn main ()
+  (begin
+    (print (== (view-of "ab") (view-slice! "xab" 1 2)))   ; 0: compares base, offset, length
+    (print (view-eq (view-of "ab") (view-slice! "xab" 1 2))) ; 1: compares the bytes
+    0))
 ```
 
 ## Good
 
 ```lisp
-(== (Cons 1 (Cons 2 Nil)) (Cons 1 (Cons 2 Nil)))   ; true (`print` shows 1)
-(== (Some "a") (Some (str-concat "" "a")))         ; true: String content
-(assert-equal (Some (Some 1)) (Some (Some 1)))     ; passes
-
 (deftype Tok (Num Int) (Word String))
 (derive Tok Ord Eq)
-(Ord.compare (Word "a") (Word "b"))                ; -1: by String content
-(Ord.compare (Num 9) (Word "a"))                   ; -1: variant declaration order first
-(Ord.compare (Some 2) (Some 1))                    ; 1: the prelude types implement Ord
 
 (defn name-lt (a b)                                ; or write the order by hand
   (match a (Some x (match b (Some y (< x y)) (None false))) (None true)))
+
+(defn main ()
+  (begin
+    (print (== (Cons 1 (Cons 2 Nil)) (Cons 1 (Cons 2 Nil))))  ; 1 (true)
+    (print (== (Some "a") (Some (str-concat "" "a"))))        ; 1: String content
+    (print (Ord.compare (Word "a") (Word "b")))               ; -1: by String content
+    (print (Ord.compare (Num 9) (Word "a")))                  ; -1: variant order first
+    (print (Ord.compare (Some 2) (Some 1)))                   ; 1: prelude types implement Ord
+    (print (name-lt (Some 1) (Some 2)))                       ; 1
+    0))
 ```
 
 ## Notes

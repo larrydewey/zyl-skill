@@ -27,7 +27,7 @@ The checker used to fail open; it no longer does. `compiler/type_annotate.zyl` i
 | Conditions (`if`, `cond`, `when`, `while`, guards, `assert*`, contract clauses) are `Bool` | `(if 1 ...)`, `(assert 1 "x")`, `(requires 1)` are errors; use `true`/`false` and comparisons |
 | `+ - * / %` take two Ints or two Floats | no implicit conversion; `(+ 1.5 2)` is an error |
 | `< > <= >=` take Int, Float or String | an ADT or struct operand is `E_TYPE_MISMATCH: ordering on ...`; use `Ord.compare` |
-| Statement forms (`print`, `set!`, `while`, `for`, `assert*`, `send`, `(begin)`, `if` without else) are `Unit`; the literal `unit` is its value | `(print (if true 1))` is an error: the missing else is Unit |
+| Statement forms (`print`, `set!`, `while`, `for`, `assert*`, `chan-send`, `(begin)`, `if` without else) are `Unit`; the literal `unit` is its value | `(print (if true 1))` is an error: the missing else is Unit |
 | `main` is `() -> Int` | `(defn main () (print 1))` is an error; end `main` with `0` |
 | Every `match` arm and both `if` branches have one type | `(match l (Red 1) (Green "g"))` is an error |
 | Local `let` is monomorphic; top-level functions generalize; top-level `def` does not | `(let id (fn (x) x) ... (id 1) (id "a"))` is an error |

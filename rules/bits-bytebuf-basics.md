@@ -10,8 +10,14 @@
 
 ```lisp
 (defn first-byte (b) (load-u8 :le b 0))     ; E_CANNOT_INFER: ByteBuf or ByteSlice?
-(load-u8 :le 5 0)                           ; E_TYPE_MISMATCH: expected `ByteBuf`, found `Int`
-(byte 300)                                  ; E_BYTE_VALUE_OOB
+```
+
+```lisp
+(defn main () (begin (print (load-u8 :le 5 0)) 0))   ; E_TYPE_MISMATCH: expected `ByteBuf`, found `Int`
+```
+
+```lisp
+(defn main () (begin (print (byte 300)) 0))   ; E_BYTE_VALUE_OOB
 ```
 
 ## Good
@@ -26,6 +32,8 @@
       (begin
         (print (load-u8 :le b 0))    ; 255 (zero-extended)
         (print (load-i8 :le b 0))    ; -1  (sign-extended)
+        (print (first-byte b))       ; 255
+        (print (first-of (byteslice b 0 4)))   ; 255
         (print (bytebuf-cap b))      ; 16
         (print (bytebuf-len b))      ; 0: bytes appended so far
         0))))
@@ -48,7 +56,7 @@
 
 - The type does not record the region: an annotation such as `(ByteBuf Stack)` is accepted but means nothing more than `ByteBuf`, and the checker does not distinguish buffers by region.
 - Operands are evaluated left to right, buffer first, then offset, then value.
-- No stdlib module uses byte buffers yet: `stdlib/math` represents byte strings as `Words` arrays with one byte per word.
+- `stdlib/math` represents byte strings as `Words` arrays with one byte per word; `encoding/cbor` is the one library module built on byte buffers.
 - A `Stack` buffer lives in the frame region and must not escape (`E_REGION_ESCAPE`); every other region gets the same heap allocation (see [bits-bytebuf-regions](bits-bytebuf-regions.md)).
 
 ## See Also

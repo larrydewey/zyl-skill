@@ -18,6 +18,8 @@ The type pass records each `Expr` node's type in `node-types`, a call it renamed
 ## Good
 
 ```lisp
+(use compiler/optimization)
+(defn my-pass-node (e) e)
 (defn my-pass (e)
   (opt-keep (my-pass-node e) e))       ; keeps the original's facts unless the new node has them
 ```

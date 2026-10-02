@@ -11,16 +11,17 @@ The compiler source still uses `str-eq` almost everywhere (it predates the fix a
 ## Bad
 
 ```lisp
-(if (> (str-eq n name) 0) ...)                          ; E_TYPE_MISMATCH: str-eq is Bool
-(ffi-call "zyl_word_of_cstr" s 1000)                    ; comparing addresses: never
+(defn same-bad (n name) (if (> (str-eq n name) 0) 1 0))   ; E_TYPE_MISMATCH: str-eq is Bool
 ```
+
+Comparing addresses (`(ffi-call "zyl_word_of_cstr" s 1000)` on both sides) is the other wrong way, and is `E_FFI_RESTRICTED` outside the standard library anyway.
 
 ## Good
 
 ```lisp
-(if (str-eq n name) ...)
-(if (= n name) ...)                                     ; n, name : String
-(ffi-call "zyl_cstr_key_matches" key name 1000)         ; qualified-key match, allocation-free
+(defn same-a (n name) (if (str-eq n name) 1 0))
+(defn same-b ((n String) (name String)) (if (= n name) 1 0))
+(defn key-match (key name) (ffi-call "zyl_cstr_key_matches" key name 1000))   ; allocation-free
 ```
 
 ## Notes

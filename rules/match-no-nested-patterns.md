@@ -45,7 +45,7 @@ Patterns are flat (spec §4.9). A nested constructor pattern such as `(Some (Con
 
 ## Notes
 
-- The check knows the prelude constructors (`Some None Ok Err Cons Nil`) and any `::`-qualified name; a program's own nullary constructor written bare in a binder position is taken as a binder name. Never reuse a constructor name as a binder.
+- The check knows the prelude constructors (`Some None Ok Err Cons Nil`), any `::`-qualified name and the program's own constructors, so `(Node v Leaf _ v)` is rejected too. Never reuse a constructor name as a binder.
 - A guard on a constructor arm, `(Some x (when (> x 0)) x)`, is also `E_NESTED_PATTERN` ([match-guards-literal-arms-only](match-guards-literal-arms-only.md)).
 - A small helper function per level is often clearer than deep inner matches.
 

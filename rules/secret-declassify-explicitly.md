@@ -9,12 +9,17 @@ Some values must become public: an AEAD acts on its tag verdict, a signature is 
 ## Good
 
 ```lisp
+(capabilities secret)
+(use math/words)
 (use math/secret/secret)
-;; The AEAD verdict is the only thing revealed, and the caller acts on it anyway.
-(if (ct-eq-words-bool tag computed 16) (Some pt) None)
-
-;; Public by protocol: a signature is published.
-(declassify signature-word)
+(defn verdict (tag computed pt)
+  ;; The AEAD verdict is the only thing revealed, and the caller acts on it anyway.
+  (if (ct-eq-words-bool tag computed 16) (Some pt) None))
+(defn main ()
+  (begin
+    (print (match (verdict (w-alloc 16) (w-alloc 16) "pt") (Some p p) (None "forged")))   ; pt
+    (print (declassify 42))   ; public by protocol, like a published signature word
+    0))
 ```
 
 ## Legitimate declassification sites in stdlib

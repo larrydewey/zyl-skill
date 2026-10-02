@@ -19,12 +19,12 @@ The spec's five regions and rules R1–R8 describe a complete static system. Sin
 |---|---|
 | R1 stack if no escape | frame region for every site proven L |
 | R2/R5 escape → heap | yes; region polymorphism puts results in the caller's region |
-| R3 Send across actors | `send` arguments are H; `let-mut` in `spawn`/`send` is `E_CAPABILITY_LEAK`; Secret is `E_SECRET_ESCAPE` |
+| R3 Send across actors | `chan-send` arguments are H; `let-mut` in `spawn`/`chan-send` is `E_CAPABILITY_LEAK`; Secret is `E_SECRET_ESCAPE` |
 | R4 FFI needs Pin + pinnable | foreign-call arguments are H; Pin required only for `Secret` |
 | R6 cycles → Circular, R7 globals | not implemented |
 | R8 pin arena never compacted | holds |
 
-`E_REGION_ESCAPE` is raised (with a location) for a `(bytebuf Stack N)` that is returned, stored, sent or passed to code that may keep it, and for a value allocated inside `with-region` that outlives it. `E_REGION_SPEC` and `E_REGION_EXHAUSTED` belong to `with-region`. The other byte-buffer codes (`E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT`, `E_ATOMIC_ABA`) are still not raised; a Stack buffer escape reports `E_REGION_ESCAPE` instead of `E_STACK_BYTEBUF_RETURN`.
+`E_REGION_ESCAPE` is raised (with a location) for a `(bytebuf Stack N)` that is returned, stored, sent or passed to code that may keep it, and for a value allocated inside `with-region` that outlives it. `E_REGION_SPEC` and `E_REGION_EXHAUSTED` belong to `with-region`. The spec's other byte-buffer codes (`E_BYTEBUF_NOT_PIN`, `E_STACK_BYTEBUF_RETURN`, `E_GLOBAL_BYTEBUF_MUT`, `E_ATOMIC_ABA`) were removed from the catalog because nothing raised them; a Stack buffer escape reports `E_REGION_ESCAPE`.
 
 ## Notes
 

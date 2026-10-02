@@ -21,13 +21,14 @@ Channels are typed, so receiving an `Int` where a `String` is needed is `E_TYPE_
 ## Bad
 
 ```lisp
-(send worker (Add 1))      ; E_UNBOUND_VARIABLE: send and receive are gone
-(print (receive))
+(capabilities actor)
+(defn main () (begin (send 1 2) (print (receive)) 0))   ; E_UNBOUND_VARIABLE: send and receive are gone
 ```
 
 ## Good
 
 ```lisp
+(capabilities actor)
 (use actor/actor)
 
 (defn main ()
@@ -45,7 +46,7 @@ Channels are typed, so receiving an `Int` where a `String` is needed is `E_TYPE_
 
 ## Notes
 
-- `chan`, `chan-send`, `chan-recv` and `spawn` need the `actor` capability in a package.
+- `chan`, `chan-send`, `chan-recv` and `spawn` need the `actor` capability: a lone file declares `(capabilities actor)`, a package lists it in `zyl.pkg` ([pkg-lone-file-capabilities](pkg-lone-file-capabilities.md)).
 - Any value type may cross, closures included; a `let-mut` value may not ([actor-no-let-mut-crossing](actor-no-let-mut-crossing.md)).
 - `ZYL_SCHED=deterministic` runs one actor at a time and `ZYL_SCHED_CHAOS=<seed>` perturbs every channel operation; the suite's `sched` category requires identical output under both. Use them to test actor code.
 - The REPL and `zyl eval` run channels and actors too ([tool-repl](tool-repl.md)).

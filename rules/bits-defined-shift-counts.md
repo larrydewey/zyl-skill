@@ -7,11 +7,14 @@
 x86 masks shift counts mod 64 (`shl 1 65` = 2). Zyl does not expose that: a logical shift by 64 or more yields 0, `ashr` by ≥64 yields the sign fill, and negative counts behave like huge counts. Porting C/Rust code that relies on masking changes results.
 
 ```lisp
-(shl 1 64)       ; 0, not 1
-(shl 1 65)       ; 0
-(shr -1 64)      ; 0
-(ashr -1 64)     ; -1
-(ashr 1024 64)   ; 0
+(defn main ()
+  (begin
+    (print (shl 1 64))       ; 0, not 1
+    (print (shl 1 65))       ; 0
+    (print (shr -1 64))      ; 0
+    (print (ashr -1 64))     ; -1
+    (print (ashr 1024 64))   ; 0
+    0))
 ```
 
 ## Notes

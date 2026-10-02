@@ -16,10 +16,15 @@ Atomics are sequentially consistent operations on 8-byte words. An unaligned or 
 | `(align-check ptr alignment)` | 1 if aligned, else 0 (does not raise) |
 
 ```lisp
-(bytebuf-atomic-store buf 8 41)   ; 1
-(bytebuf-atomic-add buf 8 1)      ; 42
-(bytebuf-atomic-cas buf 8 42 7)   ; 1, word now 7
-(bytebuf-atomic-load buf 3)       ; 0 -- not 8-aligned
+(defn main ()
+  (let buf (bytebuf Heap 64)
+    (begin
+      (print (bytebuf-atomic-store buf 8 41))   ; 1
+      (print (bytebuf-atomic-add buf 8 1))      ; 42
+      (print (bytebuf-atomic-cas buf 8 42 7))   ; 1, word now 7
+      (print (bytebuf-atomic-load buf 8))       ; 7
+      (print (bytebuf-atomic-load buf 3))       ; 0: not 8-aligned
+      0)))
 ```
 
 ## Notes
@@ -28,7 +33,7 @@ Atomics are sequentially consistent operations on 8-byte words. An unaligned or 
 - The handle must be a `ByteBuf`: atomics on a `ByteSlice` (or an `Int`) are `E_TYPE_MISMATCH`. Offsets and values are `Int`; so is every result.
 - `align-check` takes a raw address (an `Int`, e.g. from `bytebuf-ptr`), not a handle.
 - There is no `TAtomic` type; atomics are operations.
-- `E_ATOMIC_ABA` (CAS outside Pin) is not enforced.
+- A CAS outside `Pin` memory is not rejected; the spec's `E_ATOMIC_ABA` code was removed from the catalog on 2026-10-02.
 
 ## See Also
 

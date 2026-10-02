@@ -4,25 +4,29 @@
 
 ## Why It Matters
 
-Arms are tried in source order and the first match wins; there is no fallthrough. A catch-all followed by more arms is rejected (`catch-all arm `_` is followed by more arms that can never run`), which is also the mechanism that catches a misspelled constructor in a non-last arm. A repeated constructor arm is rejected the same way (`arm `Red` is already matched by an earlier arm`).
+Arms are tried in source order and the first match wins; there is no fallthrough. A catch-all followed by more arms is rejected ("the arm `_` matches every value, so the arms after it never run"). A repeated constructor arm is rejected the same way ("arm `Red` is already matched by an earlier arm and can never run"). A misspelled capitalized constructor is no longer a catch-all in any position: it is `E_UNKNOWN_CONSTRUCTOR` ([match-unknown-constructor](match-unknown-constructor.md)).
 
 ## Bad
 
-```lisp
-(match x
-  (_ 0)
-  (Some v v))        ; E_UNREACHABLE_MATCH_ARM
+Each definition is its own error.
 
-(match n (1 2) (_ (when v) 5))           ; E_MATCH_NONEXHAUSTIVE: the guarded `_` is not a catch-all
-(match o (Some x x) (_ (when v) 0))      ; E_NESTED_PATTERN
+```lisp
+(defn f (x)
+  (match x
+    (_ 0)
+    (Some v v)))                           ; E_UNREACHABLE_MATCH_ARM
+
+(defn g (n v) (match n (1 2) (_ (when v) 5)))      ; E_MATCH_NONEXHAUSTIVE: a guarded `_` is no catch-all
+(defn h (o v) (match o (Some x x) (_ (when v) 0))) ; E_NESTED_PATTERN
 ```
 
 ## Good
 
 ```lisp
-(match x
-  (Some v v)
-  (_ 0))
+(defn f (x)
+  (match x
+    (Some v v)
+    (_ 0)))
 ```
 
 ## Notes
@@ -32,4 +36,4 @@ Arms are tried in source order and the first match wins; there is no fallthrough
 
 ## See Also
 
-- [match-misspelled-last-arm](match-misspelled-last-arm.md)
+- [match-unknown-constructor](match-unknown-constructor.md)

@@ -33,7 +33,7 @@ Code generation picks `%lld`/`%f`/`%s`, String comparison (`zyl_cstr_eq`, `zyl_c
 | An `ffi-call` to a foreign symbol with no `extern` | untyped word | `E_CANNOT_INFER` ("which has no (extern ...) declaration") |
 | A runtime `zyl_*` entry missing from `ffi_sigs.zyl` | untyped word | `E_CANNOT_INFER` ("untyped ffi result") |
 | A trait call on an unresolved receiver | run-time tag dispatch | `E_CANNOT_INFER`; calls resolve statically |
-| `vec-get` out of range | a `-1` sentinel | panic `E_INDEX_OUT_OF_BOUNDS` |
+| `vec-get` out of range | a `-1` sentinel | `vec-get!` panics `E_INDEX_OUT_OF_BOUNDS`, `vec-get?` returns `None` |
 
 There is no known hole left: `receive`, whose result was any type, went away with the mailboxes (2026-09-28); channels are typed.
 

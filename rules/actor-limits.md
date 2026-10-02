@@ -16,7 +16,7 @@ Actors are the runtime's own `clone` threads in a freestanding program and pthre
 
 ## Notes
 
-- In a package, `spawn`, the channel forms and any `stdlib/actor` use need the `actor` capability (`E_PKG_CAPABILITY_VIOLATION`), `main` and top-level tests included.
+- `spawn`, the channel forms and any `stdlib/actor` use need the `actor` capability (`E_PKG_CAPABILITY_VIOLATION`), in a package and in a lone file alike: a lone file declares `(capabilities actor)` ([pkg-lone-file-capabilities](pkg-lone-file-capabilities.md)). `main`, tests and impl methods are checked too.
 - In the REPL the 1024 count covers the whole session.
 - Test pattern: keep logic in pure functions tested directly; test actor wiring under the deterministic and chaos schedules.
 

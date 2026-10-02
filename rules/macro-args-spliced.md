@@ -10,7 +10,8 @@ Arguments are copied into the body as source. A parameter used twice evaluates i
 
 ```lisp
 (defmacro double (x) (+ x x))
-(double (noisy))        ; prints "evaluated" twice
+(defn noisy () (begin (print "evaluated") 1))
+(defn main () (begin (print (double (noisy))) 0))   ; prints "evaluated" twice, then 2
 ```
 
 ## Good
@@ -19,6 +20,8 @@ Arguments are copied into the body as source. A parameter used twice evaluates i
 (defmacro double (x) (let n x (+ n n)))       ; hygiene keeps `n` private
 (defn square-fn (n) (* n n))
 (defmacro square (x) (square-fn x))           ; or delegate to a function
+(defn noisy () (begin (print "evaluated") 3))
+(defn main () (begin (print (double (noisy))) (print (square (noisy))) 0))   ; each prints "evaluated" once: 6, 9
 ```
 
 ## Notes

@@ -24,13 +24,13 @@ The spec describes capability types (`TCap<T>`, `TMut<T>`, `TAtomic<T>`, `TBox<T
 | send to actor | yes | no (`E_CAPABILITY_LEAK`) | yes | not checked |
 | pass to FFI | as its extern type | as its extern type | no | as `(Pin a)` |
 
-Enforced: the `set!` row; the send row for `let-mut` names in `send` and `spawn` (by name, not by type); `Secret` crossing an actor (`E_SECRET_ESCAPE`) or FFI unpinned (`E_FFI_PIN_REQUIRED`); a function passed to `ffi-pin` (`E_FFI_TYPE_NOT_PINNABLE`) or a closure passed to a foreign call (`E_INVALID_CAPABILITY`).
+Enforced: the `set!` row; the send row for `let-mut` names in `chan-send` and `spawn` (by name, not by type); `Secret` crossing an actor (`E_SECRET_ESCAPE`), FFI unpinned (`E_FFI_PIN_REQUIRED`), or a call into a top-level function whose parameter is not annotated `Secret` (`E_SECRET_UNANNOTATED`, [secret-unannotated-param-fails](secret-unannotated-param-fails.md)); a function passed to `ffi-pin` (`E_FFI_TYPE_NOT_PINNABLE`) or a closure passed to a foreign call (`E_INVALID_CAPABILITY`).
 
 ## Notes
 
 - Nothing upgrades a `let` to mutable, and capabilities are never written in source: `(x TMut)` is not an annotation.
 - There is no Send predicate on types: a closure or a `(Pin a)` in a message passes when it is bound by plain `let`.
-- Package capabilities (`(capabilities io ffi actor ...)` in `zyl.pkg`) are a different thing; see [pkg-capabilities](pkg-capabilities.md).
+- Package capabilities (`(capabilities io ffi actor ...)` in `zyl.pkg`, or at the top of a lone file, where absent means none) are a different thing; see [pkg-capabilities](pkg-capabilities.md) and [pkg-lone-file-capabilities](pkg-lone-file-capabilities.md).
 
 ## See Also
 

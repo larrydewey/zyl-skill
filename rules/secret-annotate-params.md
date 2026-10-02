@@ -11,19 +11,26 @@ The annotation is also a type: `(Secret Int)` and `(Secret Words)` fix the value
 ## Bad
 
 ```lisp
+(capabilities secret)
 (use math/secret/secret)
-(print (ct-select 1 10 20))            ; E_SECRET_DEBUG: result is secret
+(defn main () (begin (print (ct-select 1 10 20)) 0))   ; E_SECRET_DEBUG: the result is secret
 ```
 
 ## Good
 
 ```lisp
+(capabilities secret)
 (use math/secret/secret)
 (defn check ((k (Secret Int)))
   (if (ct-eq-bool k 5) 1 0))                     ; ct-eq-bool: a public Bool
 (defn check2 ((k (Secret Int)))
   (if (= (declassify (ct-eq k 5)) 1) 1 0))       ; ct-eq is an Int 0/1: compare it
-(print (declassify (ct-select 1 10 20)))         ; 10
+(defn main ()
+  (begin
+    (print (check 5))                            ; 1
+    (print (check2 4))                           ; 0
+    (print (declassify (ct-select 1 10 20)))     ; 10
+    0))
 ```
 
 ## Notes
@@ -31,9 +38,11 @@ The annotation is also a type: `(Secret Int)` and `(Secret Words)` fix the value
 - **Secret fields:** a field declared `Secret` or `(Secret Int)` is secret when read — `(struct-get l "pw")`, `l.pw`, or a `match` binder in that position. Storing a secret in such a field does not taint the record, so the record itself can be printed (derived `Show` prints the field as `<secret>`).
 - **Secret types:** `(impl Secret Key (defn wipe (self) ...))` (prelude trait `(trait Secret (wipe (self) Int))`) makes `Key` key material everywhere: its constructors produce secrets, a parameter or field of type `Key` is secret without an annotation, it prints as `<secret>`, and `(k.wipe)` erases it. A `Show` impl or derive for it is `E_IMPL_FORBIDDEN` (prelude `(impl-not Show Secret)`).
 - `ct-eq`, `ct-ne`, `ct-is-zero` and friends return an `Int` 0 or 1, never a `Bool` (a Bool invites a branch): `(if (ct-eq k 5) ...)` is `E_TYPE_MISMATCH`, and so is `(if (declassify (ct-eq k 5)) ...)`.
-- Both `check` functions above also draw an `E_ZEROIZE_MISSING` warning ([secret-zeroize](secret-zeroize.md)).
+- A function that consumes a Secret parameter into a public result without erasing it can draw the `E_ZEROIZE_MISSING` warning ([secret-zeroize](secret-zeroize.md)).
+- Every function a secret is passed to must annotate that parameter too, or the call is `E_SECRET_UNANNOTATED` ([secret-unannotated-param-fails](secret-unannotated-param-fails.md)).
 - Programs with no `Secret` annotation are completely unaffected.
-- Inside a package, calling `stdlib/math/secret` (or using the `Secret` type) requires the `secret` capability. A bare annotation works in any program.
+- Calling `math/secret/secret` requires the `secret` capability, in a package's `zyl.pkg` or as `(capabilities secret)` at the top of a lone file. A bare annotation works in any program.
+- The secret checker, like the capability check, does not walk top-level statements outside a `defn` or `test`; put secret code in functions.
 - Secret diagnostics are located `error[CODE]` diagnostics (file:line:col, caret) naming the function: `error[E_SECRET_DEBUG]: in `f`: Secret value reaches `print` ...`.
 - Annotations currently stop at `math/secret/secret`: AEAD, KDF, signature and bignum entry points are not yet under the checker.
 - A `let-mut` that is ever `set!` to a secret is secret for its whole scope.
@@ -41,4 +50,4 @@ The annotation is also a type: `(Secret Int)` and `(Secret Words)` fix the value
 ## See Also
 
 - [secret-five-prohibitions](secret-five-prohibitions.md)
-- [secret-unannotated-helpers-launder](secret-unannotated-helpers-launder.md)
+- [secret-unannotated-param-fails](secret-unannotated-param-fails.md)

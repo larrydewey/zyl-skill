@@ -9,23 +9,26 @@
 ## Bad
 
 ```lisp
-(for (i 0) (< i 3)
-  (print i))                      ; infinite loop
+(defn main ()
+  (begin
+    (for ((i 0)) (< i 3)
+      (print i))                  ; prints 0 forever: i never changes
+    0))
 ```
 
 ## Good
 
 ```lisp
-(for ((i 0)) (< i 3)
+(defn main ()
   (begin
-    (print i)
-    (set! i (+ i 1))))
-
-(for ((i 0) (j 100)) (< i 3)      ; several variables
-  (begin
-    (print (+ i j))
-    (set! i (+ i 1))
-    (set! j (- j 10))))
+    (for ((i 0)) (< i 3)          ; 0 1 2
+      (print i)
+      (set! i (+ i 1)))
+    (for ((i 0) (j 100)) (< i 3)  ; several variables: 100 91 82
+      (print (+ i j))
+      (set! i (+ i 1))
+      (set! j (- j 10)))
+    0))
 ```
 
 ## Notes
@@ -34,7 +37,7 @@
 - Loop variables are `TMut`: `set!` on them is allowed.
 - `while` and `for` have type `Unit`: `(let r (for ...) (+ r 1))` is `E_TYPE_MISMATCH`. Collect results in a `let-mut` or use a recursive helper.
 - The body may hold several forms (an implicit `begin`); the condition must be a `Bool`.
-- To iterate a `Vec`, index with `vec-get` up to `vec-len`; to iterate a `List`, recurse.
+- To iterate a `Vec`, index with `vec-get!` up to `vec-len`; to iterate a `List`, recurse.
 
 ## See Also
 

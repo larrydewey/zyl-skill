@@ -10,15 +10,20 @@ The two right shifts differ as soon as the value is negative, which for hash and
 
 ```lisp
 (defn rotl64 (x n) (bit-or (shl x n) (ashr x (- 64 n))))   ; wrong for negative x
+(defn main () (begin (print (rotl64 -2 1)) 0))             ; -1, not -3
 ```
 
 ## Good
 
 ```lisp
 (defn rotl64 (x n) (bit-or (shl x n) (shr x (- 64 n))))
-(shr  -1 60)   ; 15
-(ashr -1 60)   ; -1
-(ashr -16 2)   ; -4
+(defn main ()
+  (begin
+    (print (rotl64 -2 1))   ; -3
+    (print (shr -1 60))     ; 15
+    (print (ashr -1 60))    ; -1
+    (print (ashr -16 2))    ; -4
+    0))
 ```
 
 ## Operators

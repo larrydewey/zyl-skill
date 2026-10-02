@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-Visibility has two levels: package-private (default, visible to every module of the package) and `pub` (visible to dependents). `pub` prefixes a definition inline; it is not a wrapper list. `(export sym)` is deprecated and **dropped without effect**: exporting a non-`pub` definition still fails with `E_PKG_PRIVATE_SYMBOL`. Explicit import lists are checked at resolution time; with `*` or a bare path, a private symbol is not diagnosed by the resolver; the type checker then reports the call as a located `E_UNBOUND_VARIABLE` (`call to undefined function `helper``), which does not say the function exists but is private.
+Visibility has two levels: package-private (default, visible to every module of the package) and `pub` (visible to dependents). `pub` prefixes a definition inline; it is not a wrapper list. `(export sym)` is deprecated and **dropped without effect**: exporting a non-`pub` definition still fails with `E_PKG_PRIVATE_SYMBOL`. Explicit import lists are checked at resolution time; with `*` or a bare path, a private symbol is not diagnosed by the resolver; the type checker then reports the call as a located `E_UNBOUND_VARIABLE` (``` `helper` is not defined ```), which does not say the function exists but is private.
 
 ## Good
 
@@ -19,6 +19,8 @@ Visibility has two levels: package-private (default, visible to every module of 
 ```
 
 ## Notes
+
+- Verified 2026-10-02 with `acme/greet` as a path dependency of `acme/hello`: `hello` prints 101 and 202, and `(use acme/greet { helper })` is `E_PKG_PRIVATE_SYMBOL`.
 
 - `pub` applies to `defn`, `def`, `deftype` (with all constructors), `defstruct`, `defstruct+`, `trait`, `defmacro`.
 - Every definition, public or private, has its own canonical key, so renaming a private definition cannot break consumers.

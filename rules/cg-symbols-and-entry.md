@@ -8,6 +8,7 @@ Reading assembly and link errors requires knowing the naming. `ffi-call` targets
 
 ```asm
 main:
+    # frame 0
     push rbp
     mov rbp, rsp
     call zyl_save_args        ; argc/argv for zyl_argc / zyl_arg_str
@@ -20,7 +21,10 @@ main:
 
 A freestanding binary enters at `_start` (`start.s`), which calls the runtime's `zyl_rt_start` (argc/argv/envp/auxv, the static TLS block, fs) and then `main`; a hosted one enters through libc's crt. `zyl_call_on_big_stack` runs `_ZYL_main` on a thread whose stack is an `mmap` reservation of 64 GiB (falling back to 16, 4, 1 GiB) with a guard page, and returns its value as the exit code. Literals go to `.rodata` (`.string`, and a float as its exact bits, `.quad`). Output begins with `.file "<basename>.zyl"` so links are byte-identical.
 
+Every program (not the runtime's own compile) also carries a function-name table, `zyl_syms` in `.rodata` (`cg-syms-table`): a count, then `(code offset, name offset)` pairs as `.long sym - .` words in address order, an end bound at `main`, and the display names (the source name after the last `::`, cut at a specialization's `~`). An uncaught panic walks the `rbp` chain and names each return address through it, innermost first, at most 32 frames, printing `  in <name>` lines after the `PANIC:` line; caught panics and JSON mode print nothing extra, and `zyl_backtrace_set` turns it off. Inlined functions do not appear, since they have no frame of their own.
+
 ## Reading labels
+
 
 - `zy_local_x2Fmain_0__t9__add3` is `local/main@0::t9::add3`: `zyl_mangle_key` prefixes `zy_`, writes `@` as `_` and `::` as `__`, and escapes other punctuation as `_x<hex>` (`/` is `_x2F`, `-` is `_x2D`).
 - A per-type instance made by the type pass is `f~T` (`sq~Int`, `add3~Int,Int,Int`), so its label ends `_x7EInt` (`~` is `_x7E`, `,` is `_x2C`). An unannotated function whose body uses a class such as `Num` is called through such instances.

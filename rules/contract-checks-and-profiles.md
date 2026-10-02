@@ -31,19 +31,20 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
 ## Bad
 
 ```lisp
-(defn safe-div (a b)
-  (/ a b))                        ; SIGFPE on b = 0, no message
+(defn safe-div (a b) (div! a b))                      ; stops on b = 0 with no word on whose fault it is
 
-(defn add1 (x)
-  (begin
-    (ensures (> result (count-calls)))   ; side effect runs on every call
-    (+ x 1)))
-
-(recover (parse s) ((String) 0) ((E_CONTRACT_VIOLATION) -1))   ; (String) matches anything: -1 is unreachable
+(defn guarded (a b)
+  (recover (safe-div a b)
+    ((String) 0)                                     ; catches everything, so the next arm never runs
+    ((E_DIVISION_BY_ZERO) -1)))
 
 (contracts production)
-(defn f (a b) (begin (requires (> b 0)) (/ a b)))   ; check compiled out: back to SIGFPE
+(defn f (a b) (begin (requires (> b 0)) (div! a b)))  ; check compiled out: back to E_DIVISION_BY_ZERO
+
+(defn main () (begin (print (guarded 6 0)) (print (f 6 0)) 0))
 ```
+
+This does not compile: the catch-all `(String)` arm ahead of a coded arm is `W_RECOVER_SHADOW`, which, despite its `W_` name, stops the build. Without that arm, `f` would still fail on `b = 0`: under `production` its `requires` is compiled out, so the zero reaches `div!` and the program stops with `E_DIVISION_BY_ZERO` instead of the precondition's message.
 
 ## Good
 
@@ -52,20 +53,24 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
   (begin
     (requires (> b 0))
     (ensures (<= result a))
-    (/ a b)))
+    (div! a b)))
 
-(safe-div 6 0)                          ; PANIC: E_CONTRACT_VIOLATION: precondition of safe-div failed: (> b 0)
-(try (safe-div 6 0) (catch e -1))       ; -1
-(recover (safe-div 6 0)
-  ((E_CONTRACT_VIOLATION) -1)           ; the precondition failed
-  (_ -2))                               ; anything else
-(contracts off (safe-div 6 3))          ; checks inside this form removed; safe-div's own remain
-
-(let-mut x 10
+(defn main ()
   (begin
-    (try (checkpoint (begin (set! x 20) (panic "fail"))) (catch e 0))
-    (print x)))                         ; 10: rolled back
+    (print (try (safe-div 6 0) (catch _ -1)))       ; -1
+    (print (recover (safe-div 6 0)
+      ((E_CONTRACT_VIOLATION) -1)                   ; the precondition failed
+      (_ -2)))                                      ; anything else
+    (print (contracts off (safe-div 6 3)))          ; 2: checks in this form removed, safe-div's own remain
+    (let-mut x 10
+      (begin
+        (try (checkpoint (begin (set! x 20) (panic "fail"))) (catch _ 0))
+        (print x)))                                 ; 10: rolled back
+    (print (safe-div 6 0))                          ; PANIC: E_CONTRACT_VIOLATION: precondition of safe-div failed: (> b 0)
+    0))
 ```
+
+Output: `-1`, `-1`, `2`, `10`, then `PANIC: E_CONTRACT_VIOLATION: precondition of safe-div failed: (> b 0)` followed by the backtrace lines `  in safe-div` and `  in main`, exit status 1.
 
 ## Notes
 
@@ -73,7 +78,8 @@ A contract not directly in a `defn` body reports without the "of f" part (`preco
 - Under `off`/`production` a clause is removed before type checking, so a stripped clause is not checked at all: `(requires (undefined-thing 1))` compiles. Build with the default profile at least once.
 - `warn` output goes to stderr unbuffered, so it can appear before earlier stdout lines.
 - `recover` catches panics (including `panic`) and contract violations, not `(Err ...)` values.
-- `recover` arm order matters: a catch-all arm (`(String)` or `(_)`) before a specific error code arm (`(E_...)`) emits `W_RECOVER_SHADOW` warning.
+- `recover` arm order matters: a catch-all arm (`(String)` or `(_)`) before a specific error-code arm (`(E_...)`) is `W_RECOVER_SHADOW`, a located compile error despite the `W_` prefix.
+- A `requires` does not make `/` total: the partial-operation check recognises no guard, so a division by a parameter is still `div!`/`div?` ([fn-division-total](fn-division-total.md)).
 - A tail call in a body that has `ensures` is no longer a tail call (the check runs after it), so deep recursion there uses stack.
 - Contracts never alter type inference, ownership, regions or concurrency (spec P8).
 - For recoverable failures a caller should handle, return `Result` instead ([err-result-for-expected-failures](err-result-for-expected-failures.md)).

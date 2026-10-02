@@ -21,4 +21,4 @@
 ## See Also
 
 - [tool-repl](tool-repl.md)
-- [fn-integer-arith-unchecked](fn-integer-arith-unchecked.md)
+- [fn-numeric-policy](fn-numeric-policy.md)

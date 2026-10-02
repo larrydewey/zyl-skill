@@ -10,17 +10,21 @@ Parameters are substituted in name positions too, which is how macros can define
 
 ```lisp
 (defmacro bind (n v body) (let n v body))
-(print (bind q 7 (+ q 1)))                 ; 8
-
 (defmacro def-square (name) (defn name (k) (* k k)))
 (def-square sq)
-(print (sq 5))                             ; 25
+
+(defn main ()
+  (begin
+    (print (bind q 7 (+ q 1)))               ; 8
+    (print (sq 5))                           ; 25
+    0))
 ```
 
 ## Bad
 
 ```lisp
-(bind (+ 1 2) 7 0)                         ; E_MALFORMED_PARAMETER
+(defmacro bind (n v body) (let n v body))
+(defn main () (bind (+ 1 2) 7 0))          ; E_MALFORMED_PARAMETER
 ```
 
 ## See Also

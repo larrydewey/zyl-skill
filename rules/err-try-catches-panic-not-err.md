@@ -11,21 +11,32 @@ Since `error` returns an `Err` rather than raising, this is now the difference b
 ## Bad
 
 ```lisp
-(try (parse-config path)             ; returns (Err "bad")
-  (catch e (default-config)))        ; handler never runs; you get (Err "bad")
+(defn parse-config ((path String)) (if (str-eq path "") (Err "bad") (Ok 1)))
+
+(defn main ()
+  (begin
+    (print (try (parse-config "")         ; returns (Err "bad"), raises nothing
+      (catch _ (Ok 0))))                  ; handler never runs: prints Err(bad)
+    0))
 ```
 
 ## Good
 
 ```lisp
-(match (parse-config path)
-  (Ok c c)
-  (Err _ (default-config)))
+(defn parse-config ((path String)) (if (str-eq path "") (Err "bad") (Ok 1)))
 
-(defn percent-of (n)
-  (if (== n 0) (panic "division by zero") (/ 100 n)))
+(defn percent-of! (n)
+  (if (== n 0) (panic "division by zero") (div! 100 n)))
+
 (defn report ((msg String)) (begin (print-string (str-concat "caught: " msg)) -1))
-(print (try (percent-of 0) (catch e (report e))))   ; caught: division by zero, -1
+
+(defn main ()
+  (begin
+    (print (match (parse-config "")
+      (Ok c c)
+      (Err _ 0)))                                        ; 0: match handles the Err
+    (print (try (percent-of! 0) (catch e (report e))))   ; caught: division by zero, then -1
+    0))
 ```
 
 ## Notes
@@ -33,8 +44,8 @@ Since `error` returns an `Err` rather than raising, this is now the difference b
 - Syntax: `(try expr (catch name handler))`. One handler expression; use `begin` or a function for more.
 - `name` is bound to the message **String**, and prints as one.
 - The handler has the body's type: `(try (check 5 1) (catch e "s"))` with an Int body is `E_TYPE_MISMATCH`.
-- `try` also catches failed assertions (`assert-equal` etc.), `result-expect`/`option-expect` failures, contract violations, `E_INDEX_OUT_OF_BOUNDS` from `vec-get`/views/slices, and catchable runtime errors such as `E_FFI_TIMEOUT` and `E_REGION_EXHAUSTED`.
-- Without an active `try`, `panic` prints `PANIC: msg` to stderr and exits 1 (the PANIC line may appear before earlier buffered stdout).
+- `try` also catches failed assertions (`assert-equal` etc.), `result-expect!`/`option-expect!` failures, contract violations, `E_INDEX_OUT_OF_BOUNDS` from `vec-get!` and the other `!` view and slice functions, `E_OVERFLOW` and `E_DIVISION_BY_ZERO` from checked arithmetic and `div!`/`rem!`, and catchable runtime errors such as `E_FFI_TIMEOUT` and `E_REGION_EXHAUSTED`.
+- Without an active `try`, `panic` flushes stdout, prints `PANIC: msg` to stderr followed by a function-name backtrace (`  in f` lines, innermost first), and exits 1. Inlined functions do not appear in it.
 - The handler has the body's type, so `(try (error "x") (catch e 7))` does not even compile: a `Result` body cannot be paired with an `Int` handler. That is deliberate — it is the type checker refusing to let `try` pose as `?`. `match` is the only way to handle an `Err`.
 
 ## See Also

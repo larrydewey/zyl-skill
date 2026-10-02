@@ -40,11 +40,11 @@ Separate the match into two, or use guards inside arms:
     (_ "other")))
 
 ;; Constructor match only
+(deftype Shape (Circle Int) (Rect Int Int))
 (defn good-ctor (s)
   (match s
     (Circle r (str-concat "circle " (Show.show r)))
-    (Rect w h (str-concat "rect " (Show.show w)))
-    (_ "unknown")))
+    (Rect w _ (str-concat "rect " (Show.show w)))))
 ```
 
 ## Notes

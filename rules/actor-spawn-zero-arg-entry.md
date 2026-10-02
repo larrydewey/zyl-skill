@@ -9,13 +9,20 @@
 ## Bad
 
 ```lisp
-(spawn (fn (msg) (handle msg)))                ; E_TYPE_MISMATCH: the entry takes no parameters
-(let-mut c 0 (spawn (fn () (print c))))        ; E_CAPABILITY_LEAK
+(capabilities actor)
+(defn handle (m) m)
+(defn main () (let _ (spawn (fn (msg) (handle msg))) 0))   ; E_TYPE_MISMATCH: the entry takes no parameters
+```
+
+```lisp
+(capabilities actor)
+(defn main () (let-mut c 0 (let _ (spawn (fn () (print c))) 0)))   ; E_CAPABILITY_LEAK
 ```
 
 ## Good
 
 ```lisp
+(capabilities actor)
 (use actor/actor)
 
 (defn worker (rx tx) (chan-send tx (* 2 (chan-recv rx))))

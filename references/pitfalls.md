@@ -10,11 +10,11 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 |---|---|---|
 | 1 | Integer literal ≥ 2^63 (e.g. `0xFF51AFD7ED558CCD`) becomes `0` | [syn-int-literal-range](../rules/syn-int-literal-range.md) |
 | 2 | `\0` in a string literal ends the string (`"a\0b"` has length 1) | [syn-string-literals](../rules/syn-string-literals.md) |
-| 3 | Misspelled constructor in the **last** match arm is a catch-all binding | [match-misspelled-last-arm](../rules/match-misspelled-last-arm.md) |
+| 3 | A capitalized binder in a match arm is read as a constructor: `E_UNKNOWN_CONSTRUCTOR`; binders are lowercase | [match-unknown-constructor](../rules/match-unknown-constructor.md) |
 | 4 | Mixed literal + constructor arms: now `E_MATCH_MIXED_PATTERNS` compile error | [match-mixed-patterns](../rules/match-mixed-patterns.md) |
 | 5 | Misspelled or unknown type name in an annotation (`(a Intt)`) is a fresh type parameter: accepted, checks nothing | [type-sound-checking](../rules/type-sound-checking.md) |
 | 6 | `print` of a struct/ADT with no `Show` impl, or of an `Option`/`List` of one, prints an address; `print` of a `Bool` prints `1`/`0` | [trait-derive-show](../rules/trait-derive-show.md) |
-| 7 | Overflow wraps; `/` by zero → SIGFPE, exit 136, not catchable (REPL reports `E_DIVISION_BY_ZERO` instead) | [fn-integer-arith-unchecked](../rules/fn-integer-arith-unchecked.md) |
+| 7 | Overflow is `E_OVERFLOW` unless the file opts into `(numeric wrapping)`; a non-literal divisor needs `div!` or `div?` | [fn-numeric-policy](../rules/fn-numeric-policy.md), [fn-division-total](../rules/fn-division-total.md) |
 | 8 | Prelude `when`/`unless` evaluate the body even when the condition says not to | fixed: now special forms with short-circuit evaluation |
 | 9 | `recover` tries arms in order and a `(String)`/`_` arm matches any error, so it shadows later `E_` arms (now `W_RECOVER_SHADOW` warning); `checkpoint` does not undo byte-buffer writes; `--contracts=off`/`production` compiles every check out | [contract-checks-and-profiles](../rules/contract-checks-and-profiles.md) |
 | 10 | `try` does not catch `Err` values (it catches panics) | documented: use `Result`/`Option` for expected failures ([err-try-catches-panic-not-err](../rules/err-try-catches-panic-not-err.md)) |
@@ -30,7 +30,7 @@ Since 2026-09-25 the type checker is sound and enforced, so most of the old sile
 | 20 | `(exit code)` ends the process without joining actors | [fn-unlowered-forms](../rules/fn-unlowered-forms.md) |
 | 21 | `shr` vs `ashr` confusion on bit patterns | [bits-shr-vs-ashr](../rules/bits-shr-vs-ashr.md) |
 | 22 | Out-of-range byte load/store returns 0 silently | [bits-bounds-fail-closed](../rules/bits-bounds-fail-closed.md) |
-| 23 | Unannotated helper launders a `Secret` (`set!` into a `let-mut` no longer does); heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-helpers-launder](../rules/secret-unannotated-helpers-launder.md), [secret-zeroize](../rules/secret-zeroize.md) |
+| 23 | A `Secret` passed to an unannotated parameter is `E_SECRET_UNANNOTATED`; heap copies of keys are never wiped automatically (only frames are) | [secret-unannotated-param-fails](../rules/secret-unannotated-param-fails.md), [secret-zeroize](../rules/secret-zeroize.md) |
 | 24 | Test binary exit status 0 despite failures | fixed: implicit main returns `zyl_run_tests` result |
 | 25 | `--filter X` without `--full` runs nothing | [test-regression-runner](../rules/test-regression-runner.md) |
 | 26 | Capability violations in manifest-less files are unchecked | [pkg-capabilities](../rules/pkg-capabilities.md) |

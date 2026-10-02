@@ -10,21 +10,28 @@ There are no `float`/`int` built-ins: `(float 42)` is `E_UNBOUND_VARIABLE`. The 
 
 ## Bad
 
+Each definition is its own error.
+
 ```lisp
-(+ 1 2.5)                         ; E_TYPE_MISMATCH: cannot unify Float with Int
+(defn mixed () (+ 1 2.5))         ; E_TYPE_MISMATCH: the operands of `+` must have one type
 (defn half (n) (* n 0.5))
-(half 3)                          ; E_TYPE_MISMATCH at the call
-(float 42)                        ; E_UNBOUND_VARIABLE
+(defn use-half () (half 3))       ; E_TYPE_MISMATCH at the call: `half` takes `Float`
+(defn conv () (float 42))         ; E_UNBOUND_VARIABLE
 ```
 
 ## Good
 
 ```lisp
-(+ 1.0 2.5)                       ; 3.500000
 (defn scale ((x Float)) (* x 0.5))
-(* (ffi-call "zyl_f_of_int" 42 1000) 0.5)   ; 21.000000
-;; Keep integer math in Int (e.g. fixed-point: value * 1000)
+
+(defn main ()
+  (begin
+    (print (+ 1.0 2.5))                                  ; 3.500000
+    (print (scale (ffi-call "zyl_f_of_int" 42 1000)))    ; 21.000000
+    0))
 ```
+
+Keep integer math in `Int` (for example fixed-point: value times 1000).
 
 ## Notes
 

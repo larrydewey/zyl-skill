@@ -13,18 +13,23 @@ Hygiene is automatic and two-sided:
 
 ```lisp
 (defmacro getv () v)
-(let v 3 (print (getv)))
-;; error[E_UNBOUND_VARIABLE]: macro `getv` refers to `v`, which is not bound where the macro is defined
+(defn main () (let v 3 (begin (print (getv)) 0)))
+; error[E_UNBOUND_VARIABLE]: macro `getv` refers to `v`, which is not bound where the macro is defined
 ```
 
 ## Good
 
 ```lisp
 (defmacro add-tmp (e) (let tmp 100 (+ tmp e)))
-(let tmp 1 (print (add-tmp tmp)))       ; 101: expands to (let tmp__hyg0 100 (+ tmp__hyg0 tmp))
-
 (defmacro swap! (a b) (let tmp a (begin (set! a b) (set! b tmp))))
-(let-mut tmp 1 (let-mut y 2 (begin (swap! tmp y) (print tmp) (print y))))   ; 2 1
+
+(defn main ()
+  (begin
+    (let tmp 1 (print (add-tmp tmp)))     ; 101: expands to (let tmp__hyg0 100 (+ tmp__hyg0 tmp))
+    (let-mut tmp 1
+      (let-mut y 2
+        (begin (swap! tmp y) (print tmp) (print y))))   ; 2 then 1
+    0))
 ```
 
 ## Notes

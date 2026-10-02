@@ -17,6 +17,8 @@ The TMut/TCap aliasing invariant (spec §10) is enforced by name in `mutability_
 ## Good
 
 ```lisp
+(use collections/vec)
+
 (defn inc (n) (+ n 1))                ; return the new value
 
 (defn total (v)
@@ -24,9 +26,11 @@ The TMut/TCap aliasing invariant (spec §10) is enforced by name in `mutability_
     (begin
       (for (i 0) (< i (vec-len v))
         (begin
-          (set! sum (+ sum (vec-get v i)))
+          (set! sum (+ sum (vec-get! v i)))
           (set! i (+ i 1))))
       sum)))
+
+(defn main () (begin (print (inc (total (vec-push (vec-push (vec-new) 4) 5)))) 0))   ; 10
 ```
 
 ## Capability table

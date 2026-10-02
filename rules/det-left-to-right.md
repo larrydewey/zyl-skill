@@ -13,13 +13,9 @@ Determinism is non-negotiable (spec P1, P5, §27). Evaluation order is fixed: in
 (defn main ()
   (begin
     (print (+ (noisy "first" 1) (noisy "second" 2)))
+    (let-mut x 1
+      (print (+ x (begin (set! x 5) 1))))    ; 2: x was read before the set!
     0))
-;; first
-;; second
-;; 3
-
-(let-mut x 1
-  (+ x (begin (set! x 5) 1)))    ; 2: x was read before the set!
 ```
 
 ## Notes

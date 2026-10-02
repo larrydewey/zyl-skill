@@ -24,14 +24,17 @@ Binding a second name to a `let-mut` Int gives an independent copy, so later `se
 ```lisp
 (use collections/intmap)
 (use collections/vec)
-(let m1 (intmap-put (intmap-new 4) 1 100)
-  (let m2 (intmap-put m1 1 111)   ; overwrites in the shared buffer
-    (intmap-get m1 1 0)))         ; 111, not 100
 
-(let v1 (vec-push (vec-create-default 4) 1)
-  (let v2 (vec-push v1 2)         ; writes slot 1 of the shared storage
-    (let v3 (vec-push v1 3)       ; writes slot 1 again
-      (vec-get v2 1))))           ; 3, not 2
+(defn main ()
+  (begin
+    (let m1 (intmap-put (intmap-new 4) 1 100)
+      (let _m2 (intmap-put m1 1 111)              ; overwrites in the shared buffer
+        (print (intmap-get m1 1 0))))             ; 111, not 100
+    (let v1 (vec-push (vec-new-cap 4) 1)
+      (let v2 (vec-push v1 2)                     ; writes slot 1 of the shared storage
+        (let _v3 (vec-push v1 3)                  ; writes slot 1 again
+          (print (vec-get! v2 1)))))              ; 3, not 2
+    0))
 ```
 
 ## Notes

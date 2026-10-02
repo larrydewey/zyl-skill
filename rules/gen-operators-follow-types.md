@@ -18,19 +18,23 @@ So `(smaller (Some 1) (Some 2))` is rejected at the call. To order records, take
 
 ```lisp
 (defn smaller (a b) (if (< a b) a b))
-(smaller "banana" "apple")        ; apple
-(smaller 3 5)                     ; 3
-(smaller 2.5 1.5)                 ; 1.500000
-
 (defn smaller-by (lt a b) (if (lt a b) a b))
-(smaller-by (fn (x y) (> x y)) 3 5)                               ; custom ordering: 5
-(smaller-by (fn (x y) (< (Ord.compare x y) 0)) (Some 2) (Some 1)) ; Some(1)
+
+(defn main ()
+  (begin
+    (print (smaller "banana" "apple"))                                       ; apple
+    (print (smaller 3 5))                                                    ; 3
+    (print (smaller 2.5 1.5))                                                ; 1.500000
+    (print (smaller-by (fn (x y) (> x y)) 3 5))                              ; custom ordering: 5
+    (print (smaller-by (fn (x y) (< (Ord.compare x y) 0)) (Some 2) (Some 1))) ; Some(1)
+    0))
 ```
 
 ## Notes
 
 - Strings order by bytes (`strcmp`), not locale.
 - Mixing Int and Float in one operation is `E_TYPE_MISMATCH` ([fn-int-float-separation](fn-int-float-separation.md)).
+- An Int instance of a generic `+ - *` is checked (`E_OVERFLOW`) unless the file declares `(numeric wrapping)` or `(numeric saturating)`, and an Int `/` or `%` needs a nonzero literal divisor or `div!`/`div?` ([fn-numeric-policy](fn-numeric-policy.md), [fn-division-total](fn-division-total.md)).
 
 ## See Also
 

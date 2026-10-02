@@ -9,6 +9,7 @@ Output is part of the determinism contract (spec §27): the same program prints 
 ## Good
 
 ```lisp
+(capabilities actor)
 (use actor/actor)
 (defn main ()
   (let a (spawn (fn () (print "actor")))

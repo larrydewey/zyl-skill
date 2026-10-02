@@ -16,6 +16,7 @@
 
 - The seed also type-checks the new source with its own type pass, whose catch-all makes a form it has no case for `E_CANNOT_INFER` (`no type for form not typed`). A new special form therefore needs the seed to know how to type it, not only how to parse it.
 - The same applies to new built-ins the compiler itself wants to call, to new escapes in string literals, and to new runtime functions: the seed types every `ffi-call` in the compiler by its own `ffi_sigs.zyl`, so add the `zyl_*` defn in `runtime/rt/` and its signature first, reseed, then call it ([boot-fixed-point-workflow](boot-fixed-point-workflow.md)). On 2026-09-28 `zyl_actor_id`, `zyl_chan_spawn_moves` and `zyl_actor_join_unjoined` landed this way before the REPL called them.
+- A new top-level form is new syntax too: `(capabilities ...)` for a lone file landed on 2026-10-02 as step one (the seed learns the form, eb1778f) before step two enforced it (7d63783).
 - History: the bitwise operators were once unusable in compiler source because the seed of the day could not compile them, which is why the optimizer does not fold them. That limitation is gone (`mir.zyl` uses `bit-and`); the folding was simply never added.
 
 ## See Also

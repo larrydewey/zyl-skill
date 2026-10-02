@@ -9,8 +9,15 @@ A foreign symbol is typed by its `(extern "sym" (ParamType ...) ResultType)` dec
 ## Bad
 
 ```lisp
+(capabilities ffi)
 (extern "fabs" (Float) Float)        ; E_TYPE_MISMATCH: Float cannot cross the C boundary
+(defn main () (begin (print (ffi-call "fabs" -1.5 1000)) 0))
+```
+
+```lisp
+(capabilities ffi)
 (extern "abs" (a) b)                 ; E_TYPE_MISMATCH: extern types are concrete
+(defn main () (begin (print (ffi-call "abs" -1 1000)) 0))
 ```
 
 ## Good
@@ -30,12 +37,19 @@ int64_t scale_bits(int64_t xbits) {
 ```
 
 ```lisp
-(extern "my_factorial" (Int) Int)
-(extern "scale_bits" (Int) Int)
+(capabilities ffi)
+(extern "my_factorial" (Int) Int :timeout 1000)
+(extern "scale_bits" (Int) Int :timeout 1000)
 
 (defn scale ((x Float))
   (ffi-call "zyl_float_of_bits"
-    (ffi-call "scale_bits" (ffi-call "zyl_float_bits" x 1000) 1000) 1000))   ; (scale 1.5) is 3.0
+    (ffi-call "scale_bits" (ffi-call "zyl_float_bits" x 1000)) 1000))
+
+(defn main ()
+  (begin
+    (print (ffi-call "my_factorial" 5))   ; 120
+    (print (scale 1.5))                   ; 3.000000
+    0))
 ```
 
 ## What C receives

@@ -9,7 +9,7 @@ Two mechanisms keep values off the process heap, both automatic:
 1. **Frame region (per-call regions).** Any allocation whose object class does not reach the result or escape is placed in the call's own region and released on return. Passing the value to a compiled function is fine when that function's summary says the parameter does not escape.
 2. **`IStackVariant`.** For exactly one shape, `(let x (Variant ...) body)` where every use of `x` is a `match` scrutinee or a `print` argument and no nested `fn` references it, the variant is stored directly in the frame (no allocation call at all).
 
-What forces the heap: storing into a global, `send`, a foreign `ffi-call`, capture by a closure called through a function value, or a runtime function not in the compiler's region-safe table. Returning a value puts it in the caller's region, not the heap.
+What forces the heap: storing into a global, `chan-send`, a foreign `ffi-call`, capture by a closure called through a function value, or a runtime function not in the compiler's region-safe table. Returning a value puts it in the caller's region, not the heap.
 
 ## Good
 
@@ -30,6 +30,9 @@ What forces the heap: storing into a global, `send`, a foreign `ffi-call`, captu
 ## Heap (still correct)
 
 ```lisp
+(capabilities actor)
+(deftype Shape (Circle Int) (Square Int))
+
 (defn stash (tx)
   (chan-send tx (Square 4)))     ; sent: heap
 ```

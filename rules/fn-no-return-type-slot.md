@@ -4,9 +4,11 @@
 
 ## Why It Matters
 
-Everything after the parameter list is the body. A return type written there is evaluated as an expression and fails with `E_UNBOUND_VARIABLE` ("unbound identifier `Int`"). Anything in the parameter list that is not a name or `(name Type)` is `E_MALFORMED_PARAMETER`, which is also how a dropped `)` that pulls the body into the parameter list gets caught (when no body form follows, the whole `defn` is `E_MALFORMED_FORM` instead). Annotations that used to mean nothing are errors since 2026-09-25: `(a : Int)` and a trait used as a type, `(a Ord)`, are `E_MALFORMED_PARAMETER`.
+Everything after the parameter list is the body. A return type written there is evaluated as an expression and fails with `E_UNBOUND_VARIABLE` ("`Int` is not defined"). Anything in the parameter list that is not a name or `(name Type)` is `E_MALFORMED_PARAMETER`, which is also how a dropped `)` that pulls the body into the parameter list gets caught (when no body form follows, the whole `defn` is `E_MALFORMED_FORM` instead). Annotations that used to mean nothing are errors since 2026-09-25: `(a : Int)` and a trait used as a type, `(a Ord)`, are `E_MALFORMED_PARAMETER`.
 
 ## Bad
+
+Each line is its own error; the compiler reports the first.
 
 ```lisp
 (defn add ((a Int) (b Int)) Int (+ a b))   ; `Int` read as body: E_UNBOUND_VARIABLE

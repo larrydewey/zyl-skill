@@ -16,17 +16,30 @@ Sound typing closed most of the old holes: `=` and `==` on records and ADTs comp
 
 ```lisp
 (defstruct P (x Int) (y String))
-(print (make-P 1 "a"))               ; no Show impl: prints an address such as 140123932982304
-(= words-a words-b)                  ; two Words arrays: handle comparison, not content
+(defn main () (begin (print (make-P 1 "a")) 0))   ; no Show impl: prints an address such as 140123932982304
+```
+
+```lisp
+(use math/words)
+(defn main ()
+  (let a (w-from-string "ab")
+    (let b (w-from-string "ab")
+      (begin (print (if (= a b) "equal" "different")) 0))))   ; different: = compares the handles
 ```
 
 ## Good
 
 ```lisp
+(capabilities secret)
+(use math/words)
+(use math/secret/secret)
 (defstruct P (x Int) (y String))
 (derive P Show)
-(print (make-P 1 "a"))               ; P { x: 1, y: a }
-(ct-eq-words-bool words-a words-b n) ; content, in constant time (math/secret/secret)
+(defn main ()
+  (begin
+    (print (make-P 1 "a"))                                      ; P { x: 1, y: a }
+    (print (ct-eq-words-bool (w-from-string "ab") (w-from-string "ab") 2))   ; 1: equal content, compared in constant time
+    0))
 ```
 
 ## See Also

@@ -12,12 +12,12 @@ Every access is bounds-checked against the buffer's capacity (or slice length). 
 (defn main ()
   (let buf (bytebuf Heap 64)
     (begin
-      (store-u8 :le buf 0 200)       ; 1
-      (load-u8 :le buf 0)            ; 200
-      (load-i8 :le buf 0)            ; -56
-      (load-u8 :le buf 64)           ; 0 -- out of range
+      (print (store-u8 :le buf 0 200))   ; 1
+      (print (load-u8 :le buf 0))        ; 200
+      (print (load-i8 :le buf 0))        ; -56
+      (print (load-u8 :le buf 64))       ; 0: out of range
       (if (= (store-u8 :le buf 100 1) 0)
-        (panic "offset out of range")  ; taken: PANIC: offset out of range
+        (panic "offset out of range")    ; taken: PANIC: offset out of range
         0))))
 ```
 
@@ -25,7 +25,7 @@ Every access is bounds-checked against the buffer's capacity (or slice length). 
 
 - The native backend inlines one-byte loads and stores (a bound check, then the access; when the handle is a parameter that never changes, its data pointer and bound are loaded once per function). The inline path gives exactly the runtime's results: anything the runtime would reject, including an invalid handle, reads 0 or stores nothing. Wider accesses call the runtime under the same rule.
 - Only the handle is typed (`ByteBuf`/`ByteSlice`); the offset is an ordinary `Int`, so the type checker cannot catch an out-of-range offset.
-- `E_BYTE_OOB`, `E_BYTEBUF_CAP_EXCEEDED`, `E_BYTEBUF_OVERLAP`, `E_BYTEBUF_INVALID` are catalogued, never raised.
+- There is no error code for an out-of-range byte access: the spec's old `E_BYTE_OOB` family was removed from the catalog on 2026-10-02 because nothing raised it.
 - A `Secret` may not be a load/store offset (`E_CT_VIOLATION`).
 
 ## See Also

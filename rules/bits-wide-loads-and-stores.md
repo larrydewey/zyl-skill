@@ -16,16 +16,26 @@ A handle is typed: `bytebuf` returns `ByteBuf`, `byteslice`/`byteslice-sub` retu
           (shl (load-u8 :le buf (+ off 1)) 8)
           (shl (load-u8 :le buf (+ off 2)) 16)
           (shl (load-u8 :le buf (+ off 3)) 24)))
-(load-u16 :le 7 0)                             ; E_TYPE_MISMATCH: expected `ByteBuf`, found `Int`
+```
+
+```lisp
+(defn main () (begin (print (load-u16 :le 7 0)) 0))   ; E_TYPE_MISMATCH: expected `ByteBuf`, found `Int`
 ```
 
 ## Good
 
 ```lisp
 (defn header-len ((b ByteBuf)) (load-u32 :be b 4))
-(store-i64 :le buf 8 -2)
-(load-i16 :le buf 8)                           ; -2
-(load-u64 :le buf 8)                           ; -2: the bit pattern as an Int
+(defn main ()
+  (let buf (bytebuf Heap 16)
+    (begin
+      (store-u32 :be buf 4 1000)
+      (print (header-len buf))           ; 1000
+      (store-i64 :le buf 8 -2)
+      (print (load-i16 :le buf 8))       ; -2
+      (print (load-u64 :le buf 8))       ; -2: the bit pattern as an Int
+      (print (load-u16 :le buf 8))       ; 65534
+      0)))
 ```
 
 ## Notes

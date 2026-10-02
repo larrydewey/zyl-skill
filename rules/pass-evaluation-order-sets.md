@@ -21,13 +21,18 @@ Users: the native backend (`ml-operand` copies a local read into a fresh vreg wh
 ```lisp
 ; a shortcut that evaluates the complex argument first and reads locals afterwards,
 ; without the guard: (f x (begin (set! x 2) x)) would pass 2 twice
-(if (<= (cg-count-complex env args) 1) (cg-direct-args st env args n) ...)
+(use compiler/codegen)
+(defn direct-args-ok (env args n)
+  (and (<= n 6) (<= (cg-count-complex env args) 1)))
 ```
 
 ## Good
 
 ```lisp
-(defn cg-direct-args-ok (env args n)
+; cg-direct-args-ok in codegen.zyl, verbatim but renamed
+(use compiler/codegen)
+(use compiler/icnf)
+(defn direct-args-ok (env args n)
   (and (<= n 6) (and (<= (cg-count-complex env args) 1) (not (icnf-list-has-set args)))))
 ```
 

@@ -47,7 +47,7 @@ Each argument is lowered in order to a vreg; a local read is copied into a fresh
 
 ## Notes
 
-- Division: the stack machine and the native backend's general path use `cqo` before `idiv` (stale `rdx` gives SIGFPE); remainder via `mov rax, rdx`. Division by zero is unchecked. The native backend divides by a constant other than 0 and -1 without `idiv` (`mb-divmod-const`: a move for 1, a biased shift for a power of two, else a multiply by `zyl_div_magic`'s constant), with `idiv`'s results.
+- Arithmetic follows the numeric policy (`cg-arith-mnem`, `mb-checked-tail`): a checked `add`/`sub`/`imul` is followed by `jo zyl_rt_trap_ovf_<op>`, a runtime stub that panics with `E_OVERFLOW`; wrapping ops (18-20) have no `jo`, and saturating ops (21-23) go through `cg-sat-arith`. Division with a non-literal divisor (`div!`/`rem!`) tests the divisor first, `test rcx, rcx; jz zyl_rt_trap_div0_<op>` (`E_DIVISION_BY_ZERO`), then handles `-1` without `idiv` (`neg` plus `jo` for the quotient, 0 for the remainder), and only then does `cqo; idiv rcx`, so no program reaches the `#DE` fault. The native backend divides by a literal other than 0 and -1 without `idiv` (`mb-divmod-const`: a move for 1, a biased shift for a power of two, else a multiply by `zyl_div_magic`'s constant), with `idiv`'s results.
 - Comparisons: `cmp`, `setX al`, `movzx rax, al`, or a conditional jump when the comparison is a condition. Shifts use the branchless defined-count sequences (`cg-bit-mnem`) in both backends.
 - Floats (stack machine only): moved to `xmm0/xmm1` for `addsd/subsd/mulsd/divsd/comisd`.
 

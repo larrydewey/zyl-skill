@@ -19,9 +19,12 @@ A program that stays out of the FFI is deterministic in its output, actors inclu
 ## Good
 
 ```lisp
-;; reproducible randomness for tests/simulations
 (use math/rand/deterministic)
-(let rng (chacharng-from-int arena 42) ...)
+(defn main ()
+  (let rng (chacharng-from-int 42)            ; the same seed gives the same stream
+    (begin
+      (print (if (= (chacharng-next-u64 rng) (chacharng-next-u64 (chacharng-from-int 42))) "same" "differs"))   ; same
+      0)))
 ```
 
 ## Notes

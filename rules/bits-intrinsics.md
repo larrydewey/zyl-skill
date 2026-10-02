@@ -17,13 +17,14 @@ Spec §21.13: each intrinsic is defined for every input and gives the same resul
 | `(crc32c-u8 crc b)` | the same over one byte |
 | `bit-popcount32`, `bit-clz32`, `bit-ctz32` (32 for 0), `bit-bswap32`, `bit-rotl32`, `bit-rotr32` | on the low 32 bits, result in 0..2^32-1 |
 
-`stdlib/simd` (`(use simd/simd)`) gives `I64x2`, `I32x4` and `U8x16`: 128-bit vectors as immutable values, lane-wise `-add`, `-sub`, `-and`, `-or`, `-xor`, `-eq` (all-ones lanes), `-min`, `-max`, `-hsum`, `-get`/`-set`, `-splat`, and `u8x16-movemask`. They are portable SWAR over two words, not SSE, so results never depend on the CPU; a lane index out of range is `E_INDEX_OUT_OF_BOUNDS`.
+`stdlib/simd` (`(use simd/simd)`) gives `I64x2`, `I32x4` and `U8x16`: 128-bit vectors as immutable values, lane-wise `-add`, `-sub`, `-and`, `-or`, `-xor`, `-eq` (all-ones lanes), `-min`, `-max`, `-hsum`, `-splat`, `u8x16-movemask`, and the lane accessors `-get!`/`-get?` and `-set!`/`-set?` (`i64x2-get!`, `u8x16-set?`, ...). They are portable SWAR over two words, not SSE, so results never depend on the CPU. A lane index out of range is `E_INDEX_OUT_OF_BOUNDS` from the `!` forms and `None` from the `?` forms ([err-partial-ops-spelled](err-partial-ops-spelled.md)).
 
 ## Bad
 
 ```lisp
 (defn popcount (x acc)                       ; a loop the hardware does in one instruction
   (if (= x 0) acc (popcount (shr x 1) (+ acc (bit-and x 1)))))
+(defn main () (begin (print (popcount 255 0)) 0))   ; 8, the slow way
 ```
 
 ## Good

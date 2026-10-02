@@ -8,10 +8,11 @@ Codegen routes String comparisons through `zyl_cstr_eq` / `zyl_cstr_cmp` when th
 
 ## Bad
 
+Each definition is its own error.
+
 ```lisp
-(= 1 "a")                        ; E_TYPE_MISMATCH: cannot unify String with Int
-(+ "a" "b")                      ; E_TYPE_MISMATCH: arithmetic on String; use str-concat
-(if (str-eq a b) 1 0)            ; works, but `(= a b)` says the same thing
+(defn cmp () (= 1 "a"))          ; E_TYPE_MISMATCH: the operands of `=` must have one type
+(defn join () (+ "a" "b"))       ; E_TYPE_MISMATCH: arithmetic on String; use str-concat
 ```
 
 ## Good
@@ -19,12 +20,17 @@ Codegen routes String comparisons through `zyl_cstr_eq` / `zyl_cstr_cmp` when th
 ```lisp
 (defstruct Ev (level String))
 (defn same? (a b) (= a b))                       ; instantiated per type: content compare for Strings
-(defn level-is (e lvl) (= (struct-get e "level") lvl))
+(defn level-is (e lvl) (= (Ev.level e) lvl))
 
-(same? "ab" (str-concat "a" "b"))                ; true
-(level-is (make-Ev "warn") (str-concat "wa" "rn"))  ; true
-(< "abc" "abd")                                  ; true
+(defn main ()
+  (begin
+    (print (same? "ab" (str-concat "a" "b")))                 ; 1 (true)
+    (print (level-is (make-Ev "warn") (str-concat "wa" "rn"))) ; 1
+    (print (< "abc" "abd"))                                   ; 1
+    0))
 ```
+
+`(if (str-eq a b) 1 0)` works too, but `(= a b)` says the same thing.
 
 ## Notes
 

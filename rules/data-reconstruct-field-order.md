@@ -9,24 +9,25 @@ Constructors are positional, and the type checker catches a swap only when the t
 ## Bad
 
 ```lisp
-(defstruct Stats (total) (errors) (warnings) (infos) (skipped))
+(defstruct Stats (total Int) (errors Int) (warnings Int) (infos Int) (skipped Int))
 (defn count-skipped (st)
-  (make-Stats (struct-get st "total")
-              (struct-get st "warnings")   ; swapped with errors
-              (struct-get st "errors")
-              (struct-get st "infos")
-              (+ (struct-get st "skipped") 1)))
+  (make-Stats (Stats.total st)
+              (Stats.warnings st)   ; swapped with errors: compiles
+              (Stats.errors st)
+              (Stats.infos st)
+              (+ (Stats.skipped st) 1)))
 ```
 
 ## Good
 
 ```lisp
+(defstruct Stats (total Int) (errors Int) (warnings Int) (infos Int) (skipped Int))
 (defn count-skipped (st)
-  (make-Stats (struct-get st "total")
-              (struct-get st "errors")
-              (struct-get st "warnings")
-              (struct-get st "infos")
-              (+ (struct-get st "skipped") 1)))
+  (make-Stats (Stats.total st)
+              (Stats.errors st)
+              (Stats.warnings st)
+              (Stats.infos st)
+              (+ (Stats.skipped st) 1)))
 
 ;; ADT state threading: destructure and rebuild in the same order
 (deftype ST (ST Int Int))

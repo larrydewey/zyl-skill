@@ -8,6 +8,8 @@ Before parsing, `sexp_balance.zyl` rejects unclosed openers (`E_UNBALANCED_UNCLO
 
 ## Bad
 
+Each group is its own error; in one file the balance check reports first.
+
 ```lisp
 (defn f (x (+ x 1)) x)     ; E_MALFORMED_PARAMETER: `(+ ...)` is not a parameter
 (defn f2 (x (+ x 1)))      ; E_MALFORMED_FORM: malformed `defn` form

@@ -27,7 +27,7 @@
 
 (trait Desc (desc (self) String))
 (impl Desc Int (defn desc (self) "int"))
-(impl Desc Vec (defn desc (self) (str-concat "vec of " (Desc.desc (vec-get self 0)))))
+(impl Desc Vec (defn desc (self) (str-concat "vec of " (Desc.desc (vec-get! self 0)))))
 
 (defn main ()
   (begin

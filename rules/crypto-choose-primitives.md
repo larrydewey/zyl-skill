@@ -8,10 +8,10 @@ The library ships safe defaults and deliberately omits dangerous options. Pickin
 
 | Need | Use | Notes |
 |---|---|---|
-| AEAD | `math/crypto/symmetric/chacha20poly`: `(aead-encrypt arena key nonce aad aadlen pt ptlen)` → ciphertext‖tag; `(aead-decrypt arena key nonce aad aadlen sealed ctlen)` → `(Some pt)`/`None` | no decrypt-without-verify entry point |
+| AEAD | `math/crypto/symmetric/chacha20poly`: `(aead-encrypt key nonce aad aadlen pt ptlen)` → ciphertext‖tag; `(aead-decrypt key nonce aad aadlen sealed ctlen)` → `(Some pt)`/`None` | no decrypt-without-verify entry point |
 | AEAD (hardware) | `aesgcm`: `gcm-encrypt`/`gcm-decrypt` (+ key length arg); `gcm-seal`/`gcm-open` are the lower-level halves | requires AES-NI: when `(aes-available)` is `false`, both return `None` |
-| Key agreement | `x25519-public`, `(x25519 arena priv pub)`, `x25519-checked` | |
-| KDF | `(hkdf arena ikm ikmlen salt saltlen info infolen outlen)`, `hkdf-extract`/`-expand`; `pbkdf2-sha256`; `argon2id-hash` | distinct `info` labels per direction |
+| Key agreement | `x25519-public`, `(x25519 priv pub)`, `x25519-checked` | |
+| KDF | `(hkdf ikm ikmlen salt saltlen info infolen outlen)`, `hkdf-extract`/`-expand`; `pbkdf2-sha256`; `argon2id-hash` | distinct `info` labels per direction |
 | Signatures | `ed25519-public-key`, `ed25519-sign`, `ed25519-verify`; ECDSA (P-256, secp256k1, P-384) with RFC 6979 nonces; RSA-PSS | |
 | RSA encryption | `rsa-oaep-encrypt`/`decrypt` | keys loaded, not generated |
 | Hashes | SHA-256, SHA-512, SHA3-256/512, SHAKE128/256, BLAKE2b, BLAKE3, HMAC-SHA256 | |

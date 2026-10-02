@@ -4,13 +4,14 @@
 
 ## Why It Matters
 
-There is no named `let`, no `letrec`, no mutable cell to tie a knot. A `fn` referring to the name it is being bound to sees an unbound (or outer) name: `(let f (fn (n) (if (= n 0) 0 (f (- n 1)))) ...)` is `E_UNBOUND_VARIABLE` ("call to undefined function `f`").
+There is no named `let`, no `letrec`, no mutable cell to tie a knot. A `fn` referring to the name it is being bound to sees an unbound (or outer) name: `(let f (fn (n) (if (= n 0) 0 (f (- n 1)))) ...)` is `E_UNBOUND_VARIABLE` ("`f` is not defined").
 
 ## Good
 
 ```lisp
+(use collections/collections)
 (defn fact (n) (if (<= n 1) 1 (* n (fact (- n 1)))))
-(defn apply-to-list (xs) (list-map (fn (x) (fact x)) xs))  ; lambda calls the defn; (use collections/collections)
+(defn apply-to-list (xs) (list-map (fn (x) (fact x)) xs))  ; the lambda calls the defn
 ```
 
 ## Notes

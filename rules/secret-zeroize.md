@@ -11,19 +11,22 @@ A function that takes a `Secret`, returns a public result, is not a declassifyin
 ## Bad
 
 ```lisp
-(use allocator/allocator)
+(capabilities secret)
 (use math/words)
 (use math/secret/secret)
 (defn compute ((key (Secret Words))) (w-get key 0))
 (defn use-key ((key (Secret Words)))
   (declassify (compute key)))  ; frame is wiped, but the words at `key` stay on the heap
-;; E_ZEROIZE_MISSING: warning: `local/main@0::prog::use-key` consumes a Secret parameter
-;;   into a public result but never calls zeroize/zeroize-bytes on it
+;; warning[E_ZEROIZE_MISSING]: `use-key` consumes a Secret parameter into a public result without zeroize
 ```
 
 ## Good
 
 ```lisp
+(capabilities secret)
+(use math/words)
+(use math/secret/secret)
+(defn compute ((key (Secret Words))) (w-get key 0))
 (defn derive-and-wipe ((key (Secret Words)) (n Int))
   (let out (declassify (compute key))
     (begin
@@ -32,14 +35,20 @@ A function that takes a `Secret`, returns a public result, is not a declassifyin
 
 (defstruct KeyBuf (base Words) (n Int))                   ; n words of key material
 (impl Secret KeyBuf (defn wipe (self) (zeroize self.base self.n)))
-;; ... (k.wipe) when done with k; its result is secret too, so do not print it
+
+(defn main ()
+  (let k (make-KeyBuf (w-from-hex "2a2b") 2)
+    (begin
+      (print (derive-and-wipe (w-from-hex "0102") 2))     ; 1
+      (k.wipe)                                            ; its result is secret too: do not print it
+      0)))
 ```
 
 ## Notes
 
 - `zeroize` takes a `Words` handle (`math/words`), not a raw address; passing an `Int` is `E_TYPE_MISMATCH`. `zeroize-bytes` takes a raw address from C (an `Int`).
 - A trait call reached through a function value, or a `try` that unwinds past a function, skips that function's frame wipe.
-- The frame wipe only covers the function's own frame: copies passed to unannotated helpers are not wiped ([secret-unannotated-helpers-launder](secret-unannotated-helpers-launder.md)).
+- The frame wipe only covers the function's own frame: passing a secret to a helper whose parameter is not annotated `Secret` is now `E_SECRET_UNANNOTATED`, so every function that receives a secret is itself wiped ([secret-unannotated-param-fails](secret-unannotated-param-fails.md)).
 
 ## See Also
 

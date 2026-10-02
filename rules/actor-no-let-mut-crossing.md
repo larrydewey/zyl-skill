@@ -9,21 +9,33 @@ Values crossing an actor boundary must be Send-capable (spec R3). The check is s
 ## Bad
 
 ```lisp
-(let-mut x 10
-  (chan-send tx x))
-;; error[E_CAPABILITY_LEAK]: value sent on a channel references let-mut (TMut) variable `x` from the enclosing scope
+(capabilities actor)
+(defn main ()
+  (let tx (chan-tx (chan 1))
+    (let-mut x 10
+      (begin (chan-send tx x) 0))))   ; E_CAPABILITY_LEAK: the sent value names let-mut `x`
+```
 
-(let-mut count 0
-  (spawn (fn () (set! count (+ count 1)))))
-;; error[E_CAPABILITY_LEAK]: spawned closure captures let-mut (TMut) variable `count` from the enclosing scope
+```lisp
+(capabilities actor)
+(defn main ()
+  (let-mut count 0
+    (let _ (spawn (fn () (set! count (+ count 1)))) 0)))   ; E_CAPABILITY_LEAK: the closure captures `count`
 ```
 
 ## Good
 
 ```lisp
-(let-mut x 10
-  (let snapshot x
-    (chan-send tx snapshot)))     ; sound for an Int: the word is copied
+(capabilities actor)
+(use actor/actor)
+(defn main ()
+  (let c (chan 1)
+    (let-mut x 10
+      (let snapshot x
+        (begin
+          (chan-send (chan-tx c) snapshot)     ; sound for an Int: the word is copied
+          (print (chan-recv (chan-rx c)))      ; 10
+          0)))))
 ```
 
 ## See Also

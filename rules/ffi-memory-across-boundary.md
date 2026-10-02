@@ -9,6 +9,7 @@ Memory C returns is C's: if C `malloc`ed it, Zyl must `free` it, and a Zyl `Stri
 ## Good
 
 ```lisp
+(capabilities ffi)
 (use allocator/allocator)
 
 (extern "strdup" (String) Ptr)

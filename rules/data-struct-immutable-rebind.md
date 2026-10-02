@@ -9,8 +9,12 @@
 ## Bad
 
 ```lisp
-(set! (struct-get p "x") 10)
-;; E_MUT_CONFLICT: set! target must be a plain variable name bound via let-mut
+(defstruct Point (x Int) (y Int))
+(defn main ()
+  (let p (make-Point 1 2)
+    (begin
+      (set! (struct-get p "x") 10)   ; E_MUT_CONFLICT: set! target must be a plain variable
+      0)))
 ```
 
 ## Good

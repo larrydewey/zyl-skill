@@ -10,21 +10,27 @@
 
 ```lisp
 (defn first-of (a d1) a)          ; W_UNUSED_PARAMETER, and noise
-(match xs (Cons h t h) (Nil 0))   ; no warning, but `t` reads as if it mattered
+(defn head-or-zero (xs)
+  (match xs (Cons h t h) (Nil 0)))  ; no warning, but `t` reads as if it mattered
 ```
 
 ## Good
 
 ```lisp
+(capabilities io)
 (defn first-of (a _) a)
-(match xs (Cons h _ h) (Nil 0))
-(let _ (file-close fd) content)   ; run for effect
-(defn handler (_msg) 0)           ; named but exempt
+(defn head-or-zero (xs)
+  (match xs (Cons h _ h) (Nil 0)))
+(defn read-all ((path String))
+  (let fd (file-open path "r")
+    (let content (file-read fd 4096)
+      (let _ (file-close fd) content))))   ; run for effect
+(defn handler (_msg) 0)                    ; named but exempt
 ```
 
 ## Notes
 
-- Warnings (`W_UNUSED_FUNCTION`, `W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`) go to stderr and never stop a build. `main` is exempt from `W_UNUSED_FUNCTION`.
+- Warnings (`W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`) go to stderr and never stop a build. There is no unused-function warning: `W_UNUSED_FUNCTION` was removed with the other codes nothing raised.
 - Match-arm pattern binders are checked for shadowing but not for being unused, so an unused `t` above is silent; write `_` anyway.
 - The language server publishes these warnings (the unused check's `W_UNUSED_*` and `W_SHADOWED_BINDING`) as Warning diagnostics.
 - Hygiene-renamed macro binders keep their leading underscore.

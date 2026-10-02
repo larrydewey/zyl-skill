@@ -4,16 +4,18 @@
 
 ## Why It Matters
 
-A match whose arms start with literals is an implementation extension compiled to an `if` chain. Without a trailing `_` it is `E_MATCH_NONEXHAUSTIVE: a literal-pattern match must end with a `_` arm` (raised at parse time). Literal patterns bind no names: refer to the value through the scrutinee's own variable. Mixing literal and constructor arms in one `match` is now rejected at parse time with `E_MATCH_MIXED_PATTERNS` (see [match-mixed-patterns](match-mixed-patterns.md)).
+A match whose arms start with literals is an implementation extension compiled to an `if` chain. Without a trailing `_` it is `E_MATCH_NONEXHAUSTIVE` ("a literal-pattern match must end with a `_` arm", raised at parse time). Literal patterns bind no names: refer to the value through the scrutinee's own variable. Mixing literal and constructor arms in one `match` is now rejected at parse time with `E_MATCH_MIXED_PATTERNS` (see [match-mixed-patterns](match-mixed-patterns.md)).
 
 ## Bad
 
 ```lisp
-(match code (200 "OK") (404 "Not Found"))
-;; E_MATCH_NONEXHAUSTIVE: a literal-pattern match must end with a `_` arm
+(defn text (code)
+  (match code (200 "OK") (404 "Not Found")))   ; E_MATCH_NONEXHAUSTIVE: must end with `_`
+```
 
-(match v (0 "zero") (Some x "some") (_ "o"))
-;; E_MATCH_MIXED_PATTERNS: literal patterns and constructor patterns cannot be mixed
+```lisp
+(defn kind (v)
+  (match v (0 "zero") (Some _ "some") (_ "o")))  ; E_MATCH_MIXED_PATTERNS
 ```
 
 ## Good
@@ -31,6 +33,13 @@ A match whose arms start with literals is an implementation extension compiled t
     ("start" 1)                        ; strings compare by content
     ("stop" 2)
     (_ 0)))
+
+(defn main ()
+  (begin
+    (print (status-text 302))                 ; Redirect
+    (print (status-text 503))                 ; Server Error
+    (print (command (str-concat "st" "op")))  ; 2
+    0))
 ```
 
 ## Notes

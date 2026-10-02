@@ -9,12 +9,25 @@
 ## Bad
 
 ```lisp
+(capabilities ffi)
 (extern "puts" (String) Int)
-(ffi-call "puts" (ffi-pin "hello") 1000)   ; E_TYPE_MISMATCH: (Pin String) with String
+(defn main () (begin (ffi-call "puts" (ffi-pin "hello") 1000) 0))   ; E_TYPE_MISMATCH: (Pin String) with String
+```
 
+```lisp
+(capabilities ffi)
 (extern "puts" ((Pin String)) Int)         ; type-checks, but puts gets a char** and prints garbage
-(ffi-pin (fn (x) x))                       ; E_FFI_TYPE_NOT_PINNABLE: a function cannot be pinned
-(ffi-unpin p 3)                            ; E_MALFORMED_FORM: exactly one operand
+(defn main () (begin (ffi-call "puts" (ffi-pin "hello") 1000) 0))
+```
+
+```lisp
+(capabilities ffi)
+(defn main () (let _p (ffi-pin (fn (x) x)) 0))   ; E_FFI_TYPE_NOT_PINNABLE: a function cannot be pinned
+```
+
+```lisp
+(capabilities ffi)
+(defn main () (let p (ffi-pin 1) (begin (print (ffi-unpin p 3)) 0)))   ; E_MALFORMED_FORM: exactly one operand
 ```
 
 ## Good
@@ -24,14 +37,15 @@ int64_t my_divmod(int64_t a, int64_t b, int64_t *rem) { *rem = a % b; return a /
 ```
 
 ```lisp
-(extern "my_divmod" (Int Int (Pin Int)) Int)
-
+(capabilities ffi)
+(extern "my_divmod" (Int Int (Pin Int)) Int :timeout 1000)
 (defn print-divmod (a b)
   (let slot (ffi-pin 0)                       ; placeholder slot for the out-param
-    (let q (ffi-call "my_divmod" a b slot 1000)
+    (let q (ffi-call "my_divmod" a b slot)
       (begin
         (print q)                             ; (print-divmod 17 5): 3
         (print (ffi-unpin slot))))))          ; 2, written by C
+(defn main () (begin (print-divmod 17 5) 0))
 ```
 
 ## Notes
@@ -39,7 +53,7 @@ int64_t my_divmod(int64_t a, int64_t b, int64_t *rem) { *rem = a % b; return a /
 - Slots are never freed individually; the pin arena (256 KiB blocks) is released at exit. Every `ffi-pin` holds its slot until then.
 - A `Secret` argument to a foreign call must go through `ffi-pin` (`E_FFI_PIN_REQUIRED`); other values need not.
 - `stdlib/ffi/ffi.zyl` wrappers: `ffi-pin-value` and `ffi-unpin-value` are the forms as functions (same types); `ffi-safe-call` and `ffi-pin-call-unpin` only wrap an already-computed result in `Ok`, so they catch nothing the call raised before they were entered.
-- In a package, `ffi-pin` and `ffi-unpin` need the `ffi` capability.
+- `ffi-pin` and `ffi-unpin` need the `ffi` capability, in a package and in a lone file (`(capabilities ffi)`).
 
 ## See Also
 

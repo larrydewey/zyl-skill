@@ -15,6 +15,7 @@ An actor's uncaught panic ends only that actor; its message waits for the joiner
 ## Bad
 
 ```lisp
+(capabilities actor)
 (defn main ()
   (let _ (spawn (fn () (panic "boom")))
     (begin (print "main done") 0)))
@@ -25,6 +26,7 @@ An actor's uncaught panic ends only that actor; its message waits for the joiner
 ## Good
 
 ```lisp
+(capabilities actor)
 (use actor/actor)
 (defn main ()
   (let a (spawn (fn () (panic "boom")))

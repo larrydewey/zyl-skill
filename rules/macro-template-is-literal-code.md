@@ -10,11 +10,16 @@
 
 ```lisp
 (defmacro my-unless (c body) `(if ,c 0 ,body))
-;; error[E_MALFORMED_FORM]: malformed quasiquote: `if` is a name; write ,name for its value
+(defn main () (my-unless false 1))
+; error[E_MALFORMED_FORM]: malformed quasiquote: `if` is a name; write ,name for its value
+```
+
+```lisp
 (defmacro log2 (e)
   (print "evaluating")
   e)
-;; error[E_MALFORMED_FORM]: malformed `defmacro` form
+(defn main () (log2 0))
+; error[E_MALFORMED_FORM]: malformed `defmacro` form
 ```
 
 ## Good
@@ -24,7 +29,14 @@
 (defmacro my-when (c body) (my-unless (not c) body))   ; macros may use macros
 (defmacro log-and-return (e)
   (begin (print "evaluating") e))
-(defmacro framed (a &rest xs) `(,a ,@xs 0))            ; a quasiquote as list DATA: (framed 9 8) is [9, 8, 0]
+(defmacro framed (a &rest xs) `(,a ,@xs 0))            ; a quasiquote as list data
+
+(defn main ()
+  (begin
+    (my-when true (print "yes"))                       ; yes
+    (print (log-and-return 5))                         ; evaluating, then 5
+    (print (framed 9 8))                               ; [9, 8, 0]
+    0))
 ```
 
 ## Notes

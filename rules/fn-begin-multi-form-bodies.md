@@ -14,15 +14,19 @@ The places that take exactly one expression are where multi-step code still goes
 
 ## Bad
 
-```lisp
-(if (> x 0)
-  (print "positive")
-  (print "not positive")
-  (print "done"))                 ; E_MALFORMED_FORM: a form after the else branch
+Each definition is its own error; the compiler reports the first.
 
-(match opt
-  (Some n (print n) n)            ; E_NESTED_PATTERN
-  (None 0))
+```lisp
+(defn report (x)
+  (if (> x 0)
+    (print "positive")
+    (print "not positive")
+    (print "done")))              ; E_MALFORMED_FORM: a form after the else branch
+
+(defn show-n (opt)
+  (match opt
+    (Some n (print n) n)          ; E_NESTED_PATTERN
+    (None 0)))
 
 (defmacro two (a b) (print a) (print b))   ; E_MALFORMED_FORM
 ```
@@ -30,22 +34,27 @@ The places that take exactly one expression are where multi-step code still goes
 ## Good
 
 ```lisp
-(begin
-  (if (> x 0)
-    (print "positive")
-    (print "not positive"))
-  (print "done"))
-
-(match opt
-  (Some n (begin (print n) n))
-  (None 0))
-
 (defmacro two (a b) (begin (print a) (print b)))
+
+(defn report (x)
+  (begin
+    (if (> x 0)
+      (print "positive")
+      (print "not positive"))
+    (print "done")))
+
+(defn show-n (opt)
+  (match opt
+    (Some n (begin (print n) n))
+    (None 0)))
 
 (defn main ()
   (let x 10
     (let x 20 (print x))          ; 20 (W_SHADOWED_BINDING)
     (print x)                     ; 10: the inner let does not leak
+    (report x)                    ; positive, then done
+    (show-n (Some 3))             ; 3
+    (two "a" "b")                 ; a, then b
     0))
 ```
 

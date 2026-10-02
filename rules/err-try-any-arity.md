@@ -10,20 +10,21 @@ Historical note. Until 2026-09-24, a panic raised inside some functions of two o
 
 ```lisp
 ; workaround from before the fix: a one-argument helper just to raise the error
-(defn fail1 (msg) (panic msg))
-(defn check (a b) (if (> a b) (fail1 "too big") a))
+(defn fail1! (msg) (panic msg))
+(defn check! (a b) (if (> a b) (fail1! "too big") a))
 ```
 
 ## Good
 
 ```lisp
-(defn check (a b) (if (> a b) (panic "too big") a))
-(try (check 5 1) (catch e 0))        ; 0
+(defn check! (a b) (if (> a b) (panic "too big") a))
+(defn main () (begin (print (try (check! 5 1) (catch _ 0))) 0))   ; 0
 ```
 
 ## Notes
 
 - `try` still catches only panics (`panic`, failed assertions, contracts), not `Err` values ([err-try-catches-panic-not-err](err-try-catches-panic-not-err.md)).
+- A function that calls `panic` ends its name in `!` (`check!`); a plain name is `W_PANIC_UNMARKED` in a program ([err-partial-ops-spelled](err-partial-ops-spelled.md)).
 - Prefer `Result` for failures a caller is expected to handle ([err-result-for-expected-failures](err-result-for-expected-failures.md)).
 
 ## See Also

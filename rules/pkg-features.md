@@ -22,6 +22,8 @@ Features are unified across the graph: the union of all requests is computed and
 
 ## Notes
 
+- This is `tests/packages/features` in the repository (verified 2026-10-02): the app requests `simd`, so `fast` is visible, while `wide`, behind the unrequested `utf16`, is `E_PKG_UNKNOWN_SYMBOL` in an import list.
+
 - An optional dependency named in a `(feature ...)` enters the graph only when that feature is in the union.
 - `(defn f () (feature-gate simd ...))` is `E_PKG_FEATURE_NESTED`: gate the whole definition instead, `(feature-gate simd (defn f () ...))`.
 

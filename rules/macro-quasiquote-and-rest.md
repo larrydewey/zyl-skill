@@ -16,13 +16,18 @@ Spliced arguments are the caller's code and keep their names: hygiene still rena
 ## Bad
 
 ```lisp
-(defmacro bad (c &rest body) (if c ,@body 0))      ; E_MALFORMED_FORM: an if has fixed parts
-(defmacro as-list (&rest xs) (list ,@xs))          ; E_MALFORMED_FORM: splice into Cons fields
-(defmacro whole (&rest xs) ,@xs)                   ; E_MALFORMED_FORM: not inside a list of expressions
-(defmacro m (a &rest) a)                           ; E_MALFORMED_PARAMETER: &rest needs one name, last
-(defmacro one-plus (a &rest b) (+ a 1))
-(one-plus)                                         ; E_ARITY_MISMATCH: takes at least 1 argument(s)
+(defmacro bad (c &rest body) (if c ,@body 0))      ; an if has fixed parts
+(defn main () (bad true (print "a") 1))            ; E_MALFORMED_FORM: two forms cannot fill one slot
 ```
+
+The same template compiles at a call with exactly one body form, which fills the slot; the error appears at the first call that passes another number. The other shapes are rejected wherever they are used:
+
+| Template | Result |
+|---|---|
+| `(defmacro as-list (&rest xs) (list ,@xs))` | `E_MALFORMED_FORM`: "`,@` cannot splice into a constructor's fields" |
+| `(defmacro whole (&rest xs) ,@xs)` | `E_MALFORMED_FORM`: "`,@` splices into a list of expressions, so it cannot be a whole expression" |
+| `(defmacro m (a &rest) a)` | `E_MALFORMED_PARAMETER`: "`&rest` must be followed by exactly one parameter name, at the end of the list" |
+| `(one-plus)` for `(defmacro one-plus (a &rest b) (+ a 1))` | `E_ARITY_MISMATCH`: "macro `one-plus` takes at least 1 argument(s), but this call passes 0" |
 
 ## Good
 
@@ -37,6 +42,10 @@ Spliced arguments are the caller's code and keep their names: hygiene still rena
   (begin
     (my-when true (print "one") (print "two"))
     (print (sum 1 2 3))                             ; 6
+    (print (sum))                                   ; 0
+    (print (count-args 5 6 7))                      ; 3
+    (print (as-list 1 2))                           ; [1, 2]
+    (print (framed 9 8 7))                          ; [9, 8, 7, 0]
     0))
 ```
 

@@ -8,11 +8,13 @@
 
 ## Bad
 
+Each line is its own error; the compiler reports the first.
+
 ```lisp
 (deftype Option (Some T) None)   ; E_DUPLICATE_DEFINITION: type `Option`
 (deftype Mb (Some T) (Nope))     ; E_DUPLICATE_VARIANT: prelude constructor
-(defn compose (f g) ...)         ; E_DUPLICATE_DEFINITION
-(defn min (a b) ...)             ; E_DUPLICATE_DEFINITION
+(defn compose (f g) (fn (x) (f (g x))))  ; E_DUPLICATE_DEFINITION
+(defn min (a b) (if (< a b) a b))        ; E_DUPLICATE_DEFINITION
 ```
 
 ## Good
@@ -27,8 +29,8 @@
 
 - Types/constructors: `Option`/`Some`/`None`, `Result`/`Ok`/`Err`, `List`/`Cons`/`Nil`.
 - `core/core`: `identity const flip compose apply abs max min clamp signum square cube xor nand nor implies when unless is-bool is-zero is-even is-odd print-int print-float print-string print-bool option-to-result option-from-result result-to-option result-from-option`.
-- `core/option`: `option-some option-none option-is-some option-is-none option-unwrap option-unwrap-or option-expect option-map option-flatmap option-and option-or option-inspect`.
-- `core/result`: `result-ok result-err result-is-ok result-is-err result-unwrap result-unwrap-or result-expect result-map result-flatmap result-and-then result-or-else result-and result-or result-inspect`.
+- `core/option`: `option-some option-none option-is-some option-is-none option-unwrap option-unwrap-or option-expect! option-map option-flatmap option-and option-or option-inspect`.
+- `core/result`: `error result-ok result-err result-is-ok result-is-err result-unwrap result-unwrap-or result-expect! result-map result-flatmap result-and-then result-or-else result-and result-or result-inspect`.
 - `core/list`: `is-nil list-car list-cdr list-rest car cdr cadr caddr cddr list-length list-append list-reverse list-reverse-acc list-sum`, plus the helpers `zyl-qq-append` (quasiquote splicing), `list-show-items`, `list-debug-items`, `list-compare`, `list-hash`.
 - `core/show`: traits `Show Debug Eq Ord Hash Clone Secret` and helpers `show-ord-int show-mix show-str-hash`.
 

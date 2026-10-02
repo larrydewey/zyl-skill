@@ -15,13 +15,14 @@
 | Even field count for records built with nested constructions | re-tested 2026-09-25: odd counts are correct ([boot-field-parity-lifted](boot-field-parity-lifted.md)); `sexp_balance.zyl`'s even `CheckState` is a leftover. |
 | Bitwise operators cannot be used in compiler source | gone: `mir.zyl` uses `bit-and`, `bit-or`, `shl`, `shr`; the optimizer still does not fold them, by choice. |
 | Compare built strings with `str-eq`, not `=` | `=` compares String contents wherever the type is String, which sound typing now always knows ([pass-string-eq-in-compiler](pass-string-eq-in-compiler.md)). |
+| A misspelled constructor in the last arm silently matches everything | lifted 2026-10-02: a capitalized arm head no type declares is `E_UNKNOWN_CONSTRUCTOR` ([match-unknown-constructor](match-unknown-constructor.md)); a lowercase arm head is still a binder. |
+| Integer arithmetic wraps silently; division by zero is SIGFPE | lifted 2026-10-02: Int `+ - *` is checked by default (`E_OVERFLOW`), and `/` `%` need a nonzero literal divisor or `div!`/`rem!`/`div?`/`rem?` (`E_PARTIAL_OPERATION`); the compiler's own source follows the same rules ([fn-numeric-policy](fn-numeric-policy.md), [fn-division-total](fn-division-total.md)). |
 | Two definitions of one type name miscompile silently | now a type error (`cannot unify Shape with Shape`), still to be avoided ([boot-one-deftype-per-name](boot-one-deftype-per-name.md)). |
 
 ## Still active (old SKILL.md §2 numbering)
 
 | # | Rule |
 |---|---|
-| 3 | [match-misspelled-last-arm](match-misspelled-last-arm.md) |
 | 4 | [boot-parens-per-file](boot-parens-per-file.md) |
 | 5 | [boot-one-deftype-per-name](boot-one-deftype-per-name.md) |
 | 7 | [proj-buf-append-appends](proj-buf-append-appends.md) |

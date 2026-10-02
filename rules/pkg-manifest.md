@@ -31,7 +31,8 @@ The manifest is an S-expression read by the language's own parser. A missing req
 - Two `dep` entries for one name: `E_PKG_DUPLICATE_DEP`.
 - `(zyl "5.0")` is a minimum compiler (`E_PKG_COMPILER_TOO_OLD`); the only edition is `"2026"` (`E_PKG_UNKNOWN_EDITION`).
 - Root-only fields: `(overrides ...)`, `(deny-capabilities ...)`.
-- Without a `zyl.pkg`, a file is package `local/main` and nothing is enforced.
+- `(numeric checked|wrapping|saturating)` inside `(package ...)` sets the package's Int overflow policy ([fn-numeric-policy](fn-numeric-policy.md)); one policy per package.
+- Without a `zyl.pkg`, a file is package `local/main` (version 0). It still gets no capabilities unless it declares them itself with a top-level `(capabilities ...)` form, enforced exactly like a manifest's ([pkg-lone-file-capabilities](pkg-lone-file-capabilities.md)).
 - `zyl new owner/name` creates `name/zyl.pkg` and `name/name.zyl`.
 
 ## See Also

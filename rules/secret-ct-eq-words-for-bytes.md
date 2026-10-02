@@ -9,18 +9,28 @@
 ## Bad
 
 ```lisp
+(use math/words)
 (defn tag-eq (a b n i)
   (if (>= i n) 1
     (if (!= (w-get a i) (w-get b i)) 0 (tag-eq a b n (+ i 1)))))   ; early exit
+(defn main () (begin (print (tag-eq (w-from-string "ab") (w-from-string "ax") 2 0)) 0))   ; 0, after a time that leaks the prefix
 ```
 
 ## Good
 
 ```lisp
+(capabilities secret)
+(use math/words)
 (use math/secret/secret)
-(if (ct-eq-words-bool expected-tag got-tag 16)   ; one public accept/reject bit
-  (Some plaintext)
-  None)
+(defn open-if-valid (expected-tag got-tag plaintext)
+  (if (ct-eq-words-bool expected-tag got-tag 16)   ; one public accept/reject bit
+    (Some plaintext)
+    None))
+(defn main ()
+  (let t (w-from-hex "000102030405060708090a0b0c0d0e0f")
+    (begin
+      (print (match (open-if-valid t (w-from-hex "000102030405060708090a0b0c0d0e0f") "hi") (Some p p) (None "rejected")))   ; hi
+      0)))
 ```
 
 ## Notes

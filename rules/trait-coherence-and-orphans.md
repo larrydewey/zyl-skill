@@ -32,7 +32,17 @@ The `trait` declaration types calls of its methods and each impl's methods, and 
 (trait Describe (describe (self) Int))
 (impl Describe Int (defn describe (self) self))
 
+(defstruct Handle (fd Int))
+(trait Dump (dump (self) Int))
+(impl-not Dump Handle)
+(defstruct Conn (host String) (h Handle))
 (impl Dump Conn (defn dump (self) (str-length self.host)))   ; public fields only: allowed
+
+(defn main ()
+  (begin
+    (print (Describe.describe 7))                                         ; 7
+    (print (Dump.dump (make-Conn "db.local" (make-Handle 3))))            ; 8
+    0))
 ```
 
 ## Notes

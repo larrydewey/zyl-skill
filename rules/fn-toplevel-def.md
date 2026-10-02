@@ -21,8 +21,9 @@ Until 2026-09-24 a top-level `def` was unreadable in compiled code (`E_UNBOUND_V
 (pub def version "1.0")                     ; exported from its module
 (defn main ()
   (begin
-    (print max-size)
-    (print app-name)
+    (print max-size)                         ; 1000
+    (print app-name)                         ; MyApp
+    (print version)                          ; 1.0
     0))
 ```
 

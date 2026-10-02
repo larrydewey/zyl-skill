@@ -4,26 +4,32 @@
 
 ## Why It Matters
 
-An arm body shaped like `(+ 1 (f n m) (g n))` is rejected during ICNF lowering with `E_MATCH_ARM_COMPLEX: match arm combines a constant with multiple calls - nest sums through helper functions`. The error is a guard against a shape older stage binaries miscompiled (it computed 0), and it carries **no source location**, so search your `match` arms for the shape. The broader old rule ("any binop over two calls computes 0") no longer reproduces: `(+ (size l) (size r))` and `(+ 1 (+ (size l) (size r)))` compile correctly.
+An arm body shaped like `(+ 1 (f n m) (g n))` is rejected with a located `E_MATCH_ARM_COMPLEX` ("match arm combines a constant with multiple calls", help: bind the calls with `let` first, or nest the sum through a helper function). The error is a guard against a shape older stage binaries miscompiled (it computed 0). It is raised during ICNF lowering, so `zyl check`, which stops after type inference, does not report it; a build does. The broader old rule ("any binop over two calls computes 0") no longer reproduces: `(+ (size l) (size r))` and `(+ 1 (+ (size l) (size r)))` compile correctly.
 
 ## Bad
 
 ```lisp
-(match t
-  (Node v l r (+ 1 (size l) (size r))))   ; E_MATCH_ARM_COMPLEX, located
+(deftype Tree (Node Int Tree Tree) (Leaf))
+(defn size (t)
+  (match t
+    (Leaf 0)
+    (Node _ l r (+ 1 (size l) (size r)))))   ; E_MATCH_ARM_COMPLEX, located
 ```
 
 ## Good
 
 ```lisp
-(match t
-  (Node _ l r
-    (let a (size l)
-      (let b (size r)
-        (+ 1 a b)))))
+(deftype Tree (Node Int Tree Tree) (Leaf))
+(defn size (t)
+  (match t
+    (Leaf 0)
+    (Node _ l r
+      (let a (size l)
+        (let b (size r)
+          (+ 1 a b))))))
 
-;; or nest the sum explicitly
-(match t (Node _ l r (+ 1 (+ (size l) (size r)))))
+(defn size2 (t)                                ; or nest the sum explicitly
+  (match t (Leaf 0) (Node _ l r (+ 1 (+ (size2 l) (size2 r))))))
 ```
 
 ## Notes

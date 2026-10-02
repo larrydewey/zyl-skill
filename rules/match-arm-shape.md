@@ -9,20 +9,25 @@ The arm is positional: the last element is the body, everything between the cons
 ## Good
 
 ```lisp
-(match opt
-  (Some x (* x 10))
-  (None 0))
-
-(match r
-  ((Ok v) v)              ; grouped form, identical meaning
-  ((Err _) 0))
-
 (defstruct Point (x) (y))
-(match p (Point x y (+ x y)))    ; structs match as one-variant ADTs
 
-(match xs
-  (Nil Nil)                      ; not `Nil Nil` outside parens
-  (Cons x rest (Cons (f x) (my-map f rest))))
+(defn scale (opt)
+  (match opt
+    (Some x (* x 10))
+    (None 0)))
+
+(defn ok-or-zero (r)
+  (match r
+    ((Ok v) v)                   ; grouped form, identical meaning
+    ((Err _) 0)))
+
+(defn sum-point (p)
+  (match p (Point x y (+ x y)))) ; structs match as one-variant ADTs
+
+(defn my-map (f xs)
+  (match xs
+    (Nil Nil)                    ; not `Nil Nil` outside parens
+    (Cons x rest (Cons (f x) (my-map f rest)))))
 ```
 
 ## Notes

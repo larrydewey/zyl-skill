@@ -4,23 +4,37 @@
 
 ## Why It Matters
 
-`(print "Total:" n)` prints two lines, not one. `print` is a statement: its type is `Unit`, so using its value as a number is `E_TYPE_MISMATCH`, and a `main` ending in `print` does not type-check ([fn-main-and-exit-status](fn-main-and-exit-status.md)). Standard output is buffered while `PANIC:` messages go straight to stderr, so a panic line can appear **before** output printed earlier, and a crash by signal (SIGFPE, SIGSEGV) loses whatever was still buffered.
+`(print "Total:" n)` prints two lines, not one. `print` is a statement: its type is `Unit`, so using its value as a number is `E_TYPE_MISMATCH`, and a `main` ending in `print` does not type-check ([fn-main-and-exit-status](fn-main-and-exit-status.md)). Standard output is buffered. An uncaught panic flushes it before printing the `PANIC:` line and its backtrace to stderr, so earlier output is never lost to a panic; a crash by signal (SIGSEGV, a compiler or runtime bug) still loses whatever was buffered.
 
 ## Bad
 
 ```lisp
-(print "total: " n)                 ; two lines
-(let r (print x) (+ r 1))           ; E_TYPE_MISMATCH: arithmetic on Unit
-(defn main () (print "done"))       ; E_TYPE_MISMATCH: main must return Int
+(defn main ()
+  (let n 3
+    (begin
+      (print "total: " n)           ; two lines: total: and 3
+      0)))
+```
+
+```lisp
+(defn main ()
+  (let r (print 1)
+    (begin
+      (print (+ r 1))               ; E_TYPE_MISMATCH: arithmetic on Unit
+      0)))
 ```
 
 ## Good
 
 ```lisp
 (defn label (s) (print (str-concat "result: " s)))
-(label "disk full")                 ; one line: result: disk full
 
-(print (str-concat "Total: " (Show.show n)))   ; one line, number included
+(defn main ()
+  (let n 3
+    (begin
+      (label "disk full")                            ; result: disk full
+      (print (str-concat "Total: " (Show.show n)))   ; Total: 3
+      0)))
 ```
 
 ## Notes

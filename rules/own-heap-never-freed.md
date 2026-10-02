@@ -1,6 +1,6 @@
 # own-heap-never-freed
 
-> Values that escape into the heap live until process exit; per-call regions reclaim everything the compiler proves short-lived and the reuse pass updates unique dead values in place, so for bulk temporaries use `with-region`, or an `allocator/allocator` arena for raw memory.
+> Values that escape into the heap live until process exit; per-call regions reclaim everything the compiler proves short-lived and the reuse pass updates unique dead values in place, so for bulk temporaries use `with-region` (programs have no raw-memory arena).
 
 ## Why It Matters
 
@@ -21,41 +21,44 @@ Temporaries that die inside the call are reclaimed: a program that built and dro
 ## Bad
 
 ```lisp
-(def seen (vec-create-default 16))        ; global: everything pushed here is heap
-(defn step (i)
-  (vec-push seen (Some i)))               ; each (Some i) escapes: kept to exit
+(deftype WList (WC Int WList) (WN))
+(defn build (n acc) (if (= n 0) acc (build (- n 1) (WC n acc))))
+(defn wlen (l) (match l (WN 0) (WC _ r (+ 1 (wlen r)))))
+
+(def table (build 100000 (WN)))         ; a top-level def is heap: these cells live until exit
+
+(defn main () (begin (print (wlen table)) 0))
 ```
 
 ## Good
 
 ```lisp
+(deftype WList (WC Int WList) (WN))
+(defn build (n acc) (if (= n 0) acc (build (- n 1) (WC n acc))))
+(defn wsum (l) (match l (WN 0) (WC x r (+ x (wsum r)))))
+
 (defn total (n)
   (wsum (build n (WN))))                  ; the list dies in this call: frame region
 
 (defn bounded (n)                         ; explicit, capped arena for bulk work
   (with-region (arena :block 65536 :limit 1048576)
     (wsum (build n (WN)))))               ; only the Int escapes
+
+(defn loop (i acc) (if (= i 0) acc (loop (- i 1) (+ acc (total 1000)))))
+
+(defn main () (begin (print (loop 20000 0)) (print (bounded 100)) 0))
 ```
 
-For raw memory (bytes addressed as `Ptr`), use an explicit arena:
+Built 20000 times, the 1000-cell list in `total` peaks at 12 MB; compiled with `ZYL_REGIONS=0`, which sends every cell to the heap, the same program peaks at 630 MB.
 
-```lisp
-(use allocator/allocator)
-(let arena (arena-create 1048576)
-  (let result (work arena items)
-    (begin (arena-destroy arena) result)))
-```
+## Raw memory
 
-## Allocator API
-
-`(arena-create block-size)`, `(arena-alloc a n)`, `(arena-alloc-zeroed a n)`, `(arena-reset a)`, `(arena-destroy a)`, `(arena-used a)`, `(arena-capacity a)`, `(alloc-malloc n)`, `(alloc-free p)`, `(alloc-read-int addr)`, `(alloc-write-int addr v)`, `(str-intern arena s)`, `(buf-append dst src)`.
+There is none for programs. `allocator/allocator` (`arena-create`, `alloc-malloc`, `alloc-read-int`, ...) is for the compiler and the standard library: a program that calls `arena-create` is `E_FFI_RESTRICTED` ("is a raw-memory entry: it is for the compiler, not for programs"). Use `with-region` for bulk temporaries and `bytebuf` for bytes.
 
 ## Notes
 
 - Classes are field-insensitive: a variant, its fields and anything read out of it share one level, so one escaping use keeps the whole structure in the heap.
-- `(arena-create block-size)` gives an `Arena` handle: `block-size` below 16 means the 64 KiB default. `arena-alloc`/`arena-alloc-zeroed` give a `Ptr`. `arena-reset` frees all blocks; `arena-destroy` frees everything (handle dead).
-- Collections take a typed `Arena`: `(vec-create arena cap)`, `intmap-new-with`, `set-create` with a handle from `arena-create` (passing `0` is `E_TYPE_MISMATCH`), or `vec-create-default`/`intmap-new`/`set-create-default cap` for a new private arena that is never freed (one arena per call inside a loop). Release arena-backed collections with `arena-reset`/`arena-destroy`, not `vec-free`/`intmap-free`.
-- Arena memory is raw: what you get is a `Ptr`, read and written with `alloc-read-int`/`alloc-write-int`, not typed Zyl values.
+- Collections take no arena: `vec-new`, `vec-new-cap cap`, `intmap-new cap` and `set-create cap` allocate in the region the calling frame runs in, so a collection that does not outlive its frame is reclaimed on return. `vec-free` and `intmap-free` release nothing; they return an empty value, and the old storage goes with its region.
 - The compiler itself gains little from regions (its build time and peak memory are unchanged): its data mostly escapes into results or global tables.
 - `ZYL_REGIONS=0` at compile time makes every site H (the old behaviour), for bisecting a suspected region bug.
 

@@ -9,15 +9,17 @@ The body is never evaluated at expansion time, so a guarding `if` does not stop 
 ## Bad
 
 ```lisp
-(defmacro countdown (n) (if (= n 0) 0 (countdown (- n 1))))
-(defmacro ping (x) (pong x))
+(defmacro countdown (n) (if (= n 0) 0 (countdown (- n 1))))   ; E_MACRO_NON_TERMINATION
+(defmacro ping (x) (pong x))                                   ; so is this pair, through each other
 (defmacro pong (x) (ping x))
+(defn main () (+ (countdown 3) (ping 1)))
 ```
 
 ## Good
 
 ```lisp
 (defn countdown (n) (if (= n 0) 0 (countdown (- n 1))))
+(defn main () (countdown 3))
 ```
 
 ## See Also

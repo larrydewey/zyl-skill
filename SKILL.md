@@ -2,7 +2,7 @@
 name: zyl
 description: >
   Expert Zyl knowledge for writing, reviewing and debugging Zyl code and the
-  self-hosted Zyl compiler. 184 rules in 26 categories across five tiers
+  self-hosted Zyl compiler. 189 rules in 26 categories across five tiers
   (foundations, language model, systems, engineering, compiler internals),
   prioritized by impact, plus reference tables for error codes, built-ins,
   the standard library, the pipeline and spec-vs-implementation status.
@@ -49,8 +49,8 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
 
 1. **Type checking is sound and strict.** Every type error in the program is reported (`E_TYPE_MISMATCH`, `E_INFINITE_TYPE`, `E_CANNOT_INFER`, `E_UNBOUND_VARIABLE`), then the compile fails. Conditions are `Bool`, arithmetic is `Int` or `Float` with no mixing and no implicit conversion, statements are `Unit` (the literal is `unit`), both branches of an `if` share a type, and `main` is `() -> Int`. Every trait call resolves statically, and channels are typed. → [type-sound-checking](rules/type-sound-checking.md)
 2. **Lists have literal syntax; most other punctuation is invalid.** `[a b c]`, `(list a b c)` and `'(1 2 3)` build a `List` of one element type, and `` `(1 ,x ,@xs) `` fills in holes. A name inside quoted data, and a `,`/`,@` outside a quasiquote or macro template, is `E_MALFORMED_FORM`. `@ # $ | ^ \`, a lone `.` and non-ASCII bytes outside strings and comments are a located `E_INVALID_CHAR`. → [syn-list-literals-and-quote](rules/syn-list-literals-and-quote.md), [syn-no-stray-characters](rules/syn-no-stray-characters.md)
-3. **Matches: spell constructors exactly, one level at a time, `_` last.** A nested pattern is `E_NESTED_PATTERN` and a non-exhaustive match is an error, but an arm head that is not a known constructor is still a silent catch-all: a misspelled constructor with no fields binds a variable. → [match-misspelled-last-arm](rules/match-misspelled-last-arm.md)
-4. **Some things still compile and do the wrong thing.** `print` of a record with no `Show` prints its address, and `(print true)` prints `1`. Integer arithmetic wraps, and division by zero kills the process with SIGFPE. → [fn-integer-arith-unchecked](rules/fn-integer-arith-unchecked.md), [references/pitfalls](references/pitfalls.md)
+3. **Matches: spell constructors exactly, one level at a time, `_` last.** A nested pattern is `E_NESTED_PATTERN`, a non-exhaustive match is an error, and a capitalized arm head no type declares is `E_UNKNOWN_CONSTRUCTOR`. Write catch-all binders in lowercase. → [match-unknown-constructor](rules/match-unknown-constructor.md)
+4. **A runtime stop is always spelled.** Int overflow traps with `E_OVERFLOW` unless the file says `(numeric wrapping)`; `/` and `%` need a nonzero literal or `div!`/`div?`; partial library functions are `name!` or `name?`. `print` of a record with no `Show` still prints its address. → [fn-numeric-policy](rules/fn-numeric-policy.md), [fn-division-total](rules/fn-division-total.md), [err-partial-ops-spelled](rules/err-partial-ops-spelled.md), [references/pitfalls](references/pitfalls.md)
 5. **Mutation is only `set!` on a `let-mut` name.** Params and `let` are immutable, struct fields are immutable (rebind the whole value), closures capture by value and cannot `set!` captures. → [own-let-mut-only-set](rules/own-let-mut-only-set.md)
 6. **Only `if` branches and `match` arms need `begin` for several forms.** `defn`, `let`, `fn`, `while`, `for`, `cond` clauses and `catch` handlers sequence their forms. A form after an `if`'s else branch is `E_MALFORMED_FORM`, and `test` and `defmacro` take exactly one body form. → [fn-begin-multi-form-bodies](rules/fn-begin-multi-form-bodies.md)
 7. **Every foreign symbol needs an `extern`, and every `ffi-call` a timeout.** Declare `(extern "sym" (ParamType ...) ResultType)` with word-sized types (a `Float` crosses only as its bits). End each `ffi-call` with a positive integer literal timeout in milliseconds: it is checked at compile time and enforced at run time (`E_FFI_TIMEOUT`, and the C function is abandoned). `ffi-pin` gives a `(Pin a)`, a pointer to a slot. → [ffi-extern-required](rules/ffi-extern-required.md), [ffi-timeout-always-last](rules/ffi-timeout-always-last.md)
@@ -137,7 +137,8 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`fn-conditionals`](rules/fn-conditionals.md) - Conditions must be `Bool`; an `if` without else and a `cond` without `else` are `Unit`, so give both a final branch whenever their value is used.
 - [`fn-for-has-no-step`](rules/fn-for-has-no-step.md) - `for` has no step clause: the body must `set!` the loop variable, or the loop never ends.
 - [`fn-int-float-separation`](rules/fn-int-float-separation.md) - Never mix `Int` and `Float` in one operation: it is `E_TYPE_MISMATCH`, there is no implicit conversion, and there are no conversion built-ins.
-- [`fn-integer-arith-unchecked`](rules/fn-integer-arith-unchecked.md) **[CRITICAL]** - Guard divisors and overflow yourself: compiled integer arithmetic wraps silently, and division by zero kills the process with SIGFPE, which `try` cannot catch and which discards buffered output.
+- [`fn-numeric-policy`](rules/fn-numeric-policy.md) **[CRITICAL]** - Int `+ - *` are checked by default and overflow is `E_OVERFLOW`; opt out with `(numeric wrapping)` or `(numeric saturating)`, or per operation with `wrapping+` and friends.
+- [`fn-division-total`](rules/fn-division-total.md) **[CRITICAL]** - Divide by a nonzero literal, or write `div!`/`rem!` (stop on zero) or `div?`/`rem?` (Option); any other `/` or `%` is `E_PARTIAL_OPERATION`.
 - [`fn-let-single-binding`](rules/fn-let-single-binding.md) - `let` binds exactly one name; nest `let`s for several, and prefer the bare `(let name value body...)` spelling.
 - [`fn-main-and-exit-status`](rules/fn-main-and-exit-status.md) - Every executable needs `(defn main () ...)` of type `() -> Int`: no parameters, and a body that ends in an Int, which becomes the exit status. End it with an explicit `0`.
 - [`fn-no-named-let-or-early-return`](rules/fn-no-named-let-or-early-return.md) - There is no `return`, named `let` or `let*`: structure code as small tail-recursive helpers with accumulators (tail calls, direct or through a function value, are jumps), or `while` loops.
@@ -162,6 +163,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`data-two-map-types`](rules/data-two-map-types.md) - Pick one map per program: `core/map` (String keys, any values, `Option` results) or `collections/map` (Int keys and values, a default value, arena-backed).
 - [`data-unique-variant-names`](rules/data-unique-variant-names.md) **[CRITICAL]** - Give every variant a name unique across all types in the program, and declare each type name exactly once.
 - [`data-views-and-slices`](rules/data-views-and-slices.md) - Parse and window data without copying: `text/view` gives `StrView` (a substring) and `Cursor` (a parsing position), `collections/slice` gives `Slice` (a window on a Vec's storage); copy only at the end with `view-to-string` or `slice-to-vec`.
+- [`data-typed-field-accessors`](rules/data-typed-field-accessors.md) **[HIGH]** - Read a field with the generated typed accessor `(Point.x p)`; every `defstruct` defines one per field.
 
 ### 4. Pattern Matching (CRITICAL)
 
@@ -172,7 +174,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`match-guards-literal-arms-only`](rules/match-guards-literal-arms-only.md) **[CRITICAL]** - Use `(when cond)` guards only after plain literal alternatives; test constructor fields inside the arm body instead.
 - [`match-literal-requires-underscore`](rules/match-literal-requires-underscore.md) - Literal, OR and range matches must end with `_`, bind nothing, and cannot be mixed with constructor arms.
 - [`match-mixed-patterns`](rules/match-mixed-patterns.md) **[CRITICAL]** - Literal patterns and constructor patterns cannot be mixed in the same `match`; now emits `E_MATCH_MIXED_PATTERNS`.
-- [`match-misspelled-last-arm`](rules/match-misspelled-last-arm.md) **[CRITICAL]** - Spell every constructor in a match arm exactly: an arm head that is not a known constructor is a catch-all that binds nothing.
+- [`match-unknown-constructor`](rules/match-unknown-constructor.md) **[CRITICAL]** - A capitalized arm head that no type declares is `E_UNKNOWN_CONSTRUCTOR`; write catch-all binders in lowercase.
 - [`match-no-nested-patterns`](rules/match-no-nested-patterns.md) **[CRITICAL]** - Match one constructor level at a time: a field position holds only a name or `_`; a nested pattern is `E_NESTED_PATTERN`.
 
 ### 5. Error Handling (CRITICAL)
@@ -182,6 +184,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`err-result-for-expected-failures`](rules/err-result-for-expected-failures.md) - Return `Result` (`Ok`/`Err`) for failures a caller can handle, `Option` (`Some`/`None`) for absence; `error` returns an `Err`, `panic` aborts.
 - [`err-try-catches-panic-not-err`](rules/err-try-catches-panic-not-err.md) **[CRITICAL]** - `try`/`catch` intercepts panics only; an `(Err ...)` value passes straight through it, and the type checker rejects trying to catch one.
 - [`err-try-any-arity`](rules/err-try-any-arity.md) - Catching a `panic` from a call of any arity works now (the 2/4-argument hang was fixed 2026-09-24); remove old workarounds that kept panicking functions at odd arity.
+- [`err-partial-ops-spelled`](rules/err-partial-ops-spelled.md) **[CRITICAL]** - Partial library calls are spelled `name!` (stops on bad input) or `name?` (returns Option); the plain names are gone.
 
 ### 6. Contracts (HIGH)
 
@@ -283,7 +286,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`secret-ct-eq-words-for-bytes`](rules/secret-ct-eq-words-for-bytes.md) **[CRITICAL]** - Compare MACs, tags, hashes and passwords with `ct-eq-words` / `ct-eq-words-bool`, never with `=` or a loop that stops at the first difference.
 - [`secret-declassify-explicitly`](rules/secret-declassify-explicitly.md) - Make a secret-derived value public only through `declassify`, `ct-eq-bool` or `ct-eq-words-bool`, with a comment saying why it is safe.
 - [`secret-five-prohibitions`](rules/secret-five-prohibitions.md) **[CRITICAL]** - Never branch on, index with, divide by, print, or send a `Secret`, and pass it to C only through `ffi-pin`.
-- [`secret-unannotated-helpers-launder`](rules/secret-unannotated-helpers-launder.md) **[CRITICAL]** - Annotate every helper a secret flows through; an unannotated helper silently launders taint.
+- [`secret-unannotated-param-fails`](rules/secret-unannotated-param-fails.md) **[CRITICAL]** - Passing a Secret to a parameter not marked `Secret` is `E_SECRET_UNANNOTATED`; mark the parameter or `declassify`.
 - [`secret-zeroize`](rules/secret-zeroize.md) - Frames that held secrets are zeroed on return; erase heap key material explicitly with `(zeroize words n)`, `(zeroize-bytes addr n)` or `(k.wipe)`.
 
 ### 17. Cryptography Library (MEDIUM)
@@ -317,6 +320,7 @@ Impact: **CRITICAL** = silent miscompile, wrong result or crash; **HIGH** = erro
 - [`pkg-pub-and-explicit-imports`](rules/pkg-pub-and-explicit-imports.md) - Mark the public surface with inline `(pub defn ...)` and import with explicit `{ ... }` lists.
 - [`pkg-stdlib-resolution`](rules/pkg-stdlib-resolution.md) **[CRITICAL]** - When a stdlib or compiler change "doesn't take effect", suspect a stale `~/.zyl`: set `ZYL_HOME=$PWD/build/boot`, or refresh the install with `./uninstall.sh && ./install.sh` (a verified `./boot.sh` does this for you).
 - [`pkg-use-what-you-construct`](rules/pkg-use-what-you-construct.md) **[CRITICAL]** - Explicitly `use` every module whose types, constructors or functions your module relies on, even if they "happen to be visible".
+- [`pkg-lone-file-capabilities`](rules/pkg-lone-file-capabilities.md) **[CRITICAL]** - A lone file has no capabilities until it writes `(capabilities io ffi ...)` at the top.
 
 ### 20. Determinism (HIGH)
 

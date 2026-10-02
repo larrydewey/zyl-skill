@@ -15,6 +15,8 @@ There is no C runtime and no libc under a freestanding program (`docs/runtime-in
 
 - An uncalled Num-generic `zyl_*` function is never instantiated, so it is not emitted; `boot.sh` fails with `runtime entries not emitted`. Annotate its parameters.
 - A C `int` result has only its low 32 bits defined; mask it (`rt-lo32`) before comparing.
+- The runtime is checked code like the compiler: an Int `+ - *` that overflows is an `E_OVERFLOW` panic, and `/` or `%` by anything but a nonzero literal must be `div!`/`rem!`. A wrap the runtime relies on (a hash, a PRNG step) is written `wrapping+`/`wrapping*` ([fn-numeric-policy](fn-numeric-policy.md)).
+- The overflow and zero-divisor trap stubs compiled code jumps to (`zyl_rt_trap_ovf_<op>`, `zyl_rt_trap_div0_<op>`) are emitted into the runtime's assembly by codegen (`cg-rt-trap-stubs`) and call `zyl_overflow_panic` and its sibling in `runtime/rt/numeric.zyl`. The panic backtrace walker (`runtime/rt/panic.zyl`, which reads the program's `zyl_syms` table; `zyl_backtrace_set 0` turns it off) lives here too ([cg-symbols-and-entry](cg-symbols-and-entry.md)).
 - `shr` is logical and `ashr` arithmetic ([bits-shr-vs-ashr](bits-shr-vs-ashr.md)).
 - Anything the interpreter must call needs an entry in `ffitab.zyl`.
 - Shared runtime state touched from actors needs a lock once threads exist (`threads_started`), as the allocator and the interpreter's name table do.

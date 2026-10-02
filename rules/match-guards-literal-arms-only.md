@@ -9,7 +9,7 @@ Guards work in exactly one position. Elsewhere they are compile-time errors, wit
 | Position | Result |
 |---|---|
 | After a plain literal: `(0 (when verbose) "...")` | works; the condition must be `Bool` |
-| After a `range`: `((range 4 9) (when v) ...)` | `E_ARITY_MISMATCH` (mistaken for the prelude's 2-argument `when` function) |
+| After a `range`: `((range 4 9) (when v) ...)` | `E_ARITY_MISMATCH` ("`when` takes 2 arguments, but this call gives it 1": read as a `when` form) |
 | On a constructor arm: `(Some x (when (> x 0)) x)` | `E_NESTED_PATTERN` (the guard sits in a binder position) |
 | On the trailing `_` arm | `E_MATCH_NONEXHAUSTIVE` in a literal match, `E_NESTED_PATTERN` in a constructor match |
 
@@ -18,9 +18,10 @@ Guards can only refer to names bound outside the `match` (literal arms bind noth
 ## Bad
 
 ```lisp
-(match o
-  (Some x (when (> x 0)) x)     ; E_NESTED_PATTERN
-  (_ 0))
+(defn positive (o)
+  (match o
+    (Some x (when (> x 0)) x)     ; E_NESTED_PATTERN
+    (_ 0)))
 ```
 
 ## Good
@@ -36,6 +37,13 @@ Guards can only refer to names bound outside the `match` (literal arms bind noth
     (0 (when verbose) "zero, exactly")
     (0 "zero")
     (_ "nonzero")))
+
+(defn main ()
+  (begin
+    (print (positive-or-zero (Some 3)))   ; 3
+    (print (zero-word 0 true))            ; zero, exactly
+    (print (zero-word 0 false))           ; zero
+    0))
 ```
 
 ## See Also

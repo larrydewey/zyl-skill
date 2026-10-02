@@ -1,19 +1,19 @@
 # data-two-map-types
 
-> Pick one map per program: `core/map` (String keys, any values, `Option` results) or `collections/map` (Int keys and values, a default value, arena-backed).
+> Choose the map by key type: `core/map` (String keys, any values, `Option` results) or `collections/intmap` (Int keys and values, a default value, region-backed); their names no longer overlap, so both may be loaded together.
 
 ## Why It Matters
 
-Both modules define a type named `Map` and functions named `map-get`, `map-has`, `map-remove` with **different signatures and semantics**. Loading both is not an error: for each shared name, the module `use`d **later** silently wins, so a call written for the other one fails with a confusing `E_ARITY_MISMATCH` or `E_TYPE_MISMATCH` (or, worse, type-checks against the wrong one).
+The two modules used to define a type named `Map` and functions named `map-get`, `map-has` and `map-remove` with different signatures, so loading both silently let the later one win. The Int-keyed one is now `IntMap` with `intmap-*` functions, and `Map`, `len` and the `(map key val ...)` literal all mean `core/map`. Picking the wrong one is still a type error rather than a choice: `core/map` keys are compared with `str-eq`, so an Int key is `E_TYPE_MISMATCH`.
 
-| | `core/map` | `collections/map` |
+| | `core/map` | `collections/intmap` |
 |---|---|---|
-| Representation | ADT holding an association list of `(ME k v)` | struct of arena word arrays |
+| Representation | ADT holding an association list of `(ME k v)` | struct of word arrays in the caller's region |
 | Keys / values | String keys (compared with `str-eq`), any value type: `(Map String V)` | Int keys, Int values |
-| Create | `(map-new)` | `(map-create arena cap)` (`arena`: an `Arena`), `(map-create-default cap)` |
-| Insert | `(map-insert m k v)` | `(map-put m k v)` |
-| Lookup | `(map-get m k)` returns `Option`; `(map-get-or m k d)` | `(map-get m k default)` |
-| Other | `map-has`, `map-remove`, `map-entries`, `map-size`, `map-is-empty`, `map-map-values f m`, `map-from-list` | `map-has` (Bool), `map-remove`, `map-len`, `map-cap`, `map-find`, `map-free` |
+| Create | `(map-new)` | `(intmap-new cap)` (`cap` a hint) |
+| Insert | `(map-insert m k v)` | `(intmap-put m k v)` |
+| Lookup | `(map-get m k)` returns `Option`; `(map-get-or m k d)` | `(intmap-get m k default)` |
+| Other | `map-has`, `map-remove`, `map-entries`, `map-size`, `map-is-empty`, `map-map-values f m`, `map-from-list` | `intmap-has` (Bool), `intmap-remove`, `intmap-len`, `intmap-cap`, `intmap-find`, `intmap-free` |
 | Iteration order | deterministic, newest first | insertion order |
 | `print` | `{b: 2, a: 1}` (`Show`) | address (no `Show`) |
 
@@ -21,9 +21,18 @@ Both modules define a type named `Map` and functions named `map-get`, `map-has`,
 
 ```lisp
 (use core/map)
+(use collections/intmap)
+
 (defn count-service (m (svc String))
   (map-insert m svc (+ 1 (map-get-or m svc 0))))
-(print (count-service (count-service (count-service (map-new) "a") "b") "a"))  ; {a: 2, b: 1}
+
+(defn main ()
+  (let ids (intmap-put (intmap-put (intmap-new 4) 3 30) 4 40)
+    (begin
+      (print (count-service (count-service (count-service (map-new) "a") "b") "a"))  ; {a: 2, b: 1}
+      (print (intmap-get ids 3 -1))                                                   ; 30
+      (print (intmap-get ids 9 -1))                                                   ; -1
+      0)))
 ```
 
 ## Notes

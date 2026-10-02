@@ -24,8 +24,12 @@ Undershooting a level is silent memory corruption (a freed region still referenc
 ## Bad
 
 ```lisp
-; trusting a runtime function that keeps its argument (e.g. stores it in a table)
-(if (str-eq s "zyl_smap_put") 0          ; claims "keeps nothing": the key's region is freed under the table
+; claims zyl_smap_put keeps nothing, but the table keeps its key
+(defn rg-ffi-kind (s)
+  (if (str-eq s "zyl_cstr_concat") 1
+  (if (str-eq s "zyl_smap_put") 0          ; the key's region is freed under the table
+  (rg-ffi-kind-bytes s))))
+(defn rg-ffi-kind-bytes (s) (if (str-eq s "zyl_bytebuf_len") 0 3))
 ```
 
 ## Good
@@ -34,9 +38,12 @@ Undershooting a level is silent memory corruption (a freed region still referenc
 ; unlisted functions fall through to the heap default
 (defn rg-ffi-kind (s)
   (if (str-eq s "zyl_cstr_concat") 1
-  ...
-  (rg-ffi-kind-bytes s)))                 ; unknown: heap
+  (if (str-eq s "zyl_array_get") 0
+  (rg-ffi-kind-bytes s))))
+(defn rg-ffi-kind-bytes (s) (if (str-eq s "zyl_bytebuf_len") 0 3))
 ```
+
+The real table is `rg-ffi-kind` and `rg-ffi-kind-bytes` in `region_inference.zyl`; the shapes above are cut down to two entries each.
 
 ## Notes
 

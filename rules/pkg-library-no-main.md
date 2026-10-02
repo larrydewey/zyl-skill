@@ -10,17 +10,19 @@
 
 ```lisp
 ; mathlib.zyl
-(defn square (x) (* x x))
-(defn main () (begin (print (square 4)) 0))   ; breaks every importer
+(defn sq (x) (* x x))
+(defn main () (begin (print (sq 4)) 0))   ; breaks every importer
 ```
 
 ## Good
 
 ```lisp
 ; mathlib.zyl
-(defn square (x) (* x x))
-(defn mathlib-demo () (print (square 4)))   ; a real program's main may call this
+(defn sq (x) (* x x))
+(defn mathlib-demo () (print (sq 4)))   ; a real program's main may call this
 ```
+
+Verified 2026-10-02: a program that `use`s the Bad `mathlib.zyl` fails with `E_DUPLICATE_DEFINITION` at its own `main`; with the Good one it builds. (The prelude already defines `square`, so a program-file `square` is itself `E_DUPLICATE_DEFINITION`.)
 
 ## Diagnosis
 

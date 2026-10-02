@@ -7,20 +7,25 @@
 | integer, `true`/`false`, byte literal | `IConst` |
 | string / float literal | `IStr` / `IFlt` (source text) |
 | variable | `ILoad` (a name the type pass renamed, e.g. to an instance `f~T`, loads the new name) |
-| `let`, `let-mut` | `ILet` (mutability gone; `with-resource`, `assert-fail`, `test-suite` and `test-property` were rewritten on the parse tree, `compiler/desugar.zyl`) |
+| `let`, `let-mut` | `ILet` (mutability gone; `with-resource`, `assert-fail`, `let*`, `vec`, `map`, `div?`/`rem?`, `test-suite` and `test-property` were rewritten on the parse tree, `compiler/desugar.zyl`) |
 | `set!` | `ISet` |
+| Int `+ - *` | `IBinop` 0-2 (checked: a `jo` to the overflow trap); under the file's `(numeric wrapping)` or `(numeric saturating)`, `ic-policy-op` turns them into 18-20 or 21-23. Float operands keep 0-2 (IEEE, outside the policy). N-ary forms fold left (`ic-binop-fold`) |
+| `wrapping+ - *`, `saturating+ - *` | `IBinop` 18-20, 21-23, whatever the policy |
+| `/`, `%`, `div!`, `rem!` | `IBinop` 3, 4 (`ic-op-of` maps `div!` to 3 and `rem!` to 4; the numeric check has already required `/` and `%` to have a nonzero literal divisor) |
+| `div?`, `rem?` | rewritten on the parse tree (`ds-div-opt`): `(let x a (let y b (if (= y 0) None (Some (div! x y)))))` |
 | `begin` / `if` / `while` | `ISeq` / `IIf` / `IWhile` |
 | `for` | nested `ILet`s around `IWhile` |
 | `(list a b)`, `[a b]`, `'(1 2)`, quasiquote | never reach lowering as such: qualification (`qf-special`) and `convert-ast` rewrite them to `Cons`/`Nil` constructions (`ast-list-literal`, `ast-quote-data`); a `,@` splice becomes a `zyl-qq-append` call |
 | known function call | `ICall` (to the instance name when the type pass specialized it, `node-calls`) |
 | call through a local / computed head | `ICall` on the local; computed head bound to `_callee_N` first |
-| `ffi-call` | after `ffi-check-call`: `zyl_*` symbol: `IFfi sym args` (timeout dropped); other symbol: `IFfi "zyl_ffi_timed" (ISymAddr sym, IStr sym, IConst ms, IConst argc, args...)` |
+| `ffi-call` | after `ffi-check-call`: `zyl_*` symbol: `IFfi sym args` (timeout dropped); a call written without a timeout already carries its `extern`'s `:timeout N`, filled in by `convert-ast` (`ffi-default-timeout`, `expr_inner.zyl`); other symbol: `IFfi "zyl_ffi_timed" (ISymAddr sym, IStr sym, IConst ms, IConst argc, args...)` |
 | `with-region` | `parse-with-region` (Expr level, `E_REGION_SPEC` on a bad spec) then `IRegion kind block align limit body` (kind 1 arena, 2 fixed) via `ic-with-region` |
 | string built-ins, file I/O, byte buffers, atomics, `spawn`, the channel forms, `ffi-pin` | `IFfi` to runtime functions (`zyl_cstr_concat`, `zyl_file_open_c`, `zyl_bytebuf_new`, `zyl_actor_spawn`, `zyl_chan_send`...); `chan-send` reuses the `ESend` node |
 | bit intrinsics (`bit-popcount` ...) | `IFfi` to a `%` primitive the backends expand inline (`rt_mode.zyl`, `intrinsic-prim`); the interpreter evaluates a portable reference |
 | constructor / struct construction | `IVariant name tag fields` (a nullary constructor too: a one-word block) |
 | `match` | `IMatch` of `IArm`s (wildcard tag -1); nested patterns are rejected earlier (`E_NESTED_PATTERN`) |
 | `struct-get` | `IMatch` with one arm per struct type having that field |
+| `(Point.x p)` | an ordinary `ICall`: `convert-ast` emits a typed accessor `defn` for each field after the `defstruct` (`struct-accessor-forms`, `expr_inner.zyl`) |
 | `print` | `IPrint`, one per argument; a value with a `Show` impl prints its `Show.show` call (`node-shows`), marked String |
 | `try`/`catch` | `ITryCatch` |
 | `fn` | `IFn` lifted by `ic-hoist` to top level (name from `zyl_fresh_id`), referenced by `ILoad`; capturing: closure block |
