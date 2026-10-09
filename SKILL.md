@@ -81,7 +81,7 @@ Tiers build on each other: Tier 1 applies to every line of Zyl, Tier 5 only when
     0))                                      ; main's value is the exit status
 ```
 
-After every edit, check the file with `zyl balance` ([tool-balance](rules/tool-balance.md)); never count parens by hand. To repair a broken form, `zyl fmt --infer-parens <file>` closes it from its indentation and writes only a balanced result; read the diff. `zyl check` then runs everything a build does except code generation.
+After every edit, check the file with `zyl balance` ([tool-balance](rules/tool-balance.md)); never count parens by hand. To repair a broken form, `zyl balance --fix <file>` closes it from its indentation and writes only a balanced result; read the diff. `zyl check` then runs everything a build does except code generation.
 
 Tests live in a separate file: top-level `(test "name" (assert-equal actual expected))` forms and a final `(run-tests)`, no `main`.
 

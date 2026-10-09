@@ -25,7 +25,7 @@ zyl doc [file.zyl | dir] [-o out.md]   # Markdown API docs from comments (stdout
 zyl check [file.zyl | dir ...]       # every check a build makes, no codegen/link; clean check = it builds
 zyl balance [file.zyl | dir ...]     # delimiter, string and layout check (spec §1.6), status 1 on a fault
 zyl fmt [file.zyl ...] [--check]     # reindent to paren depth; never adds or removes a delimiter
-zyl fmt --infer-parens [file.zyl ...] # repair forms that do not balance, from their indentation
+zyl balance --fix [--check] [file ...] # repair forms that do not balance, from their indentation
 zyl explain [CODE]                   # what a diagnostic means; a wrong program and its fix
 zyl new owner/name | add NAME [VER] | fetch | build [--locked] | test
 zyl update | vendor | audit | key | help
