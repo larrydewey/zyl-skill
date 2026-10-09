@@ -12,7 +12,9 @@ Region inference (`region_inference.zyl`, since 2026-09-24) gives every allocati
 | R (result) | the region the caller chose for the result | with the caller's region |
 | H (heap) | the process heap (`zyl_heap_alloc`) | **never**, until exit |
 
-A value is H when it escapes in a way the compiler does not track: stored in a global, sent to an actor, handed to a foreign `ffi-call`, captured by a closure called through a function value, or passed to a runtime function not in the compiler's region-safe table (`rg-ffi-kind`). H memory is a bump allocator that is never reset (the only exception is in-place reuse, below); a loop that keeps escaping values grows until `E_OUT_OF_MEMORY` (budget = `ZYL_MAX_MEMORY` bytes if set, `0` disables it; otherwise 80% of available memory).
+A value is H when it escapes in a way the compiler does not track: stored in a global, sent to an actor, handed to a foreign `ffi-call`, captured by a closure called through a function value, or passed to a runtime function not in the compiler's region-safe table (`rg-ffi-kind`). H memory is a bump allocator that is never reset (the only exception is in-place reuse, below); a loop that keeps escaping values grows until `E_OUT_OF_MEMORY` (budget = `ZYL_MAX_MEMORY` bytes if set, `0` disables it; otherwise 80% of total memory or the cgroup limit).
+
+**Find them with the memory profile** (spec §9.3), one top-level form of a lone file or a line of `zyl.pkg`: `(memory reported)` warns `W_HEAP_ESCAPE` at each allocation in your own source that goes to the heap, labelled with where it escaped (`escapes here: passed to a function value that may keep it`, `... a runtime call ...`, `... a caught error value`); `(memory bounded)` makes each one `E_REGION_ESCAPE`. Default `unbounded`. A top-level `def`'s value is exempt (global by design), as are standard-library sites. The usual culprit is a value passed to a function value: the analysis has no summary for an unknown callee, so it assumes the callee keeps everything. Pass a named `defn` where you can, or restructure so the value is returned instead.
 
 Temporaries that die inside the call are reclaimed: a program that built and dropped 20000 lists went from a 630 MB to a 12 MB peak. A self tail call (a loop) recycles the frame region: it keeps the region's first block and empties it rather than releasing and reopening it (`zyl_region_recycle`, native backend).
 
@@ -56,6 +58,8 @@ Built 20000 times, the 1000-cell list in `total` peaks at 12 MB; compiled with `
 There is none for programs. `allocator/allocator` (`arena-create`, `alloc-malloc`, `alloc-read-int`, ...) is for the compiler and the standard library: a program that calls `arena-create` is `E_FFI_RESTRICTED` ("is a raw-memory entry: it is for the compiler, not for programs"). Use `with-region` for bulk temporaries and `bytebuf` for bytes.
 
 ## Notes
+
+- `docs/memory-reclamation-roadmap.md` in the zyl repo plans what narrows the heap: defunctionalising known function values, borrowed-parameter inference, FP² in-place checking under `(memory bounded)`, Perceus reference counting for H values, reachability types.
 
 - Classes are field-insensitive: a variant, its fields and anything read out of it share one level, so one escaping use keeps the whole structure in the heap.
 - Collections take no arena: `vec-new`, `vec-new-cap cap`, `intmap-new cap` and `set-create cap` allocate in the region the calling frame runs in, so a collection that does not outlive its frame is reclaimed on return. `vec-free` and `intmap-free` release nothing; they return an empty value, and the old storage goes with its region.

@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-`zyl-lsp` is built from the same compiler and runs the same front end in the same order (`stdlib/lsp/document_manager.zyl`): parse under the document's own path, resolve modules, expand macros, then the checks (duplicates, arity, mutability, exhaustiveness, Secret), then derive expansion, impl lifting, closure inlining and the **type checker** (`dm-type-diagnostics`). So its errors are the compiler's errors: balance with quick-fix, the checks, and since 2026-09-25 (`f4213bc`) every type error located in the document, which are the main class of error under sound typing. `unused_check`'s unused-binding and shadowing warnings are published as Warning diagnostics. Each diagnostic is placed at the `--> file:line:col` the compiler reports and shows the headline plus the `help` line (not the rendered excerpt). Navigation positions come from a text scan of the document; meanings from the real front end; the two meet by name.
+`zyl-lsp` is built from the same compiler and runs the same front end in the same order (`stdlib/lsp/document_manager.zyl`): parse under the document's own path, resolve modules, expand macros, then the checks (duplicates, arity, mutability, exhaustiveness, Secret), then derive expansion, impl lifting, closure inlining and the **type checker** (`dm-type-diagnostics`). So its errors are the compiler's errors: balance (with one quick fix that closes the unbalanced forms from their indentation, the `zyl fmt --infer-parens` edit), the checks, and since 2026-09-25 (`f4213bc`) every type error located in the document, which are the main class of error under sound typing. `unused_check`'s unused-binding and shadowing warnings are published as Warning diagnostics. Each diagnostic is placed at the `--> file:line:col` the compiler reports and shows the headline plus the `help` line (not the rendered excerpt). Navigation positions come from a text scan of the document; meanings from the real front end; the two meet by name.
 
 ## Setup
 
@@ -30,6 +30,11 @@
 
 - A compiler pass that also runs in the LSP must never write to stdout (the JSON-RPC channel); use stderr. Passes that report through `zyl_warn_emit` are captured (`zyl_warn_capture`) and turned into diagnostics; a pass that panics becomes one diagnostic instead of killing the server.
 - `tests/lsp/lsp_protocol_test.py` drives the real binary (108 checks, including a type error, one diagnostic per type error, a 150 KB document and UTF-8).
+
+## Memory and limits (2026-10-09)
+
+- The server's memory stays flat across a session (`tests/lsp/lsp_memory_test.py`): each message runs with the heap switched to a scratch arena, each analysis in a pooled arena its document owns, and a closed document's source is forgotten. Before this, every analysis of a small file kept 4.5 MB and a server left open reached 37 GB.
+- Analysis stops at type inference (`compile-front-end`). Lowering and region inference do not run in the editor, so `E_REGION_ESCAPE`, `W_HEAP_ESCAPE`, a one-operand `/` and `E_NO_MAIN` appear from `zyl check` or a build, not as you type.
 
 ## See Also
 

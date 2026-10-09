@@ -25,7 +25,7 @@ The order in `stdlib/compiler/pipeline.zyl`, as a call outline (not runnable cod
 ;; lower-exprs
 (dv-expand-program exprs0)                         ; derive -> impl blocks
 (lift-impls exprs)                                 ; impl bodies -> Trait.method_Type functions
-;; annotate-exprs (compile-front-end, and so zyl check, stops here)
+;; annotate-exprs (compile-front-end: the language server stops here)
 (ci-expand-program arena exprs)                    ; closure inlining (identity today)
 (ta-annotate ...)                                  ; sound HM: every type error, then fail
 (nc-check-program ann)                             ; partial / and %, numeric policy forms

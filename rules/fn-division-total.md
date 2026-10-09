@@ -49,7 +49,7 @@ No arithmetic reaches the processor's divide fault any more: every `idiv` with a
 - All four spelled forms take Int operands only. Float `/` by zero is infinity or NaN, as IEEE-754 says.
 - A division by a constant other than 0 and -1 compiles to a multiply by a magic number or a shift, never to `idiv`.
 - On `Secret` operands `/` and `%` are `E_CT_VIOLATION`. Known gap (2026-10-02): the secret checker does not yet flag `div!`, `rem!`, `div?` or `rem?` on a Secret, so never divide key material with them either.
-- `+ - *` are n-ary and fold left: `(- 10 3 2)` is 5. `(/ x)` and `(% x)` with one operand are `E_ARITY_MISMATCH` when you build; `zyl check` currently lets them through.
+- `+ - *` are n-ary and fold left: `(- 10 3 2)` is 5. `(/ x)` and `(% x)` with one operand are `E_ARITY_MISMATCH`, from a build and from `zyl check` (the arity is checked while lowering to ICNF, which `check` now runs).
 
 ## See Also
 

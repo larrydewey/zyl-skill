@@ -53,7 +53,7 @@ Writing the correct region now keeps the program valid when the remaining checks
 ## Notes
 
 - Foreign `ffi-call` arguments are always classified as heap, so an abandoned timed-out call never holds a released region; passing a Stack buffer's `bytebuf-ptr` to a foreign function is `E_REGION_ESCAPE`. Use a `Pin` buffer.
-- `E_REGION_ESCAPE` comes from region inference, which runs after type checking: `zyl check` passes the Bad examples above, and a build rejects them.
+- `E_REGION_ESCAPE` comes from region inference, which runs after type checking. `zyl check` runs it too (since 2026-10-09), so check and build both reject the Bad examples above; the language server stops at type checking and does not show it as you type.
 - The filename predates real regions; the rule now covers the Stack check as well.
 
 ## See Also

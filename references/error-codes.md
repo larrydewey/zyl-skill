@@ -112,13 +112,15 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 
 | Code | Status | Notes |
 |---|---|---|
-| `E_REGION_ESCAPE` | R | located, from region inference (`rg-*`): a `(bytebuf Stack N)` returned, stored, sent or passed to code that may keep it; a value allocated inside `with-region` that outlives it. An inferred placement never raises it |
+| `E_REGION_ESCAPE` | R | located, from region inference (`rg-*`): a `(bytebuf Stack N)` returned, stored, sent or passed to code that may keep it; a value allocated inside `with-region` that outlives it; and, under `(memory bounded)`, any allocation that goes to the process heap. An inferred placement never raises it otherwise |
 | `E_REGION_SPEC` | R | located, from `parse-with-region`: unknown kind (only `arena`, `fixed`), `:block` not a multiple of 4096 or above 64 MiB, `:align` not a power of two in 8..4096 |
 | `E_REGION_EXHAUSTED` | R | runtime panic when a `fixed` region's `:size` or an arena's `:limit` is exceeded; deterministic, catchable with `try`, matched by `recover`/`zyl_err_is`; compiled code only (the interpreter does not enforce limits) |
 | `E_INDEX_OUT_OF_BOUNDS` | R | runtime panic: `vec-get`/`vec-last` outside the Vec, `slice-vec`/`slice-sub`/`slice-get` outside the range (`collections/vec`, `collections/slice`), the runtime's array/vector accessors; catchable with `try` |
 | `E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN` | R | tests/top-level statements + `defn main` (incl. from a `use`d module) |
 | `E_CODEGEN_BUFFER_FULL` | R | > 63 MiB assembly |
-| `E_OUT_OF_MEMORY` | R | allocation failed / budget (`ZYL_MAX_MEMORY`, 0 disables; default 80% RAM); catalogued twice |
+| `E_OUT_OF_MEMORY` | R | allocation failed / budget (`ZYL_MAX_MEMORY`, 0 disables; default 80% of total RAM or the cgroup limit, never of free memory); the report allocates nothing; catalogued twice |
+| `E_STACK_OVERFLOW` | R | recursion reached the guard page of main's stack (a quarter of the budget, charged to it) or an actor's 8 MiB stack; reported by a SIGSEGV handler on an alternate stack after flushing output; not catchable |
+| `E_USE_AFTER_FREE` | R | a `StringBuffer` read after release, or an allocation through a destroyed arena (generational handles: a stale value no longer matches its handle's generation; a second destroy is a no-op) |
 | `E_CHANNEL_NOT_OWNER` | R | runtime: a send or receive on a channel end this actor does not own (it moved at a spawn or over a channel) |
 | `E_CHANNEL_CLOSED` | R | runtime: `chan-recv` on a closed, drained channel (its writer finished); catchable |
 | `E_CHANNEL_CAPACITY` | R | runtime: `(chan n)` with n outside 1..16777216 |
@@ -135,7 +137,8 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 | `E_OVERFLOW` | C | ints wrap |
 | `E_CONTRACT_VIOLATION` | R | failed `requires`/`ensures`/`invariant`: `precondition of f failed: C` (also `postcondition`, `invariant`); under the `warn` profile a stderr `warning: E_CONTRACT_VIOLATION: ...` and execution continues; `off`/`production` compile the checks out; `recover` arms match it by prefix |
 | `E_TEST_FAILURE`, `E_TEST_RUNNER_ERROR` | C | tests print `FAIL` |
-| `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_NO_MAIN`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |
+| `E_NO_MAIN` | U | a lone file (no `zyl.pkg` beside it) with no `main` and no top-level tests: located, from `zyl check` and a build; also the REPL interpreter's |
+| `E_UNDEFINED_FUNCTION`, `E_NOT_CALLABLE`, `E_INTERNAL` | I/U | REPL interpreter / evaluator |
 
 ## Traits
 
@@ -154,7 +157,7 @@ Secret-checker errors are located `error[CODE]: in `f`: ...` diagnostics (file:l
 
 ## Warnings (stderr, never fatal; the LSP publishes them as Warning diagnostics)
 
-`W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`, `E_ZEROIZE_MISSING`, and `W_TYPE_STRICT` (only under `ZYL_STRICT_TYPES=report`). `W_UNUSED_FUNCTION` is implemented but not wired in (it would flag every unused auto-injected `core` function). `_`/`_`-prefixed names are exempt. Printed as located `warning[CODE]` diagnostics through the runtime's warning sink (`zyl_warn_emit`), which a caller can capture instead of printing.
+`W_UNUSED_PARAMETER`, `W_UNUSED_VARIABLE`, `W_SHADOWED_BINDING`, `E_ZEROIZE_MISSING`, `W_TYPE_STRICT` (only under `ZYL_STRICT_TYPES=report`), and `W_HEAP_ESCAPE` (only under `(memory reported)`: an allocation that goes to the process heap, labelled with where it escaped). `W_UNUSED_FUNCTION` is implemented but not wired in (it would flag every unused auto-injected `core` function). `_`/`_`-prefixed names are exempt. Printed as located `warning[CODE]` diagnostics through the runtime's warning sink (`zyl_warn_emit`), which a caller can capture instead of printing.
 
 ## Exit codes
 

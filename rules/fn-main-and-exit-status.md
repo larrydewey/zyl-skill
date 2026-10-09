@@ -4,7 +4,7 @@
 
 ## Why It Matters
 
-The type checker requires `main : () -> Int`. A `main` ending in `print` (which is `Unit`), a Bool or a String is `E_TYPE_MISMATCH` ("main must return the exit status, an Int, but this is `Unit`"), and a `main` with parameters is `E_TYPE_MISMATCH` too. The generated entry stub runs `main` on the big stack and returns its value as the process exit code, truncated to 8 bits by the OS (`300` exits with 44). A file with top-level `test`/`run-tests` forms gets a synthesized `main` and must **not** also define one (`E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN`). A file with no `main` and no tests passes `zyl check` but fails to build (`PANIC: E_LINK_UNDEFINED: _ZYL_main`).
+The type checker requires `main : () -> Int`. A `main` ending in `print` (which is `Unit`), a Bool or a String is `E_TYPE_MISMATCH` ("main must return the exit status, an Int, but this is `Unit`"), and a `main` with parameters is `E_TYPE_MISMATCH` too. The generated entry stub runs `main` on the big stack and returns its value as the process exit code, truncated to 8 bits by the OS (`300` exits with 44). A file with top-level `test`/`run-tests` forms gets a synthesized `main` and must **not** also define one (`E_TOPLEVEL_STMTS_WITH_EXPLICIT_MAIN`). A lone file (no `zyl.pkg` beside it) with no `main` and no tests is `E_NO_MAIN`, located at its first line, from both `zyl check` and a build (before 2026-10-09 check passed it and the link failed with `PANIC: E_LINK_UNDEFINED: _ZYL_main`). A file beside a `zyl.pkg` may be a module and is not required to have one.
 
 ## Bad
 
